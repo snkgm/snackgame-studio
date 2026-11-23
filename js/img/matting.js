@@ -1,8 +1,8 @@
-import {db,publicUrl} from "../app/db.js?v=20261123m";
+import {db,publicUrl} from "../app/db.js?v=20261123n";
 let worker,seq=0;const waits=new Map();
 function getWorker(){
   if(worker)return worker;
-  worker=new Worker(new URL("./matting.worker.js?v=20261123m",import.meta.url),{type:"module"});
+  worker=new Worker(new URL("./matting.worker.js?v=20261123n",import.meta.url),{type:"module"});
   worker.onmessage=e=>{const w=waits.get(e.data.id);if(!w)return;if(e.data.progress){w.onp?.(e.data.progress);return}waits.delete(e.data.id);e.data.error?w.rej(new Error(e.data.error)):w.res(e.data)};
   worker.onerror=e=>{waits.forEach(w=>w.rej(new Error("El modelo no se pudo iniciar")));waits.clear();worker=null};
   return worker;
@@ -36,6 +36,18 @@ export function flatMask(c,tol=30){
   const push=(x,y)=>{const i=y*w+x;if(!isbg[i]&&near(i*4)){isbg[i]=1;st[sp++]=i}};
   for(let x=0;x<w;x++){push(x,0);push(x,h-1)}for(let y=0;y<h;y++){push(0,y);push(w-1,y)}
   while(sp){const i=st[--sp],x=i%w,y=(i/w)|0;if(x>0)push(x-1,y);if(x<w-1)push(x+1,y);if(y>0)push(x,y-1);if(y<h-1)push(x,y+1)}
+  {
+    let fa=0;for(let i=0;i<w*h;i++)if(!isbg[i])fa++;
+    const tight=i=>{const o=i*4;return Math.max(Math.abs(d[o]-bg[0]),Math.abs(d[o+1]-bg[1]),Math.abs(d[o+2]-bg[2]))<=14&&d[o+3]>200};
+    const seen=new Uint8Array(w*h);
+    for(let i0=0;i0<w*h;i0++){
+      if(isbg[i0]||seen[i0]||!tight(i0))continue;
+      const comp=[i0];seen[i0]=1;
+      for(let k=0;k<comp.length;k++){const i=comp[k],x=i%w,y=(i/w)|0;
+        for(const j of [x>0?i-1:-1,x<w-1?i+1:-1,y>0?i-w:-1,y<h-1?i+w:-1])if(j>=0&&!isbg[j]&&!seen[j]&&tight(j)){seen[j]=1;comp.push(j)}}
+      if(comp.length>=250&&comp.length<fa*.3)for(const i of comp)isbg[i]=1;
+    }
+  }
   const fg=new Uint8Array(w*h);
   for(let i=0;i<fg.length;i++)fg[i]=isbg[i]?0:1;
   const er=new Uint8Array(w*h);

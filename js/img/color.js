@@ -24,7 +24,7 @@ export function extractPalette(src,n=3){
     if(bg&&Math.abs(r-bg[0])+Math.abs(g-bg[1])+Math.abs(b-bg[2])<54)continue;
     const key=(r>>4)<<8|(g>>4)<<4|(b>>4);const e=B.get(key)||{n:0,r:0,g:0,b:0};e.n++;e.r+=r;e.g+=g;e.b+=b;B.set(key,e);
   }
-  const list=[...B.values()].map(e=>{const r=e.r/e.n,g=e.g/e.n,b=e.b/e.n,[,s,l]=rgbToHsl(r,g,b);const pen=l<.08||l>.95?.15:1;return{rgb:[r,g,b],score:e.n*(.35+s*1.65)*pen}}).sort((a,b)=>b.score-a.score);
+  const list=[...B.values()].map(e=>{const r=e.r/e.n,g=e.g/e.n,b=e.b/e.n,[,s,l]=rgbToHsl(r,g,b);const pen=l<.08||l>.95?.15:l<.22?.35:1;return{rgb:[r,g,b],score:e.n*(.15+s*s*3)*pen}}).sort((a,b)=>b.score-a.score);
   const out=[];
   for(const e of list){if(out.every(o=>Math.hypot(o.rgb[0]-e.rgb[0],o.rgb[1]-e.rgb[1],o.rgb[2]-e.rgb[2])>70))out.push(e);if(out.length>=n)break}
   const hex=out.map(e=>rgbToHex(...e.rgb));

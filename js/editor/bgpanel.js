@@ -1,11 +1,11 @@
-import {store} from "../app/store.js?v=20261123m";
-import {db} from "../app/db.js?v=20261123m";
-import {esc,toast,modal} from "../app/ui.js?v=20261123m";
-import {I} from "../app/icons.js?v=20261123m";
-import {renderBackground,BG_DEFAULT} from "../img/background.js?v=20261123m";
-import {extractPalette} from "../img/color.js?v=20261123m";
-import {hashKey} from "../img/matting.js?v=20261123m";
-import {searchBackgrounds,getKey,setKey} from "../img/bgsearch.js?v=20261123m";
+import {store} from "../app/store.js?v=20261123n";
+import {db} from "../app/db.js?v=20261123n";
+import {esc,toast,modal} from "../app/ui.js?v=20261123n";
+import {I} from "../app/icons.js?v=20261123n";
+import {renderBackground,BG_DEFAULT} from "../img/background.js?v=20261123n";
+import {extractPalette} from "../img/color.js?v=20261123n";
+import {hashKey} from "../img/matting.js?v=20261123n";
+import {searchBackgrounds,getKey,setKey} from "../img/bgsearch.js?v=20261123n";
 const rng=(k,l,min,max)=>`<div class="field"><label for="b-${k}">${l}</label><input type="range" id="b-${k}" data-b="${k}" min="${min}" max="${max}"></div>`;
 const MODES=[["auto","Automático"],["solid","Color"],["image","Imagen"]];
 export function mountBgPanel(ed){
@@ -33,7 +33,7 @@ ${c.mode==="auto"?`<section class="sec"><div class="sec__head"><span class="labe
 <div class="swatches">${cols.map((x,i)=>`<input type="color" data-col="${i}" value="${x}" aria-label="Color ${i+1}">`).join("")}</div>
 <div class="row"><button class="btn btn--sm" data-act="extract">${I["rotate-ccw"]}Extraer del producto</button><button class="btn btn--sm" data-act="reset-cols">Restablecer</button></div>
 ${rng("angle","Dirección del degradado",0,360)}${rng("spread","Distribución de color",5,95)}${rng("blur","Intensidad de desenfoque",0,100)}
-${rng("lum","Luminosidad",-60,60)}${rng("sat","Saturación",-100,100)}${rng("light","Intensidad de luz",0,100)}${rng("lightX","Luz: posición X",0,100)}${rng("lightY","Luz: posición Y",0,100)}${rng("edge","Oscuridad de bordes",0,100)}${rng("opacity","Opacidad de efectos",0,100)}
+${rng("lum","Luminosidad",-60,60)}${rng("sat","Saturación",-100,100)}${rng("tex","Textura (grano %)",0,30)}${rng("light","Intensidad de luz",0,100)}${rng("lightX","Luz: posición X",0,100)}${rng("lightY","Luz: posición Y",0,100)}${rng("edge","Oscuridad de bordes",0,100)}${rng("opacity","Opacidad de efectos",0,100)}
 </section>
 <section class="sec"><div class="sec__head"><span class="label">Variaciones</span><button class="btn btn--ghost btn--sm" data-act="regen" title="Regenerar">Regenerar</button></div><div class="varis">${variants()}</div></section>`:""}
 ${c.mode==="solid"?`<section class="sec"><div class="field"><label for="b-solid">Color de fondo</label><input class="input" type="color" id="b-solid" data-b="solid" value="${c.solid}"></div></section>`:""}

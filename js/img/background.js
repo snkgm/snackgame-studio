@@ -1,5 +1,5 @@
-import {adjust,rgba,shade,rng,clamp} from "./color.js?v=20261123m";
-export const BG_DEFAULT={mode:"auto",n:3,blur:60,angle:135,spread:50,lum:0,sat:0,light:45,edge:55,opacity:80,seed:1,lightX:50,lightY:42,solid:"#14141c",colors:null,img:"",imgFit:"cover"};
+import {adjust,rgba,shade,rng,clamp} from "./color.js?v=20261123n";
+export const BG_DEFAULT={mode:"auto",n:3,blur:60,angle:135,spread:50,lum:0,sat:0,light:45,edge:55,opacity:80,seed:1,lightX:50,lightY:42,solid:"#14141c",tex:0,colors:null,img:"",imgFit:"cover"};
 const EDGE_CLEAR=1;
 export function bgColors(cfg,palette){
   const src=(cfg.colors&&cfg.colors.length?cfg.colors:palette&&palette.length?palette:["#3b2f8f","#8f2f6a","#ffb400"]);
@@ -31,6 +31,13 @@ export function renderBackground(W,H,cfg,palette,out){
   const ed=clamp(cfg.edge/100);
   if(ed>0){const r=Math.hypot(W,H)/2;const vg=x.createRadialGradient(W/2,H/2,r*.35,W/2,H/2,r);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,`rgba(0,0,0,${.85*ed})`);x.fillStyle=vg;x.fillRect(0,0,W,H)}
   x.restore();
+  const tx=clamp((cfg.tex||0)/100);
+  if(tx>0){
+    const t=document.createElement("canvas");t.width=t.height=256;const tc=t.getContext("2d"),im=tc.createImageData(256,256),r2=rng(cfg.seed*31+7);
+    for(let i=0;i<im.data.length;i+=4){const v=r2()>.5?255:0;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255}
+    tc.putImageData(im,0,0);
+    x.save();x.globalAlpha=tx;x.fillStyle=x.createPattern(t,"repeat");x.fillRect(0,0,W,H);x.restore();
+  }
   return c;
 }
 export const bgDataUrl=(W,H,cfg,palette)=>{const c=renderBackground(Math.round(W/2),Math.round(H/2),cfg,palette);return c.toDataURL("image/jpeg",.9)};

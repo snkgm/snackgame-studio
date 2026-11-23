@@ -1,7 +1,7 @@
-import {withHeadless} from "./headless.js?v=20261123m";
-import {fmtById} from "../app/formats.js?v=20261123m";
-import {BG_DEFAULT} from "../img/background.js?v=20261123m";
-import {logoUrl} from "../app/brand.js?v=20261123m";
+import {withHeadless} from "./headless.js?v=20261123n";
+import {fmtById} from "../app/formats.js?v=20261123n";
+import {BG_DEFAULT} from "../img/background.js?v=20261123n";
+import {logoUrl} from "../app/brand.js?v=20261123n";
 const R=(o,rule)=>{o.set("rule",rule);return o};
 export function safeOf(fmt,cfg){return {...fmtById(fmt).safe,...((cfg&&cfg.safe)||{})}}
 async function slideContent(ed,kind,f,s,names){
@@ -22,7 +22,7 @@ async function slideContent(ed,kind,f,s,names){
   const w=ed.addText({text:"Snackgame.es",name:"Dirección web",role:"web",field:"web",top:bot-Math.round(H*.07),props:{width:tw,fontSize:Math.round(42*sc),fontWeight:400,fontFamily:"Anton"}});
   w.set({rule:{color:"contrast"},shadow:null});
 }
-const PROD={"post-3x4":{cy:.63,maxW:.9,maxH:.56},"post-4x5":{cy:.63,maxW:.9,maxH:.56},"post-1x1":{cy:.6,maxW:.8,maxH:.56},"story-9x16":{cy:.56,maxW:.9,maxH:.44},"carousel-4x5":{cy:.63,maxW:.9,maxH:.56},"reel-cover":{cy:.56,maxW:.9,maxH:.42}};
+const PROD={"post-3x4":{cy:.56,maxW:.88,maxH:.62},"post-4x5":{cy:.63,maxW:.9,maxH:.56},"post-1x1":{cy:.6,maxW:.8,maxH:.56},"story-9x16":{cy:.56,maxW:.9,maxH:.44},"carousel-4x5":{cy:.63,maxW:.9,maxH:.56},"reel-cover":{cy:.56,maxW:.9,maxH:.42}};
 export async function buildSkeleton(fmtId,names={}){
   const fmt=fmtById(fmtId);
   return withHeadless(async ed=>{
@@ -40,7 +40,7 @@ export async function buildSkeleton(fmtId,names={}){
         const c=document.createElement("canvas");c.width=400;c.height=520;const x=c.getContext("2d");
         const g=x.createLinearGradient(0,0,0,520);g.addColorStop(0,"#ffffff");g.addColorStop(1,"#cfcfe0");x.fillStyle=g;x.beginPath();x.roundRect(40,10,320,500,48);x.fill();
         const o=await ed.setProductImage(c.toDataURL("image/png"),{place:false});
-        o.set("rule",{...ed.ruleOf(o),...plan[i][1],shadow:true});ed.placeProduct(o);o.set("name","Producto (ejemplo)");
+        o.set("rule",{...ed.ruleOf(o),...plan[i][1],shadow:false});ed.placeProduct(o);o.set("name","Producto (ejemplo)");
       }
     }
     return ed.toData();

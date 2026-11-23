@@ -1,9 +1,9 @@
-import {store} from "../app/store.js?v=20261123m";
-import {db} from "../app/db.js?v=20261123m";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261123m";
-import {esc,toast} from "../app/ui.js?v=20261123m";
-import {scheduleDates,fmtMadrid,parseList} from "../studio/schedule.js?v=20261123m";
-import {fetchProduct,validateGallery,usable} from "../studio/gallery.js?v=20261123m";
+import {store} from "../app/store.js?v=20261123n";
+import {db} from "../app/db.js?v=20261123n";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261123n";
+import {esc,toast} from "../app/ui.js?v=20261123n";
+import {scheduleDates,fmtMadrid,parseList} from "../studio/schedule.js?v=20261123n";
+import {fetchProduct,validateGallery,usable} from "../studio/gallery.js?v=20261123n";
 const LIM={name:40,sub:60},DAYS=["L","M","X","J","V","S","D"],pad=n=>String(n).padStart(2,"0");
 const thumb=(src,w=140)=>{try{const u=new URL(src);u.searchParams.set("width",w);return u.toString()}catch{return src}};
 export function mountCampaignNew(root){

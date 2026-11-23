@@ -1,9 +1,9 @@
-import {db} from "../app/db.js?v=20261123m";
-import {store} from "../app/store.js?v=20261123m";
-import {fmtById} from "../app/formats.js?v=20261123m";
-import {composeMulti} from "./compose.js?v=20261123m";
-import {fetchProduct,validateGallery,usable,Fatal} from "./gallery.js?v=20261123m";
-import {cutoutFor,mattingInfo} from "../img/matting.js?v=20261123m";
+import {db} from "../app/db.js?v=20261123n";
+import {store} from "../app/store.js?v=20261123n";
+import {fmtById} from "../app/formats.js?v=20261123n";
+import {composeMulti} from "./compose.js?v=20261123n";
+import {fetchProduct,validateGallery,usable,Fatal} from "./gallery.js?v=20261123n";
+import {cutoutFor,mattingInfo} from "../img/matting.js?v=20261123n";
 const ext=b=>(b.type.split("/")[1]||"jpg").replace("jpeg","jpg");
 export const STAGES={pending:"Pendiente",downloading:"Descargando fotografías",removing_bg:"Eliminando fondo",analyzing:"Analizando colores",background:"Generando fondo",composing:"Componiendo imágenes",saving:"Guardando",scheduled:"Programada",error:"Error",cancelled:"Cancelada"};
 function limitWarnings(tpl,prod){
@@ -40,7 +40,7 @@ export async function runItem(item,camp,report=()=>{}){
     const tid=(camp.templates&&camp.templates[fmt])||(store.resolveTemplate(camp.type_id,camp.category_id,fmt)||{}).id||null;
     const tpl=tid?await db.get("templates",tid):null;
     const tplData=tpl&&tpl.data&&(tpl.data.c||tpl.data.slides)?tpl.data:null;
-    const bgOverride=(pp&&pp.bg)||((!tplData||!tplData.cfg||!tplData.cfg.bg)?{mode:"auto",n:2}:undefined);
+    const bgOverride=(pp&&pp.bg)||((!tplData||!tplData.cfg||!tplData.cfg.bg)?{mode:"auto",n:2,sat:35,light:55,edge:30,tex:5}:undefined);
     const r=await composeMulti({tplData,fmtId:fmt,product:prod,names,cutUrls:cuts,origs,bgOverride,onStage:report});
     report("saving");
     warnings.push(...limitWarnings(tpl,prod),...r.warnings.map(x=>`${x}: el texto no cabe`));
