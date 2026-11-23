@@ -1,4 +1,5 @@
 export const FORMATS=[
+  {id:"post-3x4",label:"Feed vertical 3:4",short:"Feed 3:4",w:1080,h:1440,safe:{t:0,b:0,l:48,r:48}},
   {id:"post-4x5",label:"Publicación vertical",short:"Feed vertical",w:1080,h:1350,safe:{t:0,b:0,l:48,r:48}},
   {id:"post-1x1",label:"Publicación cuadrada",short:"Feed cuadrado",w:1080,h:1080,safe:{t:0,b:0,l:48,r:48}},
   {id:"story-9x16",label:"Stories",short:"Stories",w:1080,h:1920,safe:{t:250,b:340,l:64,r:64}},

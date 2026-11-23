@@ -1,4 +1,4 @@
-import {CONFIG} from "./config.js?v=20261123f";
+import {CONFIG} from "./config.js?v=20261123g";
 const H={apikey:CONFIG.SUPABASE_ANON_KEY,Authorization:"Bearer "+CONFIG.SUPABASE_ANON_KEY};
 const REST=CONFIG.SUPABASE_URL+"/rest/v1/",STORE=CONFIG.SUPABASE_URL+"/storage/v1/";
 async function req(path,{method="GET",body,keepalive}={}){
@@ -7,6 +7,7 @@ async function req(path,{method="GET",body,keepalive}={}){
   return r.status===204?null:r.json();
 }
 export const db={
+  REST,H:{...H,"Content-Type":"application/json"},
   list:(t,q="")=>req(`${t}?${q}`),
   get:async(t,id)=>(await req(`${t}?id=eq.${id}&select=*`))[0]||null,
   insert:async(t,row)=>(await req(t,{method:"POST",body:row}))[0],
@@ -19,5 +20,5 @@ export const db={
   }
 };
 export const publicUrl=path=>`${STORE}object/public/studio/${path}`;
-export const COLS="id,title,status,scheduled_at,type_id,category_id,template_id,format,thumb_url,error_msg,group_id,updated_at,created_at";
+export const COLS="id,title,status,scheduled_at,type_id,category_id,template_id,format,thumb_url,error_msg,group_id,campaign_id,item_id,product_id,caption,assets,updated_at,created_at";
 export const TCOLS="id,name,type_id,category_id,format,thumb_url,is_default,updated_at,created_at";

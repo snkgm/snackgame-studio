@@ -1,8 +1,8 @@
-import {withHeadless} from "./headless.js?v=20261123f";
-import {buildSkeleton} from "./skeleton.js?v=20261123f";
-import {fmtById} from "../app/formats.js?v=20261123f";
-import {cutoutFor} from "../img/matting.js?v=20261123f";
-import {extractPalette} from "../img/color.js?v=20261123f";
+import {withHeadless} from "./headless.js?v=20261123g";
+import {buildSkeleton} from "./skeleton.js?v=20261123g";
+import {fmtById} from "../app/formats.js?v=20261123g";
+import {cutoutFor} from "../img/matting.js?v=20261123g";
+import {extractPalette} from "../img/color.js?v=20261123g";
 const loadImg=u=>new Promise((res,rej)=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>rej(new Error("No se pudo cargar la imagen del producto"));i.src=u});
 export async function composePost({tplData,fmtId,product,names,blob,onProgress,cutUrl,bgOverride}){
   const fmt=fmtById(fmtId);
@@ -28,5 +28,31 @@ export async function composePost({tplData,fmtId,product,names,blob,onProgress,c
     if(ed.slides)await ed.gotoSlide(0);
     const thumb=await ed.thumbBlob();
     return {data:ed.toData(),product:ed.product,thumb,cutUrl:prodUrl};
+  });
+}
+export async function composeMulti({tplData,fmtId,product,names,cutUrls,origs,bgOverride,onStage}){
+  const fmt={...fmtById(fmtId)};
+  let base=tplData||await buildSkeleton(fmtId,names);
+  if(base.slides&&base.slides.length)base={...base,c:base.slides[0],slides:undefined};
+  if(cutUrls.length>1)fmt.slides=true;
+  return withHeadless(async ed=>{
+    await ed.loadData(JSON.parse(JSON.stringify(base)),fmt);
+    ed.product={...(product||{})};
+    if(bgOverride)ed.cfg.bg={...ed.bgCfg,...bgOverride};
+    onStage?.("analyzing");
+    ed.palette=extractPalette(await loadImg(cutUrls[0]));
+    onStage?.("background");
+    await ed.setProductImage(cutUrls[0],{orig:origs&&origs[0]});
+    if(ed.cfg.bg&&(ed.cfg.bg.mode==="auto"||bgOverride))await ed.applyBg();else ed.applyColorRules();
+    ed.applyFields();
+    onStage?.("composing");
+    const warnings=ed.fitReport();
+    let bgBlob=null;
+    try{const b=ed.bgLayer();if(b)bgBlob=await (await fetch(b.toDataURL({format:"jpeg",quality:.85}))).blob()}catch{}
+    for(let i=1;i<cutUrls.length;i++){await ed.newSlide(true);await ed.setProductImage(cutUrls[i],{orig:origs&&origs[i]})}
+    if(ed.slides)await ed.gotoSlide(0);
+    const finals=(await ed.exportAll("jpg")).map(s=>s.blob);
+    const thumb=await ed.thumbBlob();
+    return {data:ed.toData(),product:ed.product,thumb,finals,bgBlob,warnings};
   });
 }

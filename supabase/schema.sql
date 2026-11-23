@@ -33,3 +33,30 @@ grant select,insert,update,delete on public.product_presets to anon,authenticate
 drop policy if exists studio_open on public.product_presets;
 create policy studio_open on public.product_presets for all to anon,authenticated using(true) with check(true);
 drop trigger if exists presets_touch on public.product_presets;create trigger presets_touch before update on public.product_presets for each row execute function public.touch_updated_at();
+create table if not exists public.campaigns(id uuid primary key default gen_random_uuid(),name text not null,type_id uuid references public.post_types(id) on delete set null,category_id uuid references public.categories(id) on delete set null,formats jsonb not null default '["post-3x4"]'::jsonb,images_per_post int not null default 2,templates jsonb not null default '{}'::jsonb,schedule jsonb not null default '{}'::jsonb,config jsonb not null default '{}'::jsonb,status text not null default 'draft' check(status in('draft','running','paused','cancelled','done')),started_at timestamptz,created_at timestamptz not null default now(),updated_at timestamptz not null default now());
+create table if not exists public.campaign_items(id uuid primary key default gen_random_uuid(),campaign_id uuid not null references public.campaigns(id) on delete cascade,pos int not null,name text not null,url text not null default '',subtitle text not null default '',status text not null default 'pending' check(status in('pending','downloading','removing_bg','analyzing','background','composing','saving','scheduled','error','cancelled')),error text,attempts int not null default 0,locked_at timestamptz,locked_by text,scheduled_at timestamptz,product jsonb,photos jsonb,post_ids jsonb not null default '[]'::jsonb,created_at timestamptz not null default now(),updated_at timestamptz not null default now(),unique(campaign_id,pos));
+create index if not exists citems_status_idx on public.campaign_items(status);
+create index if not exists citems_camp_idx on public.campaign_items(campaign_id);
+alter table public.posts add column if not exists campaign_id uuid references public.campaigns(id) on delete set null;
+alter table public.posts add column if not exists item_id uuid references public.campaign_items(id) on delete set null;
+alter table public.posts add column if not exists product_id text;
+alter table public.posts add column if not exists caption text not null default '';
+alter table public.posts add column if not exists assets jsonb;
+create index if not exists posts_campaign_idx on public.posts(campaign_id);
+alter table public.campaigns enable row level security;alter table public.campaign_items enable row level security;
+grant select,insert,update,delete on public.campaigns,public.campaign_items to anon,authenticated;
+drop policy if exists studio_open on public.campaigns;create policy studio_open on public.campaigns for all to anon,authenticated using(true) with check(true);
+drop policy if exists studio_open on public.campaign_items;create policy studio_open on public.campaign_items for all to anon,authenticated using(true) with check(true);
+drop trigger if exists campaigns_touch on public.campaigns;create trigger campaigns_touch before update on public.campaigns for each row execute function public.touch_updated_at();
+drop trigger if exists citems_touch on public.campaign_items;create trigger citems_touch before update on public.campaign_items for each row execute function public.touch_updated_at();
+create or replace function public.queue_pending() returns int language sql security definer set search_path=public as $$ select count(*)::int from public.campaign_items i join public.campaigns c on c.id=i.campaign_id where c.status='running' and i.attempts<3 and (i.status='pending' or (i.status in('downloading','removing_bg','analyzing','background','composing','saving') and i.locked_at<now()-interval '15 minutes')) $$;
+create or replace function public.claim_item(worker text) returns setof public.campaign_items language plpgsql security definer set search_path=public as $$
+declare r public.campaign_items;
+begin
+select i.* into r from public.campaign_items i join public.campaigns c on c.id=i.campaign_id where c.status='running' and i.attempts<3 and (i.status='pending' or (i.status in('downloading','removing_bg','analyzing','background','composing','saving') and i.locked_at<now()-interval '15 minutes')) order by c.created_at,i.pos for update of i skip locked limit 1;
+if not found then return; end if;
+update public.campaign_items set status='downloading',attempts=attempts+1,locked_at=now(),locked_by=worker,error=null where id=r.id returning * into r;
+return next r;
+end $$;
+create or replace function public.fail_stale() returns int language sql security definer set search_path=public as $$ with u as (update public.campaign_items set status='error',error=coalesce(error,'Reintentos agotados') where attempts>=3 and status in('pending','downloading','removing_bg','analyzing','background','composing','saving') and (status='pending' or locked_at<now()-interval '15 minutes') returning 1) select count(*)::int from u $$;
+grant execute on function public.queue_pending(),public.claim_item(text),public.fail_stale() to anon,authenticated;

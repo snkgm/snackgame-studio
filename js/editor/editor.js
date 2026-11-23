@@ -1,6 +1,6 @@
-import {Canvas,Rect,Circle,FabricObject,Textbox,FabricImage,Point,Shadow} from "../../vendor/fabric.min.mjs?v=20261123f";
-import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261123f";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261123f";
+import {Canvas,Rect,Circle,FabricObject,Textbox,FabricImage,Point,Shadow} from "../../vendor/fabric.min.mjs?v=20261123g";
+import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261123g";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261123g";
 const PROPS=["name","locked","role","field","pattern","rule","orig"];
 export const FIELDS={name:"Nombre del producto",number:"Número",collection:"Colección",price:"Precio",category:"Categoría",web:"snackgame.es",hashtag:"#Hashtag",tagline:"Frase del producto",desc:"Descripción breve"};
 FabricObject.customProperties=PROPS;
@@ -181,6 +181,7 @@ export class Editor{
     let sz=r.max||o.fontSize;o.set({fontSize:sz,scaleX:1,scaleY:1});o.initDimensions();
     while(o.height>r.maxH&&sz>20){sz-=4;o.set("fontSize",sz);o.initDimensions()}
   }
+  fitReport(){return this.canvas.getObjects().filter(o=>o.rule&&o.rule.fit&&o.type.toLowerCase()==="textbox"&&(o.text||"").length&&o.height>o.rule.maxH+1).map(o=>o.name||o.field)}
   newSlide(dup=true){
     if(!this.slides)return;const cur=this.canvas.toObject(PROPS);this.slides[this.cur]=cur;
     const src=dup?JSON.parse(JSON.stringify(cur)):{...JSON.parse(JSON.stringify(cur)),objects:cur.objects.filter(o=>o.role==="background").map(o=>JSON.parse(JSON.stringify(o)))};

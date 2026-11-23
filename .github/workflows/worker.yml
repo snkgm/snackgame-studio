@@ -1,0 +1,45 @@
+name: Studio worker
+on:
+  schedule: [{cron: "*/5 * * * *"}]
+  workflow_dispatch:
+concurrency: {group: studio-worker, cancel-in-progress: false}
+permissions: {contents: write}
+env:
+  SUPABASE_URL: https://rppsssqdcgrhbjcivsal.supabase.co
+  SUPABASE_KEY: sb_publishable_3R43V8OIztDdh_WMD2YAqg_9x_57DPM
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - name: Cola
+        id: q
+        run: |
+          n=$(curl -s -X POST "$SUPABASE_URL/rest/v1/rpc/queue_pending" -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" -H "Content-Type: application/json" -d '{}')
+          echo "pending=$n" >> $GITHUB_OUTPUT
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        if: steps.q.outputs.pending != '0'
+        with: {node-version: 20}
+      - uses: actions/cache@v4
+        if: steps.q.outputs.pending != '0'
+        with:
+          path: |
+            worker/.pw-profile
+            ~/.cache/ms-playwright
+          key: pw-${{ hashFiles('worker/package.json') }}
+      - name: Ejecutar
+        if: steps.q.outputs.pending != '0'
+        working-directory: worker
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          node run.mjs
+      - name: Keepalive
+        if: always()
+        run: |
+          last=$(git log -1 --format=%ct)
+          if [ $(( $(date +%s) - last )) -gt 2592000 ]; then
+            git config user.name studio-worker && git config user.email worker@users.noreply.github.com
+            git commit --allow-empty -m "keepalive" && git push || true
+          fi
