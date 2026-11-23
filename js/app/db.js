@@ -1,4 +1,4 @@
-import {CONFIG} from "./config.js?v=20261123k";
+import {CONFIG} from "./config.js?v=20261123l";
 const H={apikey:CONFIG.SUPABASE_ANON_KEY,Authorization:"Bearer "+CONFIG.SUPABASE_ANON_KEY};
 const REST=CONFIG.SUPABASE_URL+"/rest/v1/",STORE=CONFIG.SUPABASE_URL+"/storage/v1/";
 async function req(path,{method="GET",body,keepalive}={}){
@@ -7,6 +7,7 @@ async function req(path,{method="GET",body,keepalive}={}){
   return r.status===204?null:r.json();
 }
 export const db={
+  bulk:async(t,rows)=>{const r=await fetch(REST+t,{method:"POST",headers:{...H,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify(rows)});if(!r.ok){let m=r.statusText;try{m=(await r.json()).message||m}catch{}throw new Error(m)}},
   REST,H:{...H,"Content-Type":"application/json"},
   list:(t,q="")=>req(`${t}?${q}`),
   get:async(t,id)=>(await req(`${t}?id=eq.${id}&select=*`))[0]||null,

@@ -1,9 +1,11 @@
-import {store} from "./store.js?v=20261123k";
-import {mountCenter} from "../center/center.js?v=20261123k";
-import {mountSettings} from "../center/settings.js?v=20261123k";
-import {mountEditor} from "../editor/editorView.js?v=20261123k";
-import {mountTemplates} from "../center/templates.js?v=20261123k";
-import {closeMenu} from "./ui.js?v=20261123k";
+import {store} from "./store.js?v=20261123l";
+import {mountCenter} from "../center/center.js?v=20261123l";
+import {mountSettings} from "../center/settings.js?v=20261123l";
+import {mountEditor} from "../editor/editorView.js?v=20261123l";
+import {mountTemplates} from "../center/templates.js?v=20261123l";
+import {mountAutomations,mountCampaign} from "../center/automations.js?v=20261123l";
+import {mountCampaignNew} from "../center/campaignNew.js?v=20261123l";
+import {closeMenu} from "./ui.js?v=20261123l";
 let view=document.getElementById("view");
 let cleanup=null,token=0;
 async function route(){
@@ -16,6 +18,9 @@ async function route(){
   if(a==="editor"&&id){store.flush();c=await mountEditor(view,id)}
   else if(a==="plantilla"&&id){store.flush();c=await mountEditor(view,id,{template:true})}
   else if(a==="plantillas")c=mountTemplates(view);
+  else if(a==="automatizaciones"&&id==="nueva")c=mountCampaignNew(view);
+  else if(a==="automatizaciones"&&id)c=mountCampaign(view,id);
+  else if(a==="automatizaciones")c=mountAutomations(view);
   else if(a==="ajustes")c=mountSettings(view);
   else c=mountCenter(view);
   if(my!==token){c?.();return}
