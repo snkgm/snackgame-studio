@@ -1,6 +1,6 @@
-import {Canvas,Rect,Circle,FabricObject,Textbox,FabricImage,Point,Shadow} from "../../vendor/fabric.min.mjs?v=20261123i";
-import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261123i";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261123i";
+import {Canvas,Rect,Circle,FabricObject,Textbox,FabricImage,Point,Shadow} from "../../vendor/fabric.min.mjs?v=20261123j";
+import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261123j";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261123j";
 const PROPS=["name","locked","role","field","pattern","rule","orig"];
 export const FIELDS={name:"Nombre del producto",number:"Número",collection:"Colección",price:"Precio",category:"Categoría",web:"snackgame.es",hashtag:"#Hashtag",tagline:"Frase del producto",desc:"Descripción breve"};
 FabricObject.customProperties=PROPS;
@@ -37,8 +37,10 @@ export class Editor{
     this.busy=false;this.hist=[];this.hi=-1;this.fit();this.snap(true);this.emit("change");this.emit("format");
   }
   shot(format,quality,outW){
-    const z=this.canvas.getZoom()||1;
-    return this.canvas.toDataURL({format,quality,multiplier:outW/(this.W*z),left:0,top:0,width:this.W*z,height:this.H*z,enableRetinaScaling:false});
+    const c=this.canvas,z=c.getZoom(),w=c.getWidth(),h=c.getHeight();
+    c.setDimensions({width:this.W,height:this.H});c.setZoom(1);
+    try{return c.toDataURL({format,quality,multiplier:outW/this.W,left:0,top:0,width:this.W,height:this.H,enableRetinaScaling:false})}
+    finally{c.setDimensions({width:w,height:h});c.setZoom(z);c.requestRenderAll()}
   }
   async exportBlob(type="png",quality=.92){
     this.canvas.discardActiveObject();this.canvas.requestRenderAll();

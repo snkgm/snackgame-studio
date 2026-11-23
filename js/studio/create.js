@@ -1,8 +1,8 @@
-import {db} from "../app/db.js?v=20261123i";
-import {store} from "../app/store.js?v=20261123i";
-import {fmtById} from "../app/formats.js?v=20261123i";
-import {composePost} from "./compose.js?v=20261123i";
-import {uploadOriginal} from "../img/matting.js?v=20261123i";
+import {db} from "../app/db.js?v=20261123j";
+import {store} from "../app/store.js?v=20261123j";
+import {fmtById} from "../app/formats.js?v=20261123j";
+import {composePost} from "./compose.js?v=20261123j";
+import {uploadOriginal} from "../img/matting.js?v=20261123j";
 export async function createVariants({title,typeId,catId,items,product,blob,when,onStep,status="draft"}){
   const group=crypto.randomUUID();let prod={...(product||{})};const pp=store.presetFor(prod);prod={...prod,...store.catPreset(catId),...(pp?pp.fields:{})};
   if(blob){onStep?.("Subiendo imagen…");prod.image=await uploadOriginal(blob)}

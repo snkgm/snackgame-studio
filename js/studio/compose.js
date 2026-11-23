@@ -1,8 +1,8 @@
-import {withHeadless} from "./headless.js?v=20261123i";
-import {buildSkeleton} from "./skeleton.js?v=20261123i";
-import {fmtById} from "../app/formats.js?v=20261123i";
-import {cutoutFor} from "../img/matting.js?v=20261123i";
-import {extractPalette} from "../img/color.js?v=20261123i";
+import {withHeadless} from "./headless.js?v=20261123j";
+import {buildSkeleton} from "./skeleton.js?v=20261123j";
+import {fmtById} from "../app/formats.js?v=20261123j";
+import {cutoutFor} from "../img/matting.js?v=20261123j";
+import {extractPalette} from "../img/color.js?v=20261123j";
 const loadImg=u=>new Promise((res,rej)=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>rej(new Error("No se pudo cargar la imagen del producto"));i.src=u});
 export async function composePost({tplData,fmtId,product,names,blob,onProgress,cutUrl,bgOverride}){
   const fmt=fmtById(fmtId);
@@ -33,8 +33,9 @@ export async function composePost({tplData,fmtId,product,names,blob,onProgress,c
 export async function composeMulti({tplData,fmtId,product,names,cutUrls,origs,bgOverride,onStage}){
   const fmt={...fmtById(fmtId)};
   let base=tplData||await buildSkeleton(fmtId,names);
-  if(base.slides&&base.slides.length)base={...base,c:base.slides[0],slides:undefined};
-  if(cutUrls.length>1)fmt.slides=true;
+  const c0=base.slides&&base.slides.length?base.slides[0]:base.c,multi=cutUrls.length>1;
+  base={...base,c:multi?undefined:c0,slides:multi?[c0]:undefined};
+  if(multi)fmt.slides=true;
   return withHeadless(async ed=>{
     await ed.loadData(JSON.parse(JSON.stringify(base)),fmt);
     ed.product={...(product||{})};
