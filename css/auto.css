@@ -52,3 +52,4 @@
 @keyframes pulse{50%{opacity:.55}}
 @media(max-width:800px){.sums,.tiles{grid-template-columns:repeat(2,1fr)}.prow{grid-template-columns:1fr}.irow{grid-template-columns:32px 1fr auto}.irow__t,.irow__d,.irow__a{display:none}.ccard{grid-template-columns:1fr 56px}.ccard .bar-p{display:none}}
 #view:has(.auto){overflow:auto}
+.blk .seg{width:max-content;align-self:flex-start}

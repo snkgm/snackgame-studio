@@ -1,7 +1,7 @@
-import {store} from "../app/store.js?v=20261123l";
-import {I} from "../app/icons.js?v=20261123l";
-import {esc,toast} from "../app/ui.js?v=20261123l";
-import {logoUrl,uploadLogo} from "../app/brand.js?v=20261123l";
+import {store} from "../app/store.js?v=20261123m";
+import {I} from "../app/icons.js?v=20261123m";
+import {esc,toast} from "../app/ui.js?v=20261123m";
+import {logoUrl,uploadLogo} from "../app/brand.js?v=20261123m";
 export function mountSettings(root){
   const block=(table,title,arr,ph)=>`<section class="set"><h2 class="set__h">${title}</h2><div class="set__list">${arr.map(a=>`<div class="set__row" data-table="${table}" data-id="${a.id}"><input class="input" value="${esc(a.name)}" data-name aria-label="Nombre"><button class="btn btn--ghost btn--icon" data-del aria-label="Eliminar" title="Eliminar">${I["trash-2"]}</button></div>`).join("")||'<div class="empty">Sin elementos.</div>'}</div><form class="set__add" data-table="${table}"><input class="input" placeholder="${ph}" required><button class="btn btn--accent">${I.plus}Añadir</button></form></section>`;
   function render(){

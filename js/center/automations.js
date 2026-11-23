@@ -1,9 +1,9 @@
-import {db} from "../app/db.js?v=20261123l";
-import {store} from "../app/store.js?v=20261123l";
-import {esc,toast,modal} from "../app/ui.js?v=20261123l";
-import {fmtById} from "../app/formats.js?v=20261123l";
-import {STAGES} from "../studio/pipeline.js?v=20261123l";
-import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261123l";
+import {db} from "../app/db.js?v=20261123m";
+import {store} from "../app/store.js?v=20261123m";
+import {esc,toast,modal} from "../app/ui.js?v=20261123m";
+import {fmtById} from "../app/formats.js?v=20261123m";
+import {STAGES} from "../studio/pipeline.js?v=20261123m";
+import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261123m";
 const WORK=["downloading","removing_bg","analyzing","background","composing","saving"];
 const CST={draft:"Borrador",running:"En marcha",paused:"Pausada",cancelled:"Cancelada",done:"Completada"};
 const q=(t,s)=>db.list(t,s);
@@ -78,6 +78,7 @@ ${banner}${errs}
       await setC({status:C.status==="draft"?"draft":"running"});toast(`${rows.length} añadidos`);
     }});
   }
+  const off=store.on(()=>{if(C)paint()});if(!store.loaded)store.load();
   load();const t=setInterval(load,4000);
-  return ()=>{alive=false;clearInterval(t)};
+  return ()=>{alive=false;clearInterval(t);off()};
 }

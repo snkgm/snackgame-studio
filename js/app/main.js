@@ -1,11 +1,11 @@
-import {store} from "./store.js?v=20261123l";
-import {mountCenter} from "../center/center.js?v=20261123l";
-import {mountSettings} from "../center/settings.js?v=20261123l";
-import {mountEditor} from "../editor/editorView.js?v=20261123l";
-import {mountTemplates} from "../center/templates.js?v=20261123l";
-import {mountAutomations,mountCampaign} from "../center/automations.js?v=20261123l";
-import {mountCampaignNew} from "../center/campaignNew.js?v=20261123l";
-import {closeMenu} from "./ui.js?v=20261123l";
+import {store} from "./store.js?v=20261123m";
+import {mountCenter} from "../center/center.js?v=20261123m";
+import {mountSettings} from "../center/settings.js?v=20261123m";
+import {mountEditor} from "../editor/editorView.js?v=20261123m";
+import {mountTemplates} from "../center/templates.js?v=20261123m";
+import {mountAutomations,mountCampaign} from "../center/automations.js?v=20261123m";
+import {mountCampaignNew} from "../center/campaignNew.js?v=20261123m";
+import {closeMenu} from "./ui.js?v=20261123m";
 let view=document.getElementById("view");
 let cleanup=null,token=0;
 async function route(){

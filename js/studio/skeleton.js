@@ -1,7 +1,7 @@
-import {withHeadless} from "./headless.js?v=20261123l";
-import {fmtById} from "../app/formats.js?v=20261123l";
-import {BG_DEFAULT} from "../img/background.js?v=20261123l";
-import {logoUrl} from "../app/brand.js?v=20261123l";
+import {withHeadless} from "./headless.js?v=20261123m";
+import {fmtById} from "../app/formats.js?v=20261123m";
+import {BG_DEFAULT} from "../img/background.js?v=20261123m";
+import {logoUrl} from "../app/brand.js?v=20261123m";
 const R=(o,rule)=>{o.set("rule",rule);return o};
 export function safeOf(fmt,cfg){return {...fmtById(fmt).safe,...((cfg&&cfg.safe)||{})}}
 async function slideContent(ed,kind,f,s,names){
