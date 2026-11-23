@@ -1,11 +1,11 @@
-import {store} from "../app/store.js?v=20261123e";
-import {db} from "../app/db.js?v=20261123e";
-import {esc,toast,modal} from "../app/ui.js?v=20261123e";
-import {I} from "../app/icons.js?v=20261123e";
-import {renderBackground,BG_DEFAULT} from "../img/background.js?v=20261123e";
-import {extractPalette} from "../img/color.js?v=20261123e";
-import {hashKey} from "../img/matting.js?v=20261123e";
-import {searchBackgrounds,getKey,setKey} from "../img/bgsearch.js?v=20261123e";
+import {store} from "../app/store.js?v=20261123f";
+import {db} from "../app/db.js?v=20261123f";
+import {esc,toast,modal} from "../app/ui.js?v=20261123f";
+import {I} from "../app/icons.js?v=20261123f";
+import {renderBackground,BG_DEFAULT} from "../img/background.js?v=20261123f";
+import {extractPalette} from "../img/color.js?v=20261123f";
+import {hashKey} from "../img/matting.js?v=20261123f";
+import {searchBackgrounds,getKey,setKey} from "../img/bgsearch.js?v=20261123f";
 const rng=(k,l,min,max)=>`<div class="field"><label for="b-${k}">${l}</label><input type="range" id="b-${k}" data-b="${k}" min="${min}" max="${max}"></div>`;
 const MODES=[["auto","Automático"],["solid","Color"],["image","Imagen"]];
 export function mountBgPanel(ed){

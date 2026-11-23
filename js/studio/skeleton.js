@@ -1,42 +1,37 @@
-import {withHeadless} from "./headless.js?v=20261123e";
-import {fmtById} from "../app/formats.js?v=20261123e";
-import {BG_DEFAULT} from "../img/background.js?v=20261123e";
-import {logoUrl} from "../app/brand.js?v=20261123e";
+import {withHeadless} from "./headless.js?v=20261123f";
+import {fmtById} from "../app/formats.js?v=20261123f";
+import {BG_DEFAULT} from "../img/background.js?v=20261123f";
+import {logoUrl} from "../app/brand.js?v=20261123f";
 const R=(o,rule)=>{o.set("rule",rule);return o};
 export function safeOf(fmt,cfg){return {...fmtById(fmt).safe,...((cfg&&cfg.safe)||{})}}
 async function slideContent(ed,kind,f,s,names){
-  const W=ed.W,H=ed.H,mx=s.l,top=s.t,bot=H-s.b;
-  const tw=W-mx*2;
-  if(kind!=="cta"){
-    if(names.type)ed.addText({text:names.type.toUpperCase(),name:"Etiqueta tipo",top:top+Math.round(H*.04),props:{width:tw,fontSize:34,fontWeight:600,charSpacing:300,fill:"#ffb400"}}).set("rule",{color:"accent"});
-  }
-  if(kind==="main"||kind==="cover"){
-    const o=ed.addText({text:"Nombre del producto",name:"Título",field:"name",top:top+Math.round(H*.04)+(names.type?64:0),props:{width:tw,fontSize:f.title,fontWeight:800}});R(o,{fit:true,max:f.title,maxH:f.titleH,color:"contrast"});
-    ed.addText({text:"Nº 000",name:"Número",field:"number",top:Math.round(bot-H*.17),props:{width:tw,fontSize:46,fontWeight:700}}).set({pattern:"Nº {valor}",rule:{color:"accent"}});
+  const W=ed.W,H=ed.H,mx=s.l,top=s.t,bot=H-s.b,tw=W-mx*2,sc=H>1500?1.15:1;
+  const ht=ed.addText({text:"#Hashtag",name:"Hashtag",field:"hashtag",top:top+Math.round(H*.045),props:{width:tw,fontSize:Math.round(32*sc),fontWeight:700,fontFamily:"Montserrat"}});ht.set("rule",{color:"contrast"});
+  if(kind==="main"||kind==="cover"||kind==="detail"){
+    const big=kind==="detail"?96:f.title;
+    ed.addText({text:"NOMBRE",name:"Título",field:"name",top:top+Math.round(H*.045)+Math.round(52*sc),props:{width:tw,fontSize:big,fontWeight:400,fontFamily:"Anton",lineHeight:.95}}).set("rule",{fit:true,max:big,maxH:kind==="detail"?120:f.titleH,upper:true,color:"contrast"});
+    if(kind!=="detail")ed.addText({text:"Frase del producto",name:"Frase",field:"tagline",top:top+Math.round(H*.045)+Math.round(52*sc)+f.titleH+8,props:{width:tw,fontSize:Math.round(44*sc),fontWeight:700,fontFamily:"Montserrat",fontStyle:"italic"}}).set("rule",{color:"accent"});
   }
   if(kind==="detail"){
-    ed.addText({text:"Nombre del producto",name:"Título",field:"name",top:top+Math.round(H*.05),props:{width:tw,fontSize:56,fontWeight:700}}).set("rule",{fit:true,max:56,maxH:140,color:"contrast"});
-    ed.addText({text:"00,00 €",name:"Precio",field:"price",top:Math.round(bot-H*.2),props:{width:tw,fontSize:96,fontWeight:800}}).set("rule",{color:"accent"});
+    ed.addText({text:"00,00 €",name:"Precio",field:"price",top:Math.round(bot-H*.24),props:{width:tw,fontSize:110,fontWeight:400,fontFamily:"Anton"}}).set("rule",{color:"accent"});
+    ed.addText({text:"Descripción breve",name:"Descripción",field:"desc",top:Math.round(bot-H*.135),props:{width:tw,fontSize:36,fontWeight:600,fontFamily:"Montserrat"}}).set("rule",{fit:true,max:36,maxH:110,color:"contrast"});
   }
-  if(kind==="cta"){
-    ed.addText({text:"Ya disponible en tienda",name:"Llamada",top:Math.round(H*.36),props:{width:tw,fontSize:84,fontWeight:800}}).set("rule",{fit:true,max:84,maxH:300,color:"contrast"});
-  }
-  const lu=await logoUrl().catch(()=>null);
-  const by=bot-Math.round(H*.07);
-  if(lu){const l=await ed.addImage(lu,{role:"logo",name:"Logotipo",maxFrac:kind==="cta"?.3:.14});ed.setXY(l,mx,by-l.getScaledHeight()/2)}
-  const w=ed.addText({text:"snackgame.es",name:"Dirección web",role:"web",field:"web",top:by-20,props:{width:lu&&kind!=="cta"?Math.round(tw*.5):tw,fontSize:36,fontWeight:600,textAlign:lu&&kind!=="cta"?"right":"center"}});
-  w.set("rule",{color:"contrast"});if(lu&&kind!=="cta")ed.setXY(w,W-mx-w.getScaledWidth(),by-20);
+  if(kind==="cta")ed.addText({text:"YA DISPONIBLE EN TIENDA",name:"Llamada",top:Math.round(H*.36),props:{width:tw,fontSize:120,fontWeight:400,fontFamily:"Anton",lineHeight:.95}}).set("rule",{fit:true,max:120,maxH:340,color:"contrast"});
+  const lu=kind==="cta"?await logoUrl().catch(()=>null):null;
+  if(lu){const l=await ed.addImage(lu,{role:"logo",name:"Logotipo",maxFrac:.3});ed.setXY(l,(W-l.getScaledWidth())/2,Math.round(H*.2))}
+  const w=ed.addText({text:"Snackgame.es",name:"Dirección web",role:"web",field:"web",top:bot-Math.round(H*.07),props:{width:tw,fontSize:Math.round(42*sc),fontWeight:400,fontFamily:"Anton"}});
+  w.set({rule:{color:"contrast"},shadow:null});
 }
-const PROD={"post-4x5":{cy:.53,maxW:.82,maxH:.5},"post-1x1":{cy:.54,maxW:.7,maxH:.5},"story-9x16":{cy:.5,maxW:.84,maxH:.4},"carousel-4x5":{cy:.53,maxW:.82,maxH:.5},"reel-cover":{cy:.5,maxW:.84,maxH:.38}};
+const PROD={"post-4x5":{cy:.63,maxW:.9,maxH:.56},"post-1x1":{cy:.6,maxW:.8,maxH:.56},"story-9x16":{cy:.56,maxW:.9,maxH:.44},"carousel-4x5":{cy:.63,maxW:.9,maxH:.56},"reel-cover":{cy:.56,maxW:.9,maxH:.42}};
 export async function buildSkeleton(fmtId,names={}){
   const fmt=fmtById(fmtId);
   return withHeadless(async ed=>{
     const s=safeOf(fmtId);
-    const f={title:fmtId==="post-1x1"?72:fmtId==="story-9x16"||fmtId==="reel-cover"?92:80,titleH:fmtId==="post-1x1"?170:fmtId==="story-9x16"||fmtId==="reel-cover"?300:230};
-    await ed.loadData(null,fmt);
+    const f={title:fmtId==="post-1x1"?130:fmtId==="story-9x16"||fmtId==="reel-cover"?170:150,titleH:fmtId==="post-1x1"?150:fmtId==="story-9x16"||fmtId==="reel-cover"?330:210};
+    await ed.loadData(null,fmt);ed.tplMode=true;
     ed.cfg={bg:{...BG_DEFAULT},product:{removeBg:true},safe:{...s}};
     ed.palette=["#3b2f8f","#8f2f6a","#ffb400"];
-    const plan=fmt.slides?[["cover",PROD[fmtId]],["detail",{...PROD[fmtId],maxW:.9,maxH:.52,cy:.5}],["cta",null]]:[["main",PROD[fmtId]]];
+    const plan=fmt.slides?[["cover",PROD[fmtId]],["detail",{...PROD[fmtId],maxW:.9,maxH:.5,cy:.5}],["cta",null]]:[["main",PROD[fmtId]]];
     for(let i=0;i<plan.length;i++){
       if(i>0){ed.slides[ed.cur]=ed.canvas.toObject(["name","locked","role","field","pattern","rule","orig"]);ed.slides.push({version:"6",objects:[]});await ed.gotoSlideRaw(i)}
       await ed.applyBg();

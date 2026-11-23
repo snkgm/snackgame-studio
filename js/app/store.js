@@ -1,15 +1,15 @@
-import {db,COLS,TCOLS} from "./db.js?v=20261123e";
-import {toast} from "./ui.js?v=20261123e";
+import {db,COLS,TCOLS} from "./db.js?v=20261123f";
+import {toast} from "./ui.js?v=20261123f";
 const L=new Set();
 const pending=new Map();
 export const store={
-  posts:[],types:[],cats:[],templates:[],backgrounds:[],loaded:false,error:null,
+  posts:[],types:[],cats:[],templates:[],backgrounds:[],presets:[],loaded:false,error:null,
   on(f){L.add(f);return()=>L.delete(f)},
   emit(){L.forEach(f=>f())},
   async load(){
     try{
-      const [p,t,c,tp,bg]=await Promise.all([db.list("posts",`select=${COLS}&order=created_at.desc`),db.list("post_types","select=*&order=sort.asc,name.asc"),db.list("categories","select=*&order=sort.asc,name.asc"),db.list("templates",`select=${TCOLS}&order=created_at.desc`),db.list("backgrounds","select=*&order=created_at.desc")]);
-      this.posts=p;this.types=t;this.cats=c;this.templates=tp;this.backgrounds=bg;this.loaded=true;this.error=null;
+      const [p,t,c,tp,bg,pr]=await Promise.all([db.list("posts",`select=${COLS}&order=created_at.desc`),db.list("post_types","select=*&order=sort.asc,name.asc"),db.list("categories","select=*&order=sort.asc,name.asc"),db.list("templates",`select=${TCOLS}&order=created_at.desc`),db.list("backgrounds","select=*&order=created_at.desc"),db.list("product_presets","select=*").catch(()=>[])]);
+      this.posts=p;this.types=t;this.cats=c;this.templates=tp;this.backgrounds=bg;this.presets=pr;this.loaded=true;this.error=null;
     }catch(e){this.error=e.message||"Sin conexión"}
     this.emit();
   },
@@ -40,6 +40,16 @@ export const store={
     const T=typeId||null,C=catId||null;
     return best(f.filter(t=>(t.type_id||null)===T&&(t.category_id||null)===C))||best(f.filter(t=>(t.type_id||null)===T))||best(f.filter(t=>(t.category_id||null)===C))||best(f);
   },
+  catPreset:id=>(store.cats.find(c=>c.id===id)||{}).preset||{},
+  async setCatPreset(id,preset){const r=await db.update("categories",id,{preset});const c=this.cats.find(x=>x.id===id);if(c&&r)c.preset=r.preset;this.emit()},
+  presetFor(p){const k=presetKey(p);return k?this.presets.find(x=>x.key===k)||null:null},
+  async savePreset(p,{fields,bg,image}){
+    const key=presetKey(p);if(!key)throw new Error("El producto necesita un nombre");
+    const row={key,name:p.name||key,fields,bg:bg||null,image:image||p.image||null};
+    const old=this.presets.find(x=>x.key===key);
+    if(old){const r=await db.update("product_presets",old.id,row);Object.assign(old,r)}else this.presets.push(await db.insert("product_presets",row));
+    this.emit();
+  },
   async addBackground(row){const r=await db.insert("backgrounds",row);this.backgrounds.unshift(r);this.emit();return r},
   async patchBackground(id,patch){const r=await db.update("backgrounds",id,patch);const b=this.backgrounds.find(x=>x.id===id);if(b&&r)Object.assign(b,r);this.emit()},
   async removeBackground(id){await db.remove("backgrounds",id);this.backgrounds=this.backgrounds.filter(b=>b.id!==id);this.emit()},
@@ -65,6 +75,7 @@ export const store={
     this.emit();
   }
 };
+export const presetKey=p=>((p&&(p.handle||p.name))||"").toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 const tstrip=(r)=>{const o={};TCOLS.split(",").forEach(k=>{o[k]=r[k]});return o};
 const strip=(r,partial)=>{const o={};COLS.split(",").forEach(k=>{if(!partial||k in r)o[k]=r[k]});return o};
 addEventListener("beforeunload",()=>store.flush());

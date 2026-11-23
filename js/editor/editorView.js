@@ -1,17 +1,17 @@
-import {Editor} from "./editor.js?v=20261123e";
-import {LayersPanel} from "./layers.js?v=20261123e";
-import {mountInspector} from "./inspector.js?v=20261123e";
-import {logoUrl,uploadLogo} from "../app/brand.js?v=20261123e";
-import {loadAllFonts} from "../app/fonts.js?v=20261123e";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261123e";
-import {safeOf} from "../studio/skeleton.js?v=20261123e";
-import {openProductPicker} from "./product.js?v=20261123e";
-import {zipBlobs} from "../app/zip.js?v=20261123e";
-import {I} from "../app/icons.js?v=20261123e";
-import {db} from "../app/db.js?v=20261123e";
-import {store} from "../app/store.js?v=20261123e";
-import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261123e";
-import {toInput,fromInput} from "../app/dates.js?v=20261123e";
+import {Editor} from "./editor.js?v=20261123f";
+import {LayersPanel} from "./layers.js?v=20261123f";
+import {mountInspector} from "./inspector.js?v=20261123f";
+import {logoUrl,uploadLogo} from "../app/brand.js?v=20261123f";
+import {loadAllFonts} from "../app/fonts.js?v=20261123f";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261123f";
+import {safeOf} from "../studio/skeleton.js?v=20261123f";
+import {openProductPicker} from "./product.js?v=20261123f";
+import {zipBlobs} from "../app/zip.js?v=20261123f";
+import {I} from "../app/icons.js?v=20261123f";
+import {db} from "../app/db.js?v=20261123f";
+import {store} from "../app/store.js?v=20261123f";
+import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261123f";
+import {toInput,fromInput} from "../app/dates.js?v=20261123f";
 export async function mountEditor(root,id,{template=false}={}){
   const table=template?"templates":"posts";
   root.innerHTML='<div class="empty">Cargando…</div>';
@@ -53,7 +53,10 @@ export async function mountEditor(root,id,{template=false}={}){
   <div class="field"><input class="input" data-p="name" placeholder="Nombre del producto" aria-label="Nombre del producto"></div>
   <div class="row"><input class="input" data-p="number" placeholder="Número" aria-label="Número"><input class="input" data-p="price" placeholder="Precio" aria-label="Precio"></div>
   <div class="row"><input class="input" data-p="collection" placeholder="Colección" aria-label="Colección"><input class="input" data-p="category" placeholder="Categoría" aria-label="Categoría"></div>
-  <input class="input" data-p="web" placeholder="Web (snackgame.es)" aria-label="Web"></section>
+  <div class="row"><input class="input" data-p="hashtag" placeholder="#Hashtag" aria-label="Hashtag"><input class="input" data-p="web" placeholder="Web" aria-label="Web"></div>
+  <input class="input" data-p="tagline" placeholder="Frase del producto" aria-label="Frase del producto">
+  <textarea class="input input--area" data-p="desc" rows="2" placeholder="Descripción breve" aria-label="Descripción"></textarea>
+  ${template?"":`<button class="btn btn--sm" id="p-save" title="Guarda textos y fondo de este producto para reutilizarlos">${I.save}Guardar como preset del producto</button>`}</section>
  <section class="sec sec--layers"><div class="sec__head"><span class="label">Capas</span></div><div class="layers" id="layers"></div></section>
 </aside></div>`;
   const $=s=>root.querySelector(s);
@@ -63,7 +66,7 @@ export async function mountEditor(root,id,{template=false}={}){
   await loadAllFonts();
   ed.product=post.product||{};
   await ed.loadData(post.data&&(post.data.c||post.data.slides)?post.data:null,fmtOf());
-  if(template)ed.product=post.data&&post.data.sample||{};
+  if(template){ed.tplMode=true;ed.product=post.data&&post.data.sample||{}}
   if(!document.body.contains(root)){ed.destroy();return()=>{}}
   const layers=new LayersPanel($("#layers"),ed);
   const setFmt=async id=>{const f=fmtById(id);post.format=f.id;await ed.setFormat(f.w,f.h);insp.reset()};
@@ -121,6 +124,7 @@ export async function mountEditor(root,id,{template=false}={}){
       const iso=fromInput($("#when").value);if(!iso){toast("Elige fecha y hora",{kind:"err"});return}
       await meta({scheduled_at:iso,status:"scheduled"});$("#status").value="scheduled";toast("Programada para "+new Date(iso).toLocaleString("es-ES",{dateStyle:"medium",timeStyle:"short"}));
     };
+    $("#p-save").onclick=async()=>{try{const f={};["name","tagline","desc","number","collection","price"].forEach(k=>{if(ed.product[k])f[k]=ed.product[k]});const b=ed.cfg.bg;await store.savePreset(ed.product,{fields:f,bg:b&&b.mode==="image"?b:null,image:ed.product.image});toast("Preset guardado: se aplicará cada vez que uses este producto")}catch(e){toast(e.message,{kind:"err"})}};
     $("#totpl").onclick=()=>{
       const opt=(arr,sel)=>`<option value="">—</option>`+arr.map(x=>`<option value="${x.id}"${x.id===sel?" selected":""}>${esc(x.name)}</option>`).join("");
       modal("Guardar como plantilla",`<div class="field"><label for="p-n">Nombre</label><input class="input" id="p-n" value="${esc(post.title.replace(/ · .*$/,""))}" required></div><div class="row"><div class="field"><label for="p-t">Tipo de contenido</label><select class="select" id="p-t">${opt(store.types,post.type_id)}</select></div><div class="field"><label for="p-c">Categoría de producto</label><select class="select" id="p-c">${opt(store.cats,post.category_id)}</select></div></div><p class="hint">Formato: ${esc(fmtById(post.format).label)}. Se guardan capas, fondo y sus reglas, colocación del producto, zonas seguras, logotipo y web. Las publicaciones ya creadas no cambian.</p><label class="chk"><input type="checkbox" id="p-d" checked> Usar como predeterminada de esta combinación</label>`,{ok:"Guardar plantilla",onOk:async f=>{

@@ -1,7 +1,7 @@
-import {modal,toast,esc} from "../app/ui.js?v=20261123e";
-import {cutoutFor,uploadOriginal} from "../img/matting.js?v=20261123e";
-import {extractPalette} from "../img/color.js?v=20261123e";
-import {productSearchHtml,bindProductSearch} from "../studio/productSearch.js?v=20261123e";
+import {modal,toast,esc} from "../app/ui.js?v=20261123f";
+import {cutoutFor,uploadOriginal} from "../img/matting.js?v=20261123f";
+import {extractPalette} from "../img/color.js?v=20261123f";
+import {productSearchHtml,bindProductSearch} from "../studio/productSearch.js?v=20261123f";
 const img=u=>new Promise((res,rej)=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>rej(new Error("No se pudo cargar la imagen"));i.src=u});
 export async function applyProductImage(ed,{orig,blob,remove,method},onProgress){
   const rm=remove??(!ed.cfg.product||ed.cfg.product.removeBg!==false);
@@ -19,8 +19,10 @@ export function openProductPicker(ed,afterApply){
     try{
       let orig=pick.product.image;
       if(pick.blob)orig=await uploadOriginal(pick.blob);
-      const {image,preview,handle,...fields}=pick.product;
-      ed.product={...ed.product,...fields,image:orig};
+      const {image,preview,...fields}=pick.product;
+      const pp=store.presetFor(pick.product);
+      ed.product={...ed.product,...fields,...(pp?pp.fields:{}),image:orig};
+      if(pp&&pp.bg){ed.cfg.bg={...ed.bgCfg,...pp.bg};await ed.applyBg()}
       await applyProductImage(ed,{orig,blob:pick.blob},msg=>{t.querySelector("span").textContent=msg});
       afterApply?.();t.close();toast("Producto aplicado");
     }catch(e){t.close();throw e}

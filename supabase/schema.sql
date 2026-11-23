@@ -26,3 +26,10 @@ create policy studio_open on public.backgrounds for all to anon,authenticated us
 create unique index if not exists templates_default_uq on public.templates(coalesce(type_id,'00000000-0000-0000-0000-000000000000'::uuid),coalesce(category_id,'00000000-0000-0000-0000-000000000000'::uuid),format) where is_default;
 insert into public.post_types(name,sort) values('Diario',10),('Novedades',11),('Próximamente',12),('Productos destacados',13),('Promociones',14),('Recién llegados',15),('Colecciones',16) on conflict(name) do nothing;
 insert into public.categories(name,sort) values('Funkos',10),('Cartas Pokémon',11),('Juguetes',12),('Figuras y réplicas',13),('Peluches',14),('Juegos de mesa',15),('Snacks y bebidas',16),('Accesorios',17) on conflict(name) do nothing;
+alter table public.categories add column if not exists preset jsonb not null default '{}'::jsonb;
+create table if not exists public.product_presets(id uuid primary key default gen_random_uuid(),key text not null unique,name text not null default '',fields jsonb not null default '{}'::jsonb,bg jsonb,image text,created_at timestamptz not null default now(),updated_at timestamptz not null default now());
+alter table public.product_presets enable row level security;
+grant select,insert,update,delete on public.product_presets to anon,authenticated;
+drop policy if exists studio_open on public.product_presets;
+create policy studio_open on public.product_presets for all to anon,authenticated using(true) with check(true);
+drop trigger if exists presets_touch on public.product_presets;create trigger presets_touch before update on public.product_presets for each row execute function public.touch_updated_at();

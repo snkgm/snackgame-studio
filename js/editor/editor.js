@@ -1,8 +1,8 @@
-import {Canvas,Rect,Circle,FabricObject,Textbox,FabricImage,Point,Shadow} from "../../vendor/fabric.min.mjs?v=20261123e";
-import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261123e";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261123e";
+import {Canvas,Rect,Circle,FabricObject,Textbox,FabricImage,Point,Shadow} from "../../vendor/fabric.min.mjs?v=20261123f";
+import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261123f";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261123f";
 const PROPS=["name","locked","role","field","pattern","rule","orig"];
-export const FIELDS={name:"Nombre del producto",number:"Número",collection:"Colección",price:"Precio",category:"Categoría",web:"snackgame.es"};
+export const FIELDS={name:"Nombre del producto",number:"Número",collection:"Colección",price:"Precio",category:"Categoría",web:"snackgame.es",hashtag:"#Hashtag",tagline:"Frase del producto",desc:"Descripción breve"};
 FabricObject.customProperties=PROPS;
 const PAD=48,MAX_HIST=50;
 export class Editor{
@@ -83,7 +83,7 @@ export class Editor{
     this.canvas.getObjects().forEach(o=>{
       if(!o.field||o.type.toLowerCase()!=="textbox")return;
       const v=(p[o.field]??"").toString().trim();
-      o.set("text",(o.pattern||"{valor}").replace("{valor}",v||FIELDS[o.field]||""));
+      let t=v?(o.pattern||"{valor}").replace("{valor}",v):(this.tplMode?FIELDS[o.field]||"":"");if(o.rule&&o.rule.upper)t=t.toUpperCase();o.set("text",t);
     });
     this.canvas.getObjects().forEach(o=>this.fitText(o));
     this.canvas.requestRenderAll();

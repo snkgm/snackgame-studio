@@ -1,15 +1,16 @@
-import {withHeadless} from "./headless.js?v=20261123e";
-import {buildSkeleton} from "./skeleton.js?v=20261123e";
-import {fmtById} from "../app/formats.js?v=20261123e";
-import {cutoutFor} from "../img/matting.js?v=20261123e";
-import {extractPalette} from "../img/color.js?v=20261123e";
+import {withHeadless} from "./headless.js?v=20261123f";
+import {buildSkeleton} from "./skeleton.js?v=20261123f";
+import {fmtById} from "../app/formats.js?v=20261123f";
+import {cutoutFor} from "../img/matting.js?v=20261123f";
+import {extractPalette} from "../img/color.js?v=20261123f";
 const loadImg=u=>new Promise((res,rej)=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>rej(new Error("No se pudo cargar la imagen del producto"));i.src=u});
-export async function composePost({tplData,fmtId,product,names,blob,onProgress,cutUrl}){
+export async function composePost({tplData,fmtId,product,names,blob,onProgress,cutUrl,bgOverride}){
   const fmt=fmtById(fmtId);
   const data=tplData||await buildSkeleton(fmtId,names);
   return withHeadless(async ed=>{
     await ed.loadData(JSON.parse(JSON.stringify(data)),fmt);
     ed.product={...(product||{})};
+    if(bgOverride)ed.cfg.bg={...ed.bgCfg,...bgOverride};
     const orig=product&&product.image;let prodUrl=null,palette=null;
     if(orig){
       const rm=!ed.cfg.product||ed.cfg.product.removeBg!==false;
@@ -21,7 +22,7 @@ export async function composePost({tplData,fmtId,product,names,blob,onProgress,c
       if(i>0)await ed.gotoSlide(i);
       if(prodUrl&&(ed.productLayer()||!ed.slides))await ed.setProductImage(prodUrl,{orig});
       if(palette)ed.palette=palette;
-      if(ed.cfg.bg&&ed.cfg.bg.mode==="auto")await ed.applyBg();else ed.applyColorRules();
+      if(ed.cfg.bg&&(ed.cfg.bg.mode==="auto"||bgOverride))await ed.applyBg();else ed.applyColorRules();
       ed.applyFields();
     }
     if(ed.slides)await ed.gotoSlide(0);

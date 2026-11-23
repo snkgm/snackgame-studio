@@ -1,8 +1,9 @@
-import {store} from "../app/store.js?v=20261123e";
-import {I} from "../app/icons.js?v=20261123e";
-import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal,thumbHtml} from "../app/ui.js?v=20261123e";
-import {MONTHS,DOW,monthGrid,weekDays,same,ymd,time,longDate,toInput,fromInput,moveToDay,addDays,startOfWeek} from "../app/dates.js?v=20261123e";
-import {openWizard} from "./wizard.js?v=20261123e";
+import {openBatch} from "./batch.js?v=20261123f";
+import {store} from "../app/store.js?v=20261123f";
+import {I} from "../app/icons.js?v=20261123f";
+import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal,thumbHtml} from "../app/ui.js?v=20261123f";
+import {MONTHS,DOW,monthGrid,weekDays,same,ymd,time,longDate,toInput,fromInput,moveToDay,addDays,startOfWeek} from "../app/dates.js?v=20261123f";
+import {openWizard} from "./wizard.js?v=20261123f";
 const LS="sg.center";
 const load=()=>{try{return JSON.parse(localStorage.getItem(LS))||{}}catch{return{}}};
 const save=s=>{try{localStorage.setItem(LS,JSON.stringify(s))}catch{}};
@@ -50,6 +51,7 @@ export function mountCenter(root){
  <div class="ctools__nav">${S.view!=="list"?`<button class="btn btn--icon" data-nav="-1" aria-label="Anterior">${I["chevron-left"]}</button><button class="btn" data-nav="0">Hoy</button><button class="btn btn--icon" data-nav="1" aria-label="Siguiente">${I["chevron-right"]}</button>`:""}<h1 class="ctools__title">${S.view==="list"?"Todas las publicaciones":title()}</h1></div>
  <div class="seg" role="tablist">${[["month","Mes","calendar"],["week","Semana","calendar-days"],["list","Lista","list"]].map(([v,l])=>`<button data-view="${v}" class="${S.view===v?"is-on":""}">${l}</button>`).join("")}</div>
  <span class="grow"></span>
+ <button class="btn" data-batch>${I["calendar-clock"]}Programar en lote</button>
  <button class="btn btn--accent" data-new>${I.plus}Nueva publicación</button>
 </div>
 <div class="cbar">
@@ -98,6 +100,7 @@ ${S.view!=="list"&&undated.length?`<div class="tray"><span class="label">Sin fec
     const nav=t.closest("[data-nav]");if(nav){const n=+nav.dataset.nav;if(!n)S.cur=new Date(),S.cur.setHours(12);else if(S.view==="month")S.cur=new Date(S.cur.getFullYear(),S.cur.getMonth()+n,1,12);else S.cur=addDays(S.cur,7*n);render();return}
     const v=t.closest("[data-view]");if(v){S.view=v.dataset.view;save({view:S.view});render();return}
     const sm=t.closest("[data-sum]");if(sm){S.f.status=S.f.status===sm.dataset.sum?"":sm.dataset.sum;render();return}
+    if(t.closest("[data-batch]")){openBatch();return}
     if(t.closest("[data-new]")){create();return}
     if(t.closest("[data-clear]")){S.f={status:"",type:"",cat:"",q:""};render();return}
     const open=t.closest(".chip,.wcard,.lrow:not(.lrow--head)");if(open)location.hash=`#/editor/${open.dataset.id}`;
