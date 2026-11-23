@@ -1,13 +1,13 @@
-import {I} from "../app/icons.js?v=20261123d";
-import {esc} from "../app/ui.js?v=20261123d";
-import {FONTS,loadFont} from "../app/fonts.js?v=20261123d";
-import {FORMATS} from "../app/formats.js?v=20261123d";
-import {safeOf} from "../studio/skeleton.js?v=20261123d";
-import {mountBgPanel} from "./bgpanel.js?v=20261123d";
-import {applyProductImage,openProductPicker} from "./product.js?v=20261123d";
-import {toast} from "../app/ui.js?v=20261123d";
-import {FIELDS} from "./editor.js?v=20261123d";
-import {Shadow} from "../../vendor/fabric.min.mjs?v=20261123d";
+import {I} from "../app/icons.js?v=20261123e";
+import {esc} from "../app/ui.js?v=20261123e";
+import {FONTS,loadFont} from "../app/fonts.js?v=20261123e";
+import {FORMATS} from "../app/formats.js?v=20261123e";
+import {safeOf} from "../studio/skeleton.js?v=20261123e";
+import {mountBgPanel} from "./bgpanel.js?v=20261123e";
+import {applyProductImage,openProductPicker} from "./product.js?v=20261123e";
+import {toast} from "../app/ui.js?v=20261123e";
+import {FIELDS} from "./editor.js?v=20261123e";
+import {Shadow} from "../../vendor/fabric.min.mjs?v=20261123e";
 const num=(k,l,extra="")=>`<div class="field"><label for="i-${k}">${l}</label><input class="input" type="number" id="i-${k}" data-k="${k}" ${extra}></div>`;
 const rng=(k,l,min,max,step=1)=>`<div class="field"><label for="i-${k}">${l}</label><input type="range" id="i-${k}" data-k="${k}" min="${min}" max="${max}" step="${step}"></div>`;
 const rnum=(k,l,pct)=>`<div class="field"><label for="r-${k}">${l}</label><input class="input" type="number" id="r-${k}" data-r="${k}"${pct?" data-pct":""} step="${pct?1:"any"}"></div>`;
@@ -34,7 +34,7 @@ function textHtml(o){
 }
 const shapeHtml=o=>sec("Reglas de plantilla",COLRULE)+sec("Relleno",`<div class="row">${col("fill","Relleno")}${col("stroke","Contorno")}</div><div class="row">${num("strokeWidth","Grosor","min=0 max=80")}${o.type.toLowerCase()==="rect"?num("rx","Radio","min=0 max=600"):"<span></span>"}</div>`)+
   sec("Sombra",`<label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label><div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`);
-const productHtml=()=>sec("Producto",`<div class="row"><button class="btn btn--sm" data-pact="remove">Quitar fondo</button><button class="btn btn--sm" data-pact="orig">Ver original</button></div><button class="btn btn--sm" data-pact="change">Cambiar producto…</button>`)+sec("Colocación (regla de plantilla)",`<div class="row">${rnum("cx","Centro X %",1)}${rnum("cy","Centro Y %",1)}</div><div class="row">${rnum("maxW","Ancho máx. %",1)}${rnum("maxH","Alto máx. %",1)}</div><div class="row">${rnum("angle","Rotación inicial")}<label class="chk"><input type="checkbox" data-r="shadow"> Sombra auto</label></div><div class="row"><button class="btn btn--sm" data-pact="apply">Aplicar regla</button><button class="btn btn--sm" data-pact="capture">Usar posición actual</button></div>`);
+const productHtml=()=>sec("Producto",`<div class="row"><button class="btn btn--sm" data-pact="remove">Quitar fondo</button><button class="btn btn--sm" data-pact="remove-ai" title="Recorte con IA, más lento (~40 s la primera vez). Útil si el fondo no es liso.">Quitar con IA</button></div><button class="btn btn--sm" data-pact="orig">Restaurar original</button><button class="btn btn--sm" data-pact="change">Cambiar producto…</button>`)+sec("Colocación (regla de plantilla)",`<div class="row">${rnum("cx","Centro X %",1)}${rnum("cy","Centro Y %",1)}</div><div class="row">${rnum("maxW","Ancho máx. %",1)}${rnum("maxH","Alto máx. %",1)}</div><div class="row">${rnum("angle","Rotación inicial")}<label class="chk"><input type="checkbox" data-r="shadow"> Sombra auto</label></div><div class="row"><button class="btn btn--sm" data-pact="apply">Aplicar regla</button><button class="btn btn--sm" data-pact="capture">Usar posición actual</button></div>`);
 const imageHtml=o=>(o.role==="product"?productHtml():"")+sec("Recorte",`<div class="row">${num("cropX","Izq.","min=0")}${num("cropY","Arriba","min=0")}</div><div class="row">${num("cropW","Ancho","min=1")}${num("cropH","Alto","min=1")}</div>`)+sec("Imagen",`<label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label><div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`);
 const transformHtml=o=>sec("Posición y tamaño",`${alignBar}<div class="row">${num("x","X")}${num("y","Y")}</div><div class="row">${num("w","Ancho","min=1")}${isText(o)?"<span></span>":num("h","Alto","min=1")}</div><div class="row">${num("angle","Rotación","min=-360 max=360")}${isText(o)?"":rng("opacity","Opacidad",0,100)}</div>`);
 export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProduct=()=>{}){
@@ -138,7 +138,7 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
     const pa=e.target.closest("[data-pact]")?.dataset.pact,o=ed.active;
     if(pa&&o){
       try{
-        if(pa==="remove"){const t=toast("Quitando fondo…",{ms:600000});try{await applyProductImage(ed,{orig:o.orig||o.getSrc(),remove:true},m=>{t.querySelector("span").textContent=m})}finally{t.close()}}
+        if(pa==="remove"||pa==="remove-ai"){const t=toast("Quitando fondo…",{ms:600000});try{await applyProductImage(ed,{orig:o.orig||o.getSrc(),remove:true,method:pa==="remove-ai"?"ai":"auto"},m=>{t.querySelector("span").textContent=m})}finally{t.close()}}
         else if(pa==="orig"){await ed.setProductImage(o.orig||o.getSrc(),{orig:o.orig});ed.commit()}
         else if(pa==="change")openProductPicker(ed,afterProduct);
         else if(pa==="apply"){ed.placeProduct(o);ed.commit()}

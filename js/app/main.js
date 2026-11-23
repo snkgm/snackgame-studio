@@ -1,9 +1,9 @@
-import {store} from "./store.js?v=20261123d";
-import {mountCenter} from "../center/center.js?v=20261123d";
-import {mountSettings} from "../center/settings.js?v=20261123d";
-import {mountEditor} from "../editor/editorView.js?v=20261123d";
-import {mountTemplates} from "../center/templates.js?v=20261123d";
-import {closeMenu} from "./ui.js?v=20261123d";
+import {store} from "./store.js?v=20261123e";
+import {mountCenter} from "../center/center.js?v=20261123e";
+import {mountSettings} from "../center/settings.js?v=20261123e";
+import {mountEditor} from "../editor/editorView.js?v=20261123e";
+import {mountTemplates} from "../center/templates.js?v=20261123e";
+import {closeMenu} from "./ui.js?v=20261123e";
 let view=document.getElementById("view");
 let cleanup=null,token=0;
 async function route(){

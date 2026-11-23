@@ -1,6 +1,6 @@
-import {Canvas,Rect,Circle,FabricObject,Textbox,FabricImage,Point,Shadow} from "../../vendor/fabric.min.mjs?v=20261123d";
-import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261123d";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261123d";
+import {Canvas,Rect,Circle,FabricObject,Textbox,FabricImage,Point,Shadow} from "../../vendor/fabric.min.mjs?v=20261123e";
+import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261123e";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261123e";
 const PROPS=["name","locked","role","field","pattern","rule","orig"];
 export const FIELDS={name:"Nombre del producto",number:"Número",collection:"Colección",price:"Precio",category:"Categoría",web:"snackgame.es"};
 FabricObject.customProperties=PROPS;

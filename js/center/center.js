@@ -1,8 +1,8 @@
-import {store} from "../app/store.js?v=20261123d";
-import {I} from "../app/icons.js?v=20261123d";
-import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal,thumbHtml} from "../app/ui.js?v=20261123d";
-import {MONTHS,DOW,monthGrid,weekDays,same,ymd,time,longDate,toInput,fromInput,moveToDay,addDays,startOfWeek} from "../app/dates.js?v=20261123d";
-import {openWizard} from "./wizard.js?v=20261123d";
+import {store} from "../app/store.js?v=20261123e";
+import {I} from "../app/icons.js?v=20261123e";
+import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal,thumbHtml} from "../app/ui.js?v=20261123e";
+import {MONTHS,DOW,monthGrid,weekDays,same,ymd,time,longDate,toInput,fromInput,moveToDay,addDays,startOfWeek} from "../app/dates.js?v=20261123e";
+import {openWizard} from "./wizard.js?v=20261123e";
 const LS="sg.center";
 const load=()=>{try{return JSON.parse(localStorage.getItem(LS))||{}}catch{return{}}};
 const save=s=>{try{localStorage.setItem(LS,JSON.stringify(s))}catch{}};

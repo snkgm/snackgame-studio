@@ -1,11 +1,11 @@
-import {modal,toast,esc} from "../app/ui.js?v=20261123d";
-import {cutoutFor,uploadOriginal} from "../img/matting.js?v=20261123d";
-import {extractPalette} from "../img/color.js?v=20261123d";
-import {productSearchHtml,bindProductSearch} from "../studio/productSearch.js?v=20261123d";
+import {modal,toast,esc} from "../app/ui.js?v=20261123e";
+import {cutoutFor,uploadOriginal} from "../img/matting.js?v=20261123e";
+import {extractPalette} from "../img/color.js?v=20261123e";
+import {productSearchHtml,bindProductSearch} from "../studio/productSearch.js?v=20261123e";
 const img=u=>new Promise((res,rej)=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>rej(new Error("No se pudo cargar la imagen"));i.src=u});
-export async function applyProductImage(ed,{orig,blob,remove},onProgress){
+export async function applyProductImage(ed,{orig,blob,remove,method},onProgress){
   const rm=remove??(!ed.cfg.product||ed.cfg.product.removeBg!==false);
-  const url=rm?await cutoutFor(orig,{blob,onProgress}):orig;
+  const url=rm?await cutoutFor(orig,{blob,onProgress,method}):orig;
   const o=await ed.setProductImage(url,{orig});
   ed.palette=extractPalette(await img(url));
   if(ed.cfg.bg&&ed.cfg.bg.mode==="auto")await ed.applyBg();else ed.applyColorRules();
