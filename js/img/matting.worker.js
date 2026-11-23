@@ -18,8 +18,7 @@ self.onmessage=async e=>{
     say(id,"Recortando producto…");
     const img=await RawImage.fromBlob(blob);
     const {pixel_values}=await proc(img);
-    const names=model.session?.inputNames||["input"];
-    const out=await model({[names[0]]:pixel_values});
+    const out=await model({pixel_values});
     const t=Object.values(out)[0];
     const m=await RawImage.fromTensor(t[0].mul(255).to("uint8")).resize(img.width,img.height);
     const mask=new Uint8Array(m.data);

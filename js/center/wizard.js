@@ -1,9 +1,9 @@
-import {store} from "../app/store.js";
-import {FORMATS} from "../app/formats.js";
-import {esc,toast,modal} from "../app/ui.js";
-import {fromInput} from "../app/dates.js";
-import {productSearchHtml,bindProductSearch} from "../studio/productSearch.js";
-import {createVariants} from "../studio/create.js";
+import {store} from "../app/store.js?v=20261123d";
+import {FORMATS} from "../app/formats.js?v=20261123d";
+import {esc,toast,modal} from "../app/ui.js?v=20261123d";
+import {fromInput} from "../app/dates.js?v=20261123d";
+import {productSearchHtml,bindProductSearch} from "../studio/productSearch.js?v=20261123d";
+import {createVariants} from "../studio/create.js?v=20261123d";
 export function openWizard(dayKey){
   const dt=dayKey?`${dayKey}T12:00`:"";
   const opts=(arr)=>`<option value="">—</option>`+arr.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("");
