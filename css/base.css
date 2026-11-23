@@ -46,3 +46,5 @@ input[type=range]{width:100%;accent-color:var(--c-accent)}
 .seg{display:inline-flex;padding:2px;background:var(--c-bg);border:var(--bw) solid var(--c-line);border-radius:var(--r-sm)}
 .seg button{height:28px;padding:0 var(--sp-2);background:transparent;border:0;border-radius:6px;color:var(--c-muted)}
 .seg button.is-on{background:var(--c-surface-2);color:var(--c-text)}
+.modal__box--wide{max-width:640px}.modal__box{max-height:90vh;display:flex;flex-direction:column}.modal__body{overflow:auto}
+.modal__body{min-height:0;flex:1 1 auto}.modal__head,.modal__foot{flex:none}

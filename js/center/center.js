@@ -2,7 +2,7 @@ import {store} from "../app/store.js";
 import {I} from "../app/icons.js";
 import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal,thumbHtml} from "../app/ui.js";
 import {MONTHS,DOW,monthGrid,weekDays,same,ymd,time,longDate,toInput,fromInput,moveToDay,addDays,startOfWeek} from "../app/dates.js";
-import {FORMATS,DEFAULT_FORMAT} from "../app/formats.js";
+import {openWizard} from "./wizard.js";
 const LS="sg.center";
 const load=()=>{try{return JSON.parse(localStorage.getItem(LS))||{}}catch{return{}}};
 const save=s=>{try{localStorage.setItem(LS,JSON.stringify(s))}catch{}};
@@ -87,18 +87,7 @@ ${S.view!=="list"&&undated.length?`<div class="tray"><span class="label">Sin fec
       await store.patchPost(p.id,patch);
     }});
   }
-  function create(dayKey){
-    const dt=dayKey?`${dayKey}T12:00`:"";
-    modal("Nueva publicación",`<div class="field"><label for="n-t">Título</label><input class="input" id="n-t" placeholder="Ej. Lanzamiento Funko Pop Stitch" required></div>
-<div class="row"><div class="field"><label for="n-ty">Tipo</label><select class="select" id="n-ty"><option value="">—</option>${store.types.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("")}</select></div><div class="field"><label for="n-c">Categoría</label><select class="select" id="n-c"><option value="">—</option>${store.cats.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("")}</select></div></div>
-<div class="field"><label for="n-f">Formato</label><select class="select" id="n-f">${FORMATS.map(f=>`<option value="${f.id}"${f.id===DEFAULT_FORMAT?" selected":""}>${f.label}</option>`).join("")}</select></div>
-<div class="field"><label for="n-d">Fecha y hora (opcional)</label><input class="input" type="datetime-local" id="n-d" value="${dt}"></div>`,{ok:"Crear y abrir editor",onOk:async f=>{
-      const title=f.querySelector("#n-t").value.trim();if(!title)throw new Error("Escribe un título");
-      const fm=FORMATS.find(x=>x.id===f.querySelector("#n-f").value);
-      const row=await store.createPost({title,type_id:f.querySelector("#n-ty").value||null,category_id:f.querySelector("#n-c").value||null,format:fm.id,scheduled_at:fromInput(f.querySelector("#n-d").value),status:"draft",data:{W:fm.w,H:fm.h}});
-      location.hash=`#/editor/${row.id}`;
-    }});
-  }
+  function create(dayKey){openWizard(dayKey)}
   let drag=null;
   root.addEventListener("click",e=>{
     const t=e.target;

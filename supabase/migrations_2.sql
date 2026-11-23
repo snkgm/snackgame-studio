@@ -1,0 +1,10 @@
+alter table public.posts add column if not exists group_id uuid;
+create index if not exists posts_group_idx on public.posts(group_id);
+create table if not exists public.backgrounds(id uuid primary key default gen_random_uuid(),name text not null default 'Fondo',tag text not null default '',url text not null,created_at timestamptz not null default now());
+alter table public.backgrounds enable row level security;
+grant select,insert,update,delete on public.backgrounds to anon,authenticated;
+drop policy if exists studio_open on public.backgrounds;
+create policy studio_open on public.backgrounds for all to anon,authenticated using(true) with check(true);
+create unique index if not exists templates_default_uq on public.templates(coalesce(type_id,'00000000-0000-0000-0000-000000000000'::uuid),coalesce(category_id,'00000000-0000-0000-0000-000000000000'::uuid),format) where is_default;
+insert into public.post_types(name,sort) values('Diario',10),('Novedades',11),('Próximamente',12),('Productos destacados',13),('Promociones',14),('Recién llegados',15),('Colecciones',16) on conflict(name) do nothing;
+insert into public.categories(name,sort) values('Funkos',10),('Cartas Pokémon',11),('Juguetes',12),('Figuras y réplicas',13),('Peluches',14),('Juegos de mesa',15),('Snacks y bebidas',16),('Accesorios',17) on conflict(name) do nothing;

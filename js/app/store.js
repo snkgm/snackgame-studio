@@ -1,15 +1,15 @@
-import {db,COLS} from "./db.js";
+import {db,COLS,TCOLS} from "./db.js";
 import {toast} from "./ui.js";
 const L=new Set();
 const pending=new Map();
 export const store={
-  posts:[],types:[],cats:[],loaded:false,error:null,
+  posts:[],types:[],cats:[],templates:[],backgrounds:[],loaded:false,error:null,
   on(f){L.add(f);return()=>L.delete(f)},
   emit(){L.forEach(f=>f())},
   async load(){
     try{
-      const [p,t,c]=await Promise.all([db.list("posts",`select=${COLS}&order=created_at.desc`),db.list("post_types","select=*&order=sort.asc,name.asc"),db.list("categories","select=*&order=sort.asc,name.asc")]);
-      this.posts=p;this.types=t;this.cats=c;this.loaded=true;this.error=null;
+      const [p,t,c,tp,bg]=await Promise.all([db.list("posts",`select=${COLS}&order=created_at.desc`),db.list("post_types","select=*&order=sort.asc,name.asc"),db.list("categories","select=*&order=sort.asc,name.asc"),db.list("templates",`select=${TCOLS}&order=created_at.desc`),db.list("backgrounds","select=*&order=created_at.desc")]);
+      this.posts=p;this.types=t;this.cats=c;this.templates=tp;this.backgrounds=bg;this.loaded=true;this.error=null;
     }catch(e){this.error=e.message||"Sin conexión"}
     this.emit();
   },
@@ -23,6 +23,26 @@ export const store={
     try{const r=await db.update("posts",id,patch);if(p&&r)Object.assign(p,strip(r));this.emit();return r}
     catch(e){if(p){Object.assign(p,old);this.emit()}throw e}
   },
+  tpl:id=>store.templates.find(t=>t.id===id),
+  async createTemplate(f){const r=await db.insert("templates",f);this.templates.unshift(tstrip(r));this.emit();return r},
+  async patchTemplate(id,patch){const r=await db.update("templates",id,patch);const t=this.tpl(id);if(t&&r)Object.assign(t,tstrip(r));this.emit();return r},
+  async removeTemplate(id){await db.remove("templates",id);this.templates=this.templates.filter(t=>t.id!==id);this.emit()},
+  async setDefault(id){
+    const t=this.tpl(id);if(!t)return;
+    const same=this.templates.filter(x=>x.id!==id&&x.is_default&&x.format===t.format&&(x.type_id||null)===(t.type_id||null)&&(x.category_id||null)===(t.category_id||null));
+    for(const x of same){await db.update("templates",x.id,{is_default:false});x.is_default=false}
+    await db.update("templates",id,{is_default:true});t.is_default=true;this.emit();
+  },
+  async duplicateTemplate(id){const full=await db.get("templates",id);const {id:_i,created_at,updated_at,...rest}=full;const r=await this.createTemplate({...rest,name:full.name+" (copia)",is_default:false});return r},
+  resolveTemplate(typeId,catId,format){
+    const f=this.templates.filter(t=>t.format===format);
+    const best=a=>a.find(t=>t.is_default)||a[0]||null;
+    const T=typeId||null,C=catId||null;
+    return best(f.filter(t=>(t.type_id||null)===T&&(t.category_id||null)===C))||best(f.filter(t=>(t.type_id||null)===T))||best(f.filter(t=>(t.category_id||null)===C))||best(f);
+  },
+  async addBackground(row){const r=await db.insert("backgrounds",row);this.backgrounds.unshift(r);this.emit();return r},
+  async patchBackground(id,patch){const r=await db.update("backgrounds",id,patch);const b=this.backgrounds.find(x=>x.id===id);if(b&&r)Object.assign(b,r);this.emit()},
+  async removeBackground(id){await db.remove("backgrounds",id);this.backgrounds=this.backgrounds.filter(b=>b.id!==id);this.emit()},
   async duplicate(id){
     const full=await db.get("posts",id);if(!full)throw new Error("No existe");
     const {id:_i,created_at,updated_at,...rest}=full;
@@ -45,5 +65,6 @@ export const store={
     this.emit();
   }
 };
+const tstrip=(r)=>{const o={};TCOLS.split(",").forEach(k=>{o[k]=r[k]});return o};
 const strip=(r,partial)=>{const o={};COLS.split(",").forEach(k=>{if(!partial||k in r)o[k]=r[k]});return o};
 addEventListener("beforeunload",()=>store.flush());

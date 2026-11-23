@@ -19,4 +19,5 @@ export const db={
   }
 };
 export const publicUrl=path=>`${STORE}object/public/studio/${path}`;
-export const COLS="id,title,status,scheduled_at,type_id,category_id,template_id,format,thumb_url,error_msg,updated_at,created_at";
+export const COLS="id,title,status,scheduled_at,type_id,category_id,template_id,format,thumb_url,error_msg,group_id,updated_at,created_at";
+export const TCOLS="id,name,type_id,category_id,format,thumb_url,is_default,updated_at,created_at";

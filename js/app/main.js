@@ -2,17 +2,20 @@ import {store} from "./store.js";
 import {mountCenter} from "../center/center.js";
 import {mountSettings} from "../center/settings.js";
 import {mountEditor} from "../editor/editorView.js";
+import {mountTemplates} from "../center/templates.js";
 import {closeMenu} from "./ui.js";
-const view=document.getElementById("view");
+let view=document.getElementById("view");
 let cleanup=null,token=0;
 async function route(){
   const my=++token;
-  cleanup?.();cleanup=null;closeMenu();view.innerHTML="";
+  cleanup?.();cleanup=null;closeMenu();const fresh=view.cloneNode(false);view.replaceWith(fresh);view=fresh;
   const [a,id]=location.hash.replace(/^#\/?/,"").split("/");
-  document.body.classList.toggle("is-editor",a==="editor");
+  document.body.classList.toggle("is-editor",a==="editor"||a==="plantilla");
   document.querySelectorAll("[data-nav]").forEach(n=>n.classList.toggle("is-on",n.dataset.nav===(a||"")));
   let c;
   if(a==="editor"&&id){store.flush();c=await mountEditor(view,id)}
+  else if(a==="plantilla"&&id){store.flush();c=await mountEditor(view,id,{template:true})}
+  else if(a==="plantillas")c=mountTemplates(view);
   else if(a==="ajustes")c=mountSettings(view);
   else c=mountCenter(view);
   if(my!==token){c?.();return}

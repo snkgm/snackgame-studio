@@ -34,7 +34,7 @@ export function openMenu(anchor,items,{x,y}={}){
 }
 export function modal(title,bodyHtml,{ok="Aceptar",onOk,wide}={}){
   const el=document.createElement("div");el.className="modal";
-  el.innerHTML=`<div class="modal__box" role="dialog" aria-label="${esc(title)}"><div class="modal__head"><h2>${esc(title)}</h2><button class="btn btn--ghost btn--icon btn--sm" data-x aria-label="Cerrar">${I.x}</button></div><form class="modal__body">${bodyHtml}</form><div class="modal__foot"><button class="btn" data-x type="button">Cancelar</button><button class="btn btn--accent" data-ok type="button">${esc(ok)}</button></div></div>`;
+  el.innerHTML=`<div class="modal__box${wide?" modal__box--wide":""}" role="dialog" aria-label="${esc(title)}"><div class="modal__head"><h2>${esc(title)}</h2><button class="btn btn--ghost btn--icon btn--sm" data-x aria-label="Cerrar">${I.x}</button></div><form class="modal__body">${bodyHtml}</form><div class="modal__foot"><button class="btn" data-x type="button">Cancelar</button><button class="btn btn--accent" data-ok type="button">${esc(ok)}</button></div></div>`;
   const close=()=>{el.remove();removeEventListener("keydown",key)};
   const key=e=>{if(e.key==="Escape")close()};
   addEventListener("keydown",key);

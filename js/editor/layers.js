@@ -5,10 +5,10 @@ export class LayersPanel{
   render(){
     if(this.root.contains(document.activeElement)&&document.activeElement.matches("input.layer__name:not([readonly])"))return;
     const list=this.ed.layers(),act=this.ed.active;
-    const sig=JSON.stringify([list.map(o=>[(o.__lid??=++LID),o.name,o.visible,o.locked,o.role,typeof o.fill==="string"?o.fill:"",o.type]),list.indexOf(act),this.ed.bgSel,this.ed.bg]);
+    const sig=JSON.stringify([list.map(o=>[(o.__lid??=++LID),o.name,o.visible,o.locked,o.role,typeof o.fill==="string"?o.fill:"",o.type]),list.indexOf(act),this.ed.bgSel,this.ed.bg,JSON.stringify(this.ed.cfg.bg||0),!!this.ed.bgLayer()]);
     if(sig===this.sig)return;this.sig=sig;
     this.root.innerHTML="";
-    const bgRow=()=>{const b=document.createElement("div");b.className="layer layer--bg"+(this.ed.bgSel?" is-sel":"");b.innerHTML=`<span class="layer__thumb" style="background:${this.ed.bg}"></span><span class="layer__name">Fondo</span><span></span><span></span><span></span>`;b.onclick=()=>this.ed.selectBackground();return b};
+    const bgRow=()=>{const b=document.createElement("div");b.className="layer layer--bg"+(this.ed.bgSel?" is-sel":"");const bl=this.ed.bgLayer();const st=bl?`background:url('${bl.getSrc()}') center/cover`:`background:${this.ed.bg}`;b.innerHTML=`<span class="layer__thumb" style="${st}"></span><span class="layer__name">Fondo</span><span></span><span></span><span></span>`;b.onclick=()=>this.ed.selectBackground();return b};
     if(!list.length){this.root.innerHTML='<div class="empty">Sin capas. Añade un elemento.</div>';this.root.appendChild(bgRow());return}
     list.forEach(o=>{
       const el=document.createElement("div");
