@@ -1,6 +1,7 @@
-import {db} from "../app/db.js?v=20261123n";
-import {runItem} from "./pipeline.js?v=20261123n";
-import {Fatal} from "./gallery.js?v=20261123n";
+import {auth} from "../app/auth.js?v=20261123o";
+import {db} from "../app/db.js?v=20261123o";
+import {runItem} from "./pipeline.js?v=20261123o";
+import {Fatal} from "./gallery.js?v=20261123o";
 const rpc=async(fn,b={})=>{const r=await fetch(db.REST+"rpc/"+fn,{method:"POST",headers:db.H,body:JSON.stringify(b)});if(!r.ok)throw new Error(fn+" "+r.status);return r.json()};
 const patch=(id,p)=>db.update("campaign_items",id,p);
 async function closeIfDone(cid){
@@ -25,4 +26,5 @@ window.__drain=async(wid,maxMs)=>{
   }
   return log;
 };
+window.__login=(e,p)=>auth.login(e,p);
 window.__ready=true;

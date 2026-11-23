@@ -1,5 +1,5 @@
-import {db,COLS,TCOLS} from "./db.js?v=20261123n";
-import {toast} from "./ui.js?v=20261123n";
+import {db,COLS,TCOLS} from "./db.js?v=20261123o";
+import {toast} from "./ui.js?v=20261123o";
 const L=new Set();
 const pending=new Map();
 export const store={

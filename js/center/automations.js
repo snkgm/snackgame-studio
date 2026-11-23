@@ -1,9 +1,9 @@
-import {db} from "../app/db.js?v=20261123n";
-import {store} from "../app/store.js?v=20261123n";
-import {esc,toast,modal} from "../app/ui.js?v=20261123n";
-import {fmtById} from "../app/formats.js?v=20261123n";
-import {STAGES} from "../studio/pipeline.js?v=20261123n";
-import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261123n";
+import {db} from "../app/db.js?v=20261123o";
+import {store} from "../app/store.js?v=20261123o";
+import {esc,toast,modal} from "../app/ui.js?v=20261123o";
+import {fmtById} from "../app/formats.js?v=20261123o";
+import {STAGES} from "../studio/pipeline.js?v=20261123o";
+import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261123o";
 const WORK=["downloading","removing_bg","analyzing","background","composing","saving"];
 const CST={draft:"Borrador",running:"En marcha",paused:"Pausada",cancelled:"Cancelada",done:"Completada"};
 const q=(t,s)=>db.list(t,s);

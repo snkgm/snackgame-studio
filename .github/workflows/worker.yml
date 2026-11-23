@@ -31,6 +31,9 @@ jobs:
       - name: Ejecutar
         if: steps.q.outputs.pending != '0'
         working-directory: worker
+        env:
+          STUDIO_EMAIL: ${{ secrets.STUDIO_EMAIL }}
+          STUDIO_PASSWORD: ${{ secrets.STUDIO_PASSWORD }}
         run: |
           npm install --no-audit --no-fund
           npx playwright install --with-deps chromium

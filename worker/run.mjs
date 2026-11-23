@@ -11,6 +11,7 @@ while(Date.now()-t0<LIMIT&&await pending()>0&&rounds++<50){
     page.on("console",m=>{if(["error","warning"].includes(m.type()))console.log("[page]",m.text().slice(0,200))});
     await page.goto(SITE+"worker.html?t="+Date.now(),{waitUntil:"load"});
     await page.waitForFunction(()=>window.__ready,null,{timeout:60e3});
+    if(process.env.STUDIO_EMAIL)await page.evaluate(([e,p])=>window.__login(e,p),[process.env.STUDIO_EMAIL,process.env.STUDIO_PASSWORD]);
     const log=await page.evaluate(([w,ms])=>window.__drain(w,ms),[wid,Math.max(60e3,LIMIT-(Date.now()-t0)-120e3)]);
     console.log(JSON.stringify(log));
   }catch(e){console.log("round error",e.message)}
