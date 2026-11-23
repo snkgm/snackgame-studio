@@ -1,17 +1,21 @@
 import {I} from "../app/icons.js";
+let LID=0;
 export class LayersPanel{
   constructor(root,ed){this.root=root;this.ed=ed;this.drag=null;ed.on("change",()=>this.render());this.render()}
   render(){
     if(this.root.contains(document.activeElement)&&document.activeElement.matches("input.layer__name:not([readonly])"))return;
     const list=this.ed.layers(),act=this.ed.active;
+    const sig=JSON.stringify([list.map(o=>[(o.__lid??=++LID),o.name,o.visible,o.locked,o.role,typeof o.fill==="string"?o.fill:"",o.type]),list.indexOf(act),this.ed.bgSel,this.ed.bg]);
+    if(sig===this.sig)return;this.sig=sig;
     this.root.innerHTML="";
-    if(!list.length){this.root.innerHTML='<div class="empty">Sin capas. Añade una forma.</div>';return}
+    const bgRow=()=>{const b=document.createElement("div");b.className="layer layer--bg"+(this.ed.bgSel?" is-sel":"");b.innerHTML=`<span class="layer__thumb" style="background:${this.ed.bg}"></span><span class="layer__name">Fondo</span><span></span><span></span><span></span>`;b.onclick=()=>this.ed.selectBackground();return b};
+    if(!list.length){this.root.innerHTML='<div class="empty">Sin capas. Añade un elemento.</div>';this.root.appendChild(bgRow());return}
     list.forEach(o=>{
       const el=document.createElement("div");
       el.className="layer"+(o===act?" is-sel":"")+(o.visible===false?" is-hidden":"");
       el.draggable=true;
-      const fill=typeof o.fill==="string"?o.fill:"#888";
-      el.innerHTML=`<span class="layer__thumb" style="background:${fill}"></span><input class="layer__name" value="" readonly><button class="layer__btn" data-a="vis" title="Visibilidad">${o.visible===false?I["eye-off"]:I.eye}</button><button class="layer__btn" data-a="lock" title="Bloquear">${o.locked?I.lock:I["lock-open"]}</button><button class="layer__btn" data-a="del" title="Eliminar">${I["trash-2"]}</button>`;
+      const fill=typeof o.fill==="string"?o.fill:"#888";const ty=o.type.toLowerCase();const th=ty==="textbox"?I.type:ty==="image"?I.image:null;
+      el.innerHTML=`${th?`<span class="layer__ico">${th}</span>`:`<span class="layer__thumb" style="background:${fill}"></span>`}<input class="layer__name" value="" readonly><button class="layer__btn" data-a="vis" title="Visibilidad">${o.visible===false?I["eye-off"]:I.eye}</button><button class="layer__btn" data-a="lock" title="Bloquear">${o.locked?I.lock:I["lock-open"]}</button><button class="layer__btn" data-a="del" title="Eliminar">${I["trash-2"]}</button>`;
       const inp=el.querySelector(".layer__name");inp.value=o.name||"Capa";
       inp.addEventListener("dblclick",()=>{inp.readOnly=false;el.draggable=false;inp.focus();inp.select()});
       const done=()=>{if(inp.readOnly)return;inp.readOnly=true;el.draggable=true;const v=inp.value.trim();if(v&&v!==o.name)this.ed.patch(o,{name:v});else this.render()};
@@ -40,6 +44,7 @@ export class LayersPanel{
       });
       this.root.appendChild(el);
     });
+    this.root.appendChild(bgRow());
   }
   clearMarks(){this.root.querySelectorAll(".drop-before,.drop-after").forEach(n=>n.classList.remove("drop-before","drop-after"))}
 }

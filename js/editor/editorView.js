@@ -1,5 +1,8 @@
 import {Editor} from "./editor.js";
 import {LayersPanel} from "./layers.js";
+import {mountInspector} from "./inspector.js";
+import {logoUrl,uploadLogo} from "../app/brand.js";
+import {loadAllFonts} from "../app/fonts.js";
 import {FORMATS} from "../app/formats.js";
 import {I} from "../app/icons.js";
 import {db} from "../app/db.js";
@@ -28,36 +31,51 @@ export async function mountEditor(root,id){
  <button class="btn btn--accent" id="export">${I.download}Exportar</button>
 </header>
 <aside class="tools">
+ <button class="tool" id="t-text" title="Añadir texto">${I.type}<span>Texto</span></button>
+ <button class="tool" id="t-web" title="Dirección web como capa">${I.globe}<span>Web</span></button>
+ <button class="tool" id="t-logo" title="Logotipo como capa">${I.image}<span>Logo</span></button>
  <button class="tool" id="t-rect" title="Rectángulo">${I.square}<span>Rect.</span></button>
  <button class="tool" id="t-circle" title="Círculo">${I.circle}<span>Círculo</span></button>
 </aside>
 <main class="stage" id="stage"><div class="stage__box" id="box"><canvas id="cv"></canvas></div></main>
 <aside class="panel">
- <section class="sec"><div class="field"><label for="fmt">Formato</label><select class="select" id="fmt">${FORMATS.map(f=>`<option value="${f.id}">${f.label}</option>`).join("")}</select></div><div class="field"><label for="bg">Fondo</label><input class="input" type="color" id="bg" value="#ffffff"></div></section>
- <section class="sec" id="props" hidden><div class="sec__head"><span class="label">Propiedades</span></div><div class="row"><div class="field"><label for="p-fill">Relleno</label><input class="input" type="color" id="p-fill"></div><div class="field"><label for="p-op">Opacidad</label><input type="range" id="p-op" min="0" max="100" value="100"></div></div></section>
- <section class="sec sec--grow"><div class="sec__head"><span class="label">Capas</span></div><div class="layers" id="layers"></div></section>
+ <div class="panel__scroll" id="insp"></div>
+ <section class="sec"><div class="sec__head"><span class="label">Datos del producto</span></div>
+  <div class="field"><input class="input" data-p="name" placeholder="Nombre del producto" aria-label="Nombre del producto"></div>
+  <div class="row"><input class="input" data-p="number" placeholder="Número" aria-label="Número"><input class="input" data-p="price" placeholder="Precio" aria-label="Precio"></div>
+  <div class="row"><input class="input" data-p="collection" placeholder="Colección" aria-label="Colección"><input class="input" data-p="category" placeholder="Categoría" aria-label="Categoría"></div>
+  <input class="input" data-p="web" placeholder="Web (snackgame.es)" aria-label="Web"></section>
+ <section class="sec sec--layers"><div class="sec__head"><span class="label">Capas</span></div><div class="layers" id="layers"></div></section>
 </aside></div>`;
   const $=s=>root.querySelector(s);
   const ed=new Editor($("#cv"),$("#stage"),$("#box"));
   window.studio=ed;
   const fmtOf=()=>FORMATS.find(f=>f.id===post.format)||FORMATS[1];
+  await loadAllFonts();
+  ed.product=post.product||{};
   await ed.loadData(post.data&&post.data.c?post.data:null,fmtOf());
   if(!document.body.contains(root)){ed.destroy();return()=>{}}
   const layers=new LayersPanel($("#layers"),ed);
-  const fmt=$("#fmt"),bg=$("#bg");
-  const syncFmt=()=>{const f=FORMATS.find(x=>x.w===ed.W&&x.h===ed.H);if(f)fmt.value=f.id;bg.value=ed.bg;post.format=fmt.value};
-  syncFmt();ed.on("format",syncFmt);ed.on("history",()=>{bg.value=ed.bg});
-  fmt.onchange=()=>{const f=FORMATS.find(x=>x.id===fmt.value);post.format=f.id;ed.setFormat(f.w,f.h)};
-  bg.oninput=()=>ed.setBg(bg.value);
+  const setFmt=id=>{const f=FORMATS.find(x=>x.id===id);post.format=f.id;ed.setFormat(f.w,f.h)};
+  ed.on("format",()=>{const f=FORMATS.find(x=>x.w===ed.W&&x.h===ed.H);if(f)post.format=f.id});
+  const insp=mountInspector($("#insp"),ed,setFmt);
+  ed.product=post.product||{};ed.applyFields();
+  root.querySelectorAll("[data-p]").forEach(i=>{i.value=ed.product[i.dataset.p]||"";i.oninput=()=>{ed.setProduct({[i.dataset.p]:i.value})}});
+  const addText=()=>ed.addText({text:"Título",name:"Título",top:Math.round(ed.H*.06),props:{fontSize:84}});
+  $("#t-text").onclick=addText;
+  $("#t-web").onclick=()=>ed.addText({text:"snackgame.es",name:"Dirección web",role:"web",field:"web",top:Math.round(ed.H*.93),props:{fontSize:36,fontWeight:600}});
+  $("#t-logo").onclick=async()=>{
+    try{
+      let u=await logoUrl();
+      if(!u){const f=await pickFile();if(!f)return;toast("Subiendo logotipo…");u=await uploadLogo(f)}
+      await ed.addImage(u,{role:"logo",name:"Logotipo",maxFrac:.22});
+    }catch(e){toast("No se pudo añadir el logotipo: "+e.message,{kind:"err"})}
+  };
+  const pickFile=()=>new Promise(r=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=()=>r(i.files[0]||null);i.click()});
   $("#t-rect").onclick=()=>ed.addRect();$("#t-circle").onclick=()=>ed.addCircle();
   $("#undo").onclick=()=>ed.undo();$("#redo").onclick=()=>ed.redo();
   const hist=()=>{$("#undo").disabled=!ed.canUndo;$("#redo").disabled=!ed.canRedo};ed.on("history",hist);hist();
   ed.on("zoom",s=>{$("#zoom").textContent=Math.round(s*100)+"%"});$("#zoom").textContent=Math.round(ed.scale*100)+"%";
-  const props=$("#props"),fill=$("#p-fill"),op=$("#p-op");
-  const syncProps=()=>{const o=ed.active;props.hidden=!o;if(!o)return;fill.value=typeof o.fill==="string"&&/^#[0-9a-f]{6}$/i.test(o.fill)?o.fill:"#000000";op.value=Math.round((o.opacity??1)*100)};
-  ed.on("change",syncProps);syncProps();
-  fill.oninput=()=>{const o=ed.active;if(o)ed.patch(o,{fill:fill.value})};
-  op.oninput=()=>{const o=ed.active;if(o)ed.patch(o,{opacity:op.value/100})};
   const saveEl=$("#save");let dirty=false,saving=false,timer;
   const setSave=(t,err)=>{saveEl.textContent=t;saveEl.classList.toggle("is-err",!!err)};
   setSave("Guardado");
@@ -68,7 +86,7 @@ export async function mountEditor(root,id){
       const blob=await ed.thumbBlob();
       let thumb=post.thumb_url;
       try{thumb=await db.upload(`thumbs/${post.id}.jpg`,blob)}catch{}
-      const body={data:ed.toData(),format:post.format,thumb_url:thumb};
+      const body={data:ed.toData(),format:post.format,thumb_url:thumb,product:ed.product};
       await (store.loaded?store.patchPost(post.id,body):db.update("posts",post.id,body));
       post.thumb_url=thumb;setSave("Guardado");
     }catch(e){setSave("Error al guardar",true);toast(e.message,{kind:"err"})}

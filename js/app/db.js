@@ -18,4 +18,5 @@ export const db={
     return `${STORE}object/public/studio/${path}?v=${Date.now()}`;
   }
 };
+export const publicUrl=path=>`${STORE}object/public/studio/${path}`;
 export const COLS="id,title,status,scheduled_at,type_id,category_id,template_id,format,thumb_url,error_msg,updated_at,created_at";
