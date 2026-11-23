@@ -1,6 +1,6 @@
-import {Canvas,Rect,Circle,FabricObject,Textbox,FabricImage,Point,Shadow} from "../../vendor/fabric.min.mjs?v=20261123h";
-import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261123h";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261123h";
+import {Canvas,Rect,Circle,FabricObject,Textbox,FabricImage,Point,Shadow} from "../../vendor/fabric.min.mjs?v=20261123i";
+import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261123i";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261123i";
 const PROPS=["name","locked","role","field","pattern","rule","orig"];
 export const FIELDS={name:"Nombre del producto",number:"Número",collection:"Colección",price:"Precio",category:"Categoría",web:"snackgame.es",hashtag:"#Hashtag",tagline:"Frase del producto",desc:"Descripción breve"};
 FabricObject.customProperties=PROPS;
@@ -36,15 +36,15 @@ export class Editor{
     this.counter={};this.applyFields();this.canvas.getObjects().forEach(o=>{const m=/^(.*) (\d+)$/.exec(o.name||"");if(m)this.counter[m[1]]=Math.max(this.counter[m[1]]||0,+m[2])});
     this.busy=false;this.hist=[];this.hi=-1;this.fit();this.snap(true);this.emit("change");this.emit("format");
   }
+  shot(format,quality,outW){
+    const z=this.canvas.getZoom()||1;
+    return this.canvas.toDataURL({format,quality,multiplier:outW/(this.W*z),left:0,top:0,width:this.W*z,height:this.H*z,enableRetinaScaling:false});
+  }
   async exportBlob(type="png",quality=.92){
     this.canvas.discardActiveObject();this.canvas.requestRenderAll();
-    const url=this.canvas.toDataURL({format:type==="jpg"?"jpeg":"png",quality,multiplier:1,left:0,top:0,width:this.W,height:this.H,enableRetinaScaling:false});
-    return (await fetch(url)).blob();
+    return (await fetch(this.shot(type==="jpg"?"jpeg":"png",quality,this.W))).blob();
   }
-  async thumbBlob(w=360){
-    const url=this.canvas.toDataURL({format:"jpeg",quality:.72,multiplier:w/this.W,left:0,top:0,width:this.W,height:this.H,enableRetinaScaling:false});
-    return (await fetch(url)).blob();
-  }
+  async thumbBlob(w=360){return (await fetch(this.shot("jpeg",.72,w))).blob()}
   on(e,f){(this.listeners[e]??=[]).push(f)}
   emit(e,d){(this.listeners[e]||[]).forEach(f=>f(d))}
   async setFormat(w,h){this.W=w;this.H=h;this.fit();await this.applyBg();this.snap();this.emit("change")}
