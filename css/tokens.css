@@ -1,0 +1,15 @@
+:root{
+--sp-0:0;--sp-1:4px;--sp-2:8px;--sp-3:16px;--sp-4:24px;--sp-5:32px;--sp-6:40px;--sp-7:48px;--sp-8:64px;--sp-9:80px;
+--fs-12:12px;--fs-14:14px;--fs-16:16px;--fs-20:20px;--fs-24:24px;--fs-32:32px;--fs-48:48px;
+--lh-12:16px;--lh-14:24px;--lh-16:24px;--lh-20:32px;--lh-24:32px;--lh-32:40px;--lh-48:56px;
+--font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+--c-bg:#0f1115;--c-surface:#171a21;--c-surface-2:#1f232c;--c-line:#2a2f3a;
+--c-text:#f2f4f8;--c-muted:#9aa3b2;--c-accent:#ffb400;--c-accent-ink:#1a1300;--c-danger:#ff5c5c;--c-focus:#4da3ff;
+--r-sm:8px;--r-md:16px;--r-lg:24px;
+--bw:1px;--bw-strong:2px;
+--sh-1:0 1px 0 rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.24);
+--ctl-h:40px;
+--container:1040px;
+--topbar-h:56px;--left-w:80px;--right-w:304px;
+--ease:cubic-bezier(.2,.8,.2,1);--dur:160ms;
+}

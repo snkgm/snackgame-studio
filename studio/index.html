@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SnackGame Studio</title>
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/studio.css">
+</head>
+<body class="studio">
+<div class="app">
+  <header class="top">
+    <a class="top__brand" href="../"><b>Snack<span>Game</span> Studio</b></a>
+    <span class="top__sep"></span>
+    <div class="top__group">
+      <button class="btn btn--icon" id="undo" title="Deshacer (Ctrl+Z)"><span id="ic-undo"></span></button>
+      <button class="btn btn--icon" id="redo" title="Rehacer (Ctrl+Shift+Z)"><span id="ic-redo"></span></button>
+    </div>
+    <div class="top__grow"></div>
+    <span class="top__zoom" id="zoom">100%</span>
+  </header>
+  <aside class="tools">
+    <button class="tool" id="t-rect" title="Rectángulo">Rect.</button>
+    <button class="tool" id="t-circle" title="Círculo">Círculo</button>
+    <button class="tool" id="t-text" title="Tramo 2" disabled>Texto</button>
+    <button class="tool" id="t-image" title="Tramo 3" disabled>Imagen</button>
+    <button class="tool" id="t-product" title="Tramo 3" disabled>Producto</button>
+  </aside>
+  <main class="stage" id="stage"><div class="stage__box" id="box"><canvas id="cv"></canvas></div></main>
+  <aside class="panel">
+    <section class="sec">
+      <div class="field"><label for="fmt">Formato</label><select class="select" id="fmt"></select></div>
+      <div class="field"><label for="bg">Fondo</label><input class="input" type="color" id="bg" value="#ffffff"></div>
+    </section>
+    <section class="sec" id="props" hidden>
+      <div class="sec__head"><span class="label">Propiedades</span></div>
+      <div class="row">
+        <div class="field"><label for="p-fill">Relleno</label><input class="input" type="color" id="p-fill"></div>
+        <div class="field"><label for="p-op">Opacidad</label><input type="range" id="p-op" min="0" max="100" value="100"></div>
+      </div>
+    </section>
+    <section class="sec sec--grow">
+      <div class="sec__head"><span class="label">Capas</span></div>
+      <div class="layers" id="layers"></div>
+    </section>
+  </aside>
+</div>
+<script type="module" src="../js/studio/main.js"></script>
+</body>
+</html>
