@@ -1,0 +1,14 @@
+const pad=n=>String(n).padStart(2,"0");
+export const MONTHS=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+export const DOW=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+export const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+export const same=(a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
+export const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+export const startOfWeek=d=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-((x.getDay()+6)%7));return x};
+export const monthGrid=d=>{const s=startOfWeek(new Date(d.getFullYear(),d.getMonth(),1));return Array.from({length:42},(_,i)=>addDays(s,i))};
+export const weekDays=d=>{const s=startOfWeek(d);return Array.from({length:7},(_,i)=>addDays(s,i))};
+export const time=iso=>{const d=new Date(iso);return `${pad(d.getHours())}:${pad(d.getMinutes())}`};
+export const longDate=iso=>{const d=new Date(iso);return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)} ${d.getFullYear()}`};
+export const toInput=iso=>{if(!iso)return"";const d=new Date(iso);return `${ymd(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`};
+export const fromInput=v=>v?new Date(v).toISOString():null;
+export const moveToDay=(iso,day)=>{const d=iso?new Date(iso):new Date(day.getFullYear(),day.getMonth(),day.getDate(),12,0);d.setFullYear(day.getFullYear(),day.getMonth(),day.getDate());return d.toISOString()};

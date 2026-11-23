@@ -10,8 +10,27 @@ export class Editor{
     FabricObject.prototype.set({transparentCorners:false,cornerColor:"#ffb400",cornerStrokeColor:"#1a1300",borderColor:"#ffb400",cornerSize:14,padding:0});
     ["object:added","object:removed","object:modified","selection:created","selection:updated","selection:cleared"].forEach(e=>this.canvas.on(e,()=>this.emit("change")));
     ["object:added","object:removed","object:modified"].forEach(e=>this.canvas.on(e,()=>this.snap()));
-    new ResizeObserver(()=>this.fit()).observe(stageEl);
+    this.ro=new ResizeObserver(()=>this.fit());this.ro.observe(stageEl);
     this.fit();this.snap(true);
+  }
+  destroy(){this.ro.disconnect();this.listeners={};this.canvas.dispose()}
+  toData(){return {W:this.W,H:this.H,c:this.canvas.toObject(PROPS)}}
+  async loadData(d,fmt){
+    this.busy=true;
+    if(d&&d.W){this.W=d.W;this.H=d.H}else if(fmt){this.W=fmt.w;this.H=fmt.h}
+    if(d&&d.c)await this.canvas.loadFromJSON(d.c);
+    this.canvas.getObjects().forEach(o=>{if(o.locked)o.set({selectable:false,evented:false})});
+    this.counter={};this.canvas.getObjects().forEach(o=>{const m=/^(.*) (\d+)$/.exec(o.name||"");if(m)this.counter[m[1]]=Math.max(this.counter[m[1]]||0,+m[2])});
+    this.busy=false;this.hist=[];this.hi=-1;this.fit();this.snap(true);this.emit("change");this.emit("format");
+  }
+  async exportBlob(type="png",quality=.92){
+    this.canvas.discardActiveObject();this.canvas.requestRenderAll();
+    const url=this.canvas.toDataURL({format:type==="jpg"?"jpeg":"png",quality,multiplier:1,left:0,top:0,width:this.W,height:this.H,enableRetinaScaling:false});
+    return (await fetch(url)).blob();
+  }
+  async thumbBlob(w=360){
+    const url=this.canvas.toDataURL({format:"jpeg",quality:.72,multiplier:w/this.W,left:0,top:0,width:this.W,height:this.H,enableRetinaScaling:false});
+    return (await fetch(url)).blob();
   }
   on(e,f){(this.listeners[e]??=[]).push(f)}
   emit(e,d){(this.listeners[e]||[]).forEach(f=>f(d))}

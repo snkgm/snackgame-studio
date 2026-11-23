@@ -1,11 +1,6 @@
-body.studio{overflow:hidden}
 .app{display:grid;grid-template-columns:var(--left-w) 1fr var(--right-w);grid-template-rows:var(--topbar-h) 1fr;grid-template-areas:"top top top" "tools stage panel";height:100vh}
-.top{grid-area:top;display:flex;align-items:center;gap:var(--sp-3);padding:0 var(--sp-3);background:var(--c-surface);border-bottom:var(--bw) solid var(--c-line)}
-.top__brand{display:flex;align-items:center;gap:var(--sp-2);font-weight:800;font-size:var(--fs-16);color:inherit;text-decoration:none}
-.top__brand span{color:var(--c-accent)}.top__brand b{font-weight:800}
+.etop{grid-area:top;display:flex;align-items:center;gap:var(--sp-3);padding:0 var(--sp-3);background:var(--c-surface);border-bottom:var(--bw) solid var(--c-line)}
 .top__sep{width:var(--bw);height:var(--sp-4);background:var(--c-line)}
-.top__grow{flex:1}
-.top__group{display:flex;align-items:center;gap:var(--sp-2)}
 .top__zoom{min-width:var(--sp-8);text-align:center;color:var(--c-muted);font-variant-numeric:tabular-nums}
 .tools{grid-area:tools;display:flex;flex-direction:column;align-items:center;gap:var(--sp-2);padding:var(--sp-3) 0;background:var(--c-surface);border-right:var(--bw) solid var(--c-line)}
 .tool{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--sp-1);width:64px;height:64px;background:transparent;border:var(--bw) solid transparent;border-radius:var(--r-sm);color:var(--c-muted);font-size:var(--fs-12);line-height:var(--lh-12)}
@@ -34,3 +29,11 @@ body.studio{overflow:hidden}
 .layer__btn .ico{width:16px;height:16px}
 .empty{color:var(--c-muted);text-align:center;padding:var(--sp-4) 0}
 @media (max-width:1024px){:root{--right-w:256px;--left-w:64px}.tool{width:48px;height:56px}}
+.etop__title{flex:0 1 320px;min-width:0;height:var(--ctl-h);padding:0 var(--sp-2);background:transparent;border:var(--bw) solid transparent;border-radius:var(--r-sm);font-weight:600;font-size:var(--fs-16)}
+.etop__title:hover{border-color:var(--c-line)}.etop__title:focus{background:var(--c-bg);border-color:var(--c-focus);outline:0}
+.etop__status{width:208px}.etop__date{width:208px}
+.save{color:var(--c-muted);font-size:var(--fs-12);min-width:96px;text-align:right}.save.is-err{color:var(--c-danger)}
+.top__sep{width:var(--bw);height:var(--sp-4);background:var(--c-line)}
+.top__zoom{min-width:var(--sp-7);text-align:center;color:var(--c-muted);font-variant-numeric:tabular-nums}
+.tool .ico{width:20px;height:20px}
+.app{height:100vh}

@@ -11,5 +11,6 @@
 --ctl-h:40px;
 --container:1040px;
 --topbar-h:56px;--left-w:80px;--right-w:304px;
+--st-draft:#9aa3b2;--st-review:#f5a524;--st-scheduled:#4da3ff;--st-published:#3ecf8e;--st-cancelled:#6b7280;--st-error:#ff5c5c;
 --ease:cubic-bezier(.2,.8,.2,1);--dur:160ms;
 }

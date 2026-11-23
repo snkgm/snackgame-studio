@@ -1,0 +1,18 @@
+create table if not exists public.post_types(id uuid primary key default gen_random_uuid(),name text not null unique,sort int not null default 0,created_at timestamptz not null default now());
+create table if not exists public.categories(id uuid primary key default gen_random_uuid(),name text not null unique,sort int not null default 0,created_at timestamptz not null default now());
+create table if not exists public.templates(id uuid primary key default gen_random_uuid(),name text not null,type_id uuid references public.post_types(id) on delete set null,category_id uuid references public.categories(id) on delete set null,format text not null default 'post-4x5',data jsonb not null default '{}'::jsonb,thumb_url text,is_default boolean not null default false,created_at timestamptz not null default now(),updated_at timestamptz not null default now());
+create table if not exists public.posts(id uuid primary key default gen_random_uuid(),title text not null default 'Sin título',status text not null default 'draft' check(status in('draft','review','scheduled','published','cancelled','error')),scheduled_at timestamptz,type_id uuid references public.post_types(id) on delete set null,category_id uuid references public.categories(id) on delete set null,template_id uuid references public.templates(id) on delete set null,format text not null default 'post-4x5',data jsonb not null default '{}'::jsonb,product jsonb,thumb_url text,error_msg text,created_at timestamptz not null default now(),updated_at timestamptz not null default now());
+create index if not exists posts_scheduled_idx on public.posts(scheduled_at);
+create index if not exists posts_status_idx on public.posts(status);
+create or replace function public.touch_updated_at() returns trigger language plpgsql as $$ begin new.updated_at=now(); return new; end $$;
+drop trigger if exists posts_touch on public.posts;create trigger posts_touch before update on public.posts for each row execute function public.touch_updated_at();
+drop trigger if exists templates_touch on public.templates;create trigger templates_touch before update on public.templates for each row execute function public.touch_updated_at();
+alter table public.post_types enable row level security;alter table public.categories enable row level security;alter table public.templates enable row level security;alter table public.posts enable row level security;
+grant usage on schema public to anon,authenticated;
+grant select,insert,update,delete on public.post_types,public.categories,public.templates,public.posts to anon,authenticated;
+do $$ declare t text; begin foreach t in array array['post_types','categories','templates','posts'] loop execute format('drop policy if exists studio_open on public.%I',t); execute format('create policy studio_open on public.%I for all to anon,authenticated using(true) with check(true)',t); end loop; end $$;
+insert into public.post_types(name,sort) values('Lanzamiento',1),('Oferta',2),('Novedad',3),('Reposición',4) on conflict(name) do nothing;
+insert into public.categories(name,sort) values('Funko Pop',1),('Figuras',2),('Coleccionables',3),('Otros',4) on conflict(name) do nothing;
+insert into storage.buckets(id,name,public) values('studio','studio',true) on conflict(id) do nothing;
+drop policy if exists studio_files on storage.objects;
+create policy studio_files on storage.objects for all to anon,authenticated using(bucket_id='studio') with check(bucket_id='studio');
