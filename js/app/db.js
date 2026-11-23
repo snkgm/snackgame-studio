@@ -1,4 +1,4 @@
-import {CONFIG} from "./config.js?v=20261123j";
+import {CONFIG} from "./config.js?v=20261123k";
 const H={apikey:CONFIG.SUPABASE_ANON_KEY,Authorization:"Bearer "+CONFIG.SUPABASE_ANON_KEY};
 const REST=CONFIG.SUPABASE_URL+"/rest/v1/",STORE=CONFIG.SUPABASE_URL+"/storage/v1/";
 async function req(path,{method="GET",body,keepalive}={}){

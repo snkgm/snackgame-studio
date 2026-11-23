@@ -1,4 +1,4 @@
-import {I} from "../app/icons.js?v=20261123j";
+import {I} from "../app/icons.js?v=20261123k";
 let LID=0;
 export class LayersPanel{
   constructor(root,ed){this.root=root;this.ed=ed;this.drag=null;ed.on("change",()=>this.render());this.render()}
