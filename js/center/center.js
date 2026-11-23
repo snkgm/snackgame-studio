@@ -1,9 +1,9 @@
-import {openBatch} from "./batch.js?v=20261123g";
-import {store} from "../app/store.js?v=20261123g";
-import {I} from "../app/icons.js?v=20261123g";
-import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal,thumbHtml} from "../app/ui.js?v=20261123g";
-import {MONTHS,DOW,monthGrid,weekDays,same,ymd,time,longDate,toInput,fromInput,moveToDay,addDays,startOfWeek} from "../app/dates.js?v=20261123g";
-import {openWizard} from "./wizard.js?v=20261123g";
+import {openBatch} from "./batch.js?v=20261123h";
+import {store} from "../app/store.js?v=20261123h";
+import {I} from "../app/icons.js?v=20261123h";
+import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal,thumbHtml} from "../app/ui.js?v=20261123h";
+import {MONTHS,DOW,monthGrid,weekDays,same,ymd,time,longDate,toInput,fromInput,moveToDay,addDays,startOfWeek} from "../app/dates.js?v=20261123h";
+import {openWizard} from "./wizard.js?v=20261123h";
 const LS="sg.center";
 const load=()=>{try{return JSON.parse(localStorage.getItem(LS))||{}}catch{return{}}};
 const save=s=>{try{localStorage.setItem(LS,JSON.stringify(s))}catch{}};

@@ -1,5 +1,5 @@
-import {CONFIG} from "../app/config.js?v=20261123g";
-import {toProduct} from "../app/catalog.js?v=20261123g";
+import {CONFIG} from "../app/config.js?v=20261123h";
+import {toProduct} from "../app/catalog.js?v=20261123h";
 export class Fatal extends Error{}
 export const handleOf=u=>{try{const x=new URL(String(u).trim());if(!/(^|\.)snackgame\.es$/.test(x.hostname))return null;const m=/\/products\/([^/?#]+)/.exec(x.pathname);return m?decodeURIComponent(m[1]):null}catch{return null}};
 export async function fetchProduct(url){
@@ -7,7 +7,7 @@ export async function fetchProduct(url){
   const r=await fetch(`${CONFIG.SHOP_URL}/products/${h}.json`);
   if(r.status===404)throw new Fatal("Producto no encontrado en la tienda");
   if(!r.ok)throw new Error("No se pudo leer la ficha ("+r.status+")");
-  const p=(await r.json()).product;
+  const p=(await r.json()).product;if(typeof p.tags==="string")p.tags=p.tags.split(",").map(t=>t.trim()).filter(Boolean);
   const images=(p.images||[]).slice().sort((a,b)=>a.position-b.position).map(i=>({id:i.id,src:i.src,w:i.width,h:i.height,alt:i.alt||""}));
   return {handle:h,title:p.title,images,product:toProduct(p)};
 }
