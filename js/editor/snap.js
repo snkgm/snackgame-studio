@@ -14,7 +14,7 @@ const best=(es,ts,thr)=>{let b=null;es.forEach(e=>ts.forEach(([t])=>{const d=t-e
 export function snapMove(ed,o,ev){
   if(!o||o.role==="background"||o.locked)return;
   if(!active(ed,ev)){ed.setGuides([]);return}
-  const thr=ed.snapCfg.tol/Math.max(.05,ed.scale),{tx,ty}=targets(ed,o),b=box(o),rot=(o.angle||0)%90!==0;
+  o.setCoords();const thr=ed.snapCfg.tol/Math.max(.05,ed.scale),{tx,ty}=targets(ed,o),b=box(o),rot=(o.angle||0)%90!==0;
   const ex=rot?[(b.L+b.R)/2]:[b.L,(b.L+b.R)/2,b.R],ey=rot?[(b.T+b.B)/2]:[b.T,(b.T+b.B)/2,b.B];
   const bx=best(ex,tx,thr),by=best(ey,ty,thr),g=[];
   if(bx){o.set("left",o.left+bx.d);g.push({x:bx.t})}if(by){o.set("top",o.top+by.d);g.push({y:by.t})}
@@ -24,7 +24,7 @@ export function snapResize(ed,e){
   const tr=e.transform,o=(tr&&tr.target)||e.target,c=tr&&tr.corner;
   if(!o||!c||o.role==="background"||o.locked||(o.angle||0)%360!==0)return;
   if(!active(ed,e.e)){ed.setGuides([]);return}
-  const thr=ed.snapCfg.tol/Math.max(.05,ed.scale),{tx,ty}=targets(ed,o),b=box(o);
+  o.setCoords();const thr=ed.snapCfg.tol/Math.max(.05,ed.scale),{tx,ty}=targets(ed,o),b=box(o);
   const hasL=c.includes("l")&&c!=="mt"&&c!=="mb",hasR=c.includes("r")&&c!=="mt"&&c!=="mb",hasT=c.includes("t")&&c!=="ml"&&c!=="mr",hasB=c.includes("b")&&c!=="ml"&&c!=="mr";
   const w=b.R-b.L,h=b.B-b.T;if(w<2||h<2)return;
   let bx=null,by=null;
