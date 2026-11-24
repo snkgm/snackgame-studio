@@ -1,9 +1,9 @@
-import {Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261124r";
-import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261124r";
-import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261124r";
-import {renderOverlay,overlayById} from "../img/overlays.js?v=20261124r";
-import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261124r";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261124r";
+import {Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261124s";
+import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261124s";
+import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261124s";
+import {renderOverlay,overlayById} from "../img/overlays.js?v=20261124s";
+import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261124s";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261124s";
 const PROPS=["name","locked","role","field","pattern","rule","orig","gen","globalCompositeOperation"];
 const PLACE="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEAAAAALAAAAAABAAEAAAIA";
 export const BLENDS=[["source-over","Normal"],["multiply","Multiplicar"],["screen","Trama"],["overlay","Superponer"],["soft-light","Luz suave"],["hard-light","Luz fuerte"],["darken","Oscurecer"],["lighten","Aclarar"],["color-dodge","Sobreexponer color"],["color-burn","Subexponer color"]];
@@ -19,7 +19,7 @@ export class Editor{
     this.stage=stageEl;this.box=boxEl;this.W=1080;this.H=1350;this.scale=1;
     this.listeners={};this.hist=[];this.hi=-1;this.busy=false;this.counter={};
     this.canvas=new Canvas(canvasEl,{width:this.W,height:this.H,backgroundColor:"#ffffff",preserveObjectStacking:true,selection:true,renderOnAddRemove:true});
-    FabricObject.prototype.set({transparentCorners:false,cornerStyle:"circle",cornerColor:"#ffffff",cornerStrokeColor:"#ff3d9a",borderColor:"#ffb400",cornerSize:18,touchCornerSize:32,borderScaleFactor:3,padding:2});
+    FabricObject.prototype.set({transparentCorners:false,cornerStyle:"circle",cornerColor:"#ffffff",cornerStrokeColor:"#ff3d9a",borderColor:"#ffb400",cornerSize:10,touchCornerSize:24,borderScaleFactor:3,padding:2});
     this.snapCfg=loadSnap();this.initSelectionFx();
     this.bgSel=false;this.product={};this.cfg={};this.palette=[];this.slides=null;this.cur=0;
     ["selection:created","selection:updated"].forEach(e=>this.canvas.on(e,()=>{this.bgSel=false}));
@@ -136,7 +136,7 @@ export class Editor{
       o.set("borderColor",`rgb(${c1.map((v,i)=>Math.round(v+(c2[i]-v)*k)).join(",")})`);this.canvas.requestRenderAll()},90);
   }
   styleControls(o){
-    if(o&&o.set&&!o.__sgs){o.__sgs=1;o.set({transparentCorners:false,cornerStyle:"circle",cornerColor:"#ffffff",cornerStrokeColor:"#ff3d9a",borderColor:"#ffb400",cornerSize:18,touchCornerSize:32,borderScaleFactor:3,padding:2})}
+    if(o&&o.set&&!o.__sgs){o.__sgs=1;if(o.controls)for(const k of['ml','mr','mt','mb']){const c=o.controls[k];if(c&&!c.__sg){c.__sg=1;const r=c.render;c.render=function(ctx,l,t,st,ob){const cv=ob.canvas,z=cv?cv.getElement().getBoundingClientRect().width/cv.getWidth():1,v=k==='ml'||k==='mr'?ob.getScaledHeight():ob.getScaledWidth();if(v*z<48)return;return r.call(this,ctx,l,t,st,ob)}}}o.set({transparentCorners:false,cornerStyle:"circle",cornerColor:"#ffffff",cornerStrokeColor:"#ff3d9a",borderColor:"#ffb400",cornerSize:10,touchCornerSize:24,borderScaleFactor:3,padding:2})}
     const m=o&&o.controls&&o.controls.mtr;if(!m||m.__sg)return;m.__sg=1;
     const svg=encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="white" stroke="#1a1300" stroke-width="1.5"/><path d="M17 12a5 5 0 1 1-1.6-3.7M17 6v3h-3" fill="none" stroke="#1a1300" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     m.cursorStyleHandler=()=>`url("data:image/svg+xml,${svg}") 14 14, grab`;

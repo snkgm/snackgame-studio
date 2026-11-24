@@ -1,11 +1,11 @@
-import {db} from "../app/db.js?v=20261124r";
-import {store} from "../app/store.js?v=20261124r";
-import {lightbox} from "../app/lightbox.js?v=20261124r";
-import {I} from "../app/icons.js?v=20261124r";
-import {esc,toast,modal} from "../app/ui.js?v=20261124r";
-import {fmtById} from "../app/formats.js?v=20261124r";
-import {STAGES} from "../studio/pipeline.js?v=20261124r";
-import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261124r";
+import {db} from "../app/db.js?v=20261124s";
+import {store} from "../app/store.js?v=20261124s";
+import {lightbox} from "../app/lightbox.js?v=20261124s";
+import {I} from "../app/icons.js?v=20261124s";
+import {esc,toast,modal} from "../app/ui.js?v=20261124s";
+import {fmtById} from "../app/formats.js?v=20261124s";
+import {STAGES} from "../studio/pipeline.js?v=20261124s";
+import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261124s";
 const WORK=["downloading","removing_bg","analyzing","background","composing","saving"];
 const CST={draft:"Borrador",running:"En marcha",paused:"Pausada",cancelled:"Cancelada",done:"Completada"};
 const q=(t,s)=>db.list(t,s);
@@ -19,9 +19,15 @@ export function mountAutomations(root){
       const [cs,its]=await Promise.all([q("campaigns","select=*&order=created_at.desc"),q("campaign_items","select=campaign_id,status,scheduled_at")]);
       if(!alive)return;
       root.querySelector("#list").innerHTML=cs.map(c=>{const it=its.filter(i=>i.campaign_id===c.id),done=it.filter(i=>i.status==="scheduled").length,err=it.filter(i=>i.status==="error").length;
-        return `<a class="ccard" href="#/automatizaciones/${c.id}"><div><b>${esc(c.name)}</b><span class="hint">${CST[c.status]} · ${it.length} productos${err?` · <i class="over">${err} con error</i>`:""}</span></div><div class="bar-p"><i style="width:${it.length?Math.round(done/it.length*100):0}%"></i></div><em>${done}/${it.length}</em></a>`}).join("")||'<p class="hint">Aún no hay listas.</p>';
+        return `<div class="ccardw"><a class="ccard" href="#/automatizaciones/${c.id}"><div><b>${esc(c.name)}</b><span class="hint">${CST[c.status]} · ${it.length} productos${err?` · <i class="over">${err} con error</i>`:""}</span></div><div class="bar-p"><i style="width:${it.length?Math.round(done/it.length*100):0}%"></i></div><em>${done}/${it.length}</em></a><button class="btn btn--ghost btn--icon" data-delc="${c.id}" aria-label="Eliminar lista" title="Eliminar lista">${I["trash-2"]}</button></div>`}).join("")||'<p class="hint">Aún no hay listas.</p>';
     }catch(e){if(alive)root.querySelector("#list").innerHTML=`<p class="hint">${esc(e.message)}</p>`}
   };
+  root.addEventListener("click",e=>{const b=e.target.closest("[data-delc]");if(!b)return;const id=b.dataset.delc,n=b.closest(".ccardw").querySelector("b").textContent;
+    modal("Eliminar lista",`<p>Se elimina «${esc(n)}» con todos sus productos y las publicaciones creadas desde ella. No se puede deshacer.</p>`,{ok:"Eliminar",onOk:async()=>{
+      const its=await q("campaign_items",`select=id&campaign_id=eq.${id}`);
+      if(its.length)await fetch(`${db.REST}posts?item_id=in.(${its.map(i=>i.id).join(",")})`,{method:"DELETE",headers:db.H});
+      await fetch(`${db.REST}campaign_items?campaign_id=eq.${id}`,{method:"DELETE",headers:db.H});
+      await fetch(`${db.REST}campaigns?id=eq.${id}`,{method:"DELETE",headers:db.H});await load();toast("Lista eliminada")}})});
   load();const t=setInterval(load,5000);
   return ()=>{alive=false;clearInterval(t)};
 }

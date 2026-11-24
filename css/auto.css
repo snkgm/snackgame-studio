@@ -69,3 +69,5 @@
 .lbx small{color:var(--c-muted)}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
 .ver{position:fixed;right:8px;bottom:8px;z-index:400;padding:2px 8px;border-radius:8px;background:rgba(0,0,0,.55);color:var(--c-muted);font-size:11px;line-height:16px;pointer-events:none}
+
+.ccardw{display:grid;grid-template-columns:minmax(0,1fr) 40px;align-items:center;gap:var(--sp-2)}.ccardw .ccard{min-width:0}
