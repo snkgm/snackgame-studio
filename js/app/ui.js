@@ -1,4 +1,4 @@
-import {I} from "./icons.js?v=20261124l";
+import {I} from "./icons.js?v=20261124o";
 export const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 export const STATUS={
   draft:{label:"Borrador"},review:{label:"Pendiente de revisión"},scheduled:{label:"Programada"},

@@ -1,17 +1,17 @@
-import {Editor} from "./editor.js?v=20261124l";
-import {LayersPanel} from "./layers.js?v=20261124l";
-import {mountInspector} from "./inspector.js?v=20261124l";
-import {loadAllFonts} from "../app/fonts.js?v=20261124l";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261124l";
-import {safeOf} from "../studio/skeleton.js?v=20261124l";
-import {openProductPicker} from "./product.js?v=20261124l";
-import {openImageTool,openShapes,closePop} from "./tools.js?v=20261124l";
-import {zipBlobs} from "../app/zip.js?v=20261124l";
-import {I} from "../app/icons.js?v=20261124l";
-import {db} from "../app/db.js?v=20261124l";
-import {store} from "../app/store.js?v=20261124l";
-import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261124l";
-import {toInput,fromInput} from "../app/dates.js?v=20261124l";
+import {Editor} from "./editor.js?v=20261124o";
+import {LayersPanel} from "./layers.js?v=20261124o";
+import {mountInspector} from "./inspector.js?v=20261124o";
+import {loadAllFonts} from "../app/fonts.js?v=20261124o";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261124o";
+import {safeOf} from "../studio/skeleton.js?v=20261124o";
+import {openProductPicker} from "./product.js?v=20261124o";
+import {openImageTool,openShapes,openOverlayTool,closePop} from "./tools.js?v=20261124o";
+import {zipBlobs} from "../app/zip.js?v=20261124o";
+import {I} from "../app/icons.js?v=20261124o";
+import {db} from "../app/db.js?v=20261124o";
+import {store} from "../app/store.js?v=20261124o";
+import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261124o";
+import {toInput,fromInput} from "../app/dates.js?v=20261124o";
 export async function mountEditor(root,id,{template=false}={}){
   const table=template?"templates":"posts";
   root.innerHTML='<div class="empty">Cargando…</div>';
@@ -41,6 +41,7 @@ export async function mountEditor(root,id,{template=false}={}){
  <button class="tool" id="t-text" title="Añadir texto">${I.type}<span>Texto</span></button>
  <button class="tool" id="t-img" title="Subir imagen, elegir de la biblioteca o añadir un producto">${I.image}<span>Imagen</span></button>
  <button class="tool" id="t-shapes" data-pop title="Formas">${I.square}<span>Formas</span></button>
+ <button class="tool" id="t-ov" title="Overlays: destellos, grano, texturas, luces…">${I.layers}<span>Overlays</span></button>
  <button class="tool" id="t-safe" title="Mostrar zonas seguras">${I.square}<span>Zonas</span></button>
 </aside>
 <main class="stage" id="stage"><div class="stage__box" id="box"><canvas id="cv"></canvas><div class="safe" id="safe" hidden></div><div class="guides" id="guides"></div><div class="guides" id="cg"></div></div><div class="slides" id="slides" hidden></div></main>
@@ -63,6 +64,7 @@ export async function mountEditor(root,id,{template=false}={}){
   let savePreset=null;const insp=mountInspector($("#insp"),ed,setFmt,fmtOf,syncP,()=>savePreset);
   if(!template)ed.product=post.product||{};ed.applyFields();
   $("#t-img").onclick=()=>openImageTool(ed,syncP);
+  $("#t-ov").onclick=()=>openOverlayTool(ed);
   $("#t-shapes").onclick=e=>openShapes(e.currentTarget,ed);
   const addText=()=>ed.addText({text:"Título",name:"Título",top:Math.round(ed.H*.06),props:{fontSize:84}});
   $("#t-text").onclick=addText;

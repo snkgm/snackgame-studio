@@ -1,7 +1,8 @@
-import {withHeadless} from "./headless.js?v=20261124l";
-import {fmtById} from "../app/formats.js?v=20261124l";
-import {BG_DEFAULT} from "../img/background.js?v=20261124l";
-import {logoUrl} from "../app/brand.js?v=20261124l";
+import {withHeadless} from "./headless.js?v=20261124o";
+import {fmtById} from "../app/formats.js?v=20261124o";
+import {BG_DEFAULT} from "../img/background.js?v=20261124o";
+import {FLOOR_DEFAULT} from "../img/fx.js?v=20261124o";
+import {logoUrl} from "../app/brand.js?v=20261124o";
 const R=(o,rule)=>{o.set("rule",rule);return o};
 export function safeOf(fmt,cfg){return {...fmtById(fmt).safe,...((cfg&&cfg.safe)||{})}}
 async function slideContent(ed,kind,f,s,names){
@@ -40,7 +41,7 @@ export async function buildSkeleton(fmtId,names={}){
         const c=document.createElement("canvas");c.width=400;c.height=520;const x=c.getContext("2d");
         const g=x.createLinearGradient(0,0,0,520);g.addColorStop(0,"#ffffff");g.addColorStop(1,"#cfcfe0");x.fillStyle=g;x.beginPath();x.roundRect(40,10,320,500,48);x.fill();
         const o=await ed.setProductImage(c.toDataURL("image/png"),{place:false});
-        o.set("rule",{...ed.ruleOf(o),...plan[i][1],shadow:false});ed.placeProduct(o);o.set("name","Producto (ejemplo)");
+        o.set("rule",{...ed.ruleOf(o),...plan[i][1],shadow:false,floor:{...FLOOR_DEFAULT,blur:42}});ed.placeProduct(o);o.set("name","Producto (ejemplo)");
       }
     }
     return ed.toData();

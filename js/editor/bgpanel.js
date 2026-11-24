@@ -1,12 +1,19 @@
-import {store} from "../app/store.js?v=20261124l";
-import {db} from "../app/db.js?v=20261124l";
-import {esc,toast,modal} from "../app/ui.js?v=20261124l";
-import {I} from "../app/icons.js?v=20261124l";
-import {renderBackground,BG_DEFAULT} from "../img/background.js?v=20261124l";
-import {extractPalette} from "../img/color.js?v=20261124l";
-import {hashKey} from "../img/matting.js?v=20261124l";
-import {searchBackgrounds,getKey,setKey} from "../img/bgsearch.js?v=20261124l";
+import {store} from "../app/store.js?v=20261124o";
+import {db} from "../app/db.js?v=20261124o";
+import {esc,toast,modal} from "../app/ui.js?v=20261124o";
+import {I} from "../app/icons.js?v=20261124o";
+import {renderBackground,BG_DEFAULT} from "../img/background.js?v=20261124o";
+import {extractPalette} from "../img/color.js?v=20261124o";
+import {FX_DEFAULT} from "../img/fx.js?v=20261124o";
+import {hashKey} from "../img/matting.js?v=20261124o";
+import {searchBackgrounds,getKey,setKey} from "../img/bgsearch.js?v=20261124o";
 const rng=(k,l,min,max)=>`<div class="field"><label for="b-${k}">${l}</label><input type="range" id="b-${k}" data-b="${k}" min="${min}" max="${max}"></div>`;
+const fxv=(path,def)=>path.split(".").reduce((a,k)=>a&&a[k],def);
+const fr=(p,l,min,max)=>`<div class="field"><label for="fx-${p}">${l}</label><input type="range" id="fx-${p}" data-fx="${p}" min="${min}" max="${max}"></div>`;
+const fc=(p,l)=>`<label class="chk"><input type="checkbox" data-fx="${p}"> ${l}</label>`;
+const fk=(p,l)=>`<div class="field"><label for="fx-${p}">${l}</label><input class="input" type="color" id="fx-${p}" data-fx="${p}"></div>`;
+const FXHTML=`<section class="sec"><div class="sec__head"><span class="label">Viñeta</span></div>${fc("vig.on","Activar viñeta")}${fr("vig.intensity","Intensidad",0,100)}${fr("vig.size","Tamaño del área central",0,100)}${fr("vig.soft","Suavidad",0,100)}${fr("vig.opacity","Opacidad",0,100)}${fk("vig.color","Color")}</section>
+<section class="sec"><div class="sec__head"><span class="label">Degradados desde bordes</span></div><div class="row">${fc("edges.t","Superior")}${fc("edges.b","Inferior")}</div><div class="row">${fc("edges.l","Izquierdo")}${fc("edges.r","Derecho")}</div>${fr("edges.extent","Extensión",5,100)}${fr("edges.intensity","Intensidad",0,100)}${fr("edges.opacity","Opacidad",0,100)}${fr("edges.soft","Suavidad de transición",0,100)}${fk("edges.color","Color")}<span class="hint">Se aplican sobre el fondo, debajo del producto: las fotos originales no se tocan.</span></section>`;
 const MODES=[["auto","Automático"],["solid","Color"],["image","Imagen"]];
 export function mountBgPanel(ed){
   let pending=null,running=false,found=[],tag="",msg="";
@@ -37,6 +44,7 @@ ${rng("lum","Luminosidad",-60,60)}${rng("sat","Saturación",-100,100)}${rng("tex
 </section>
 <section class="sec"><div class="sec__head"><span class="label">Variaciones</span><button class="btn btn--ghost btn--sm" data-act="regen" title="Regenerar">Regenerar</button></div><div class="varis">${variants()}</div></section>`:""}
 ${c.mode==="solid"?`<section class="sec"><div class="field"><label for="b-solid">Color de fondo</label><input class="input" type="color" id="b-solid" data-b="solid" value="${c.solid}"></div></section>`:""}
+${FXHTML}
 <section class="sec"><div class="sec__head"><span class="label">Biblioteca de fondos</span><button class="btn btn--ghost btn--sm" data-act="upload">${I.upload}Subir</button></div>
 <div class="row"><select class="select" id="b-tag" aria-label="Categoría"><option value="">Todas</option>${tags.map(t=>`<option${t===tag?" selected":""}>${esc(t)}</option>`).join("")}</select><button class="btn btn--sm" data-act="save-cur" title="Guardar el fondo actual en la biblioteca">Guardar actual</button></div>
 <div class="lib">${lib.map(b=>`<div class="lib__it${c.mode==="image"&&c.img===b.url?" is-on":""}" data-id="${b.id}"><img src="${esc(b.url)}" alt="${esc(b.name)}" loading="lazy"><span>${esc(b.name)}</span><div class="lib__act"><button data-act="edit" title="Editar">${I.pencil}</button><button data-act="del" title="Eliminar">${I["trash-2"]}</button></div></div>`).join("")||'<div class="hint">Sin fondos guardados. Sube imágenes o guarda el fondo actual.</div>'}</div></section>
@@ -44,7 +52,10 @@ ${c.mode==="solid"?`<section class="sec"><div class="field"><label for="b-solid"
 ${getKey()?`<form class="row" id="b-sf"><input class="input" id="b-q" placeholder="Ej. neón, galaxia, madera" required><button class="btn btn--sm">Buscar</button></form><div class="lib">${found.map((f,i)=>`<div class="lib__it" data-f="${i}"><img src="${esc(f.thumb)}" alt="" loading="lazy"><span>${esc(f.credit)}</span></div>`).join("")}</div><button class="btn btn--ghost btn--sm" data-act="key">Cambiar clave</button>`:`<form class="row" id="b-kf"><input class="input" id="b-k" placeholder="Clave gratuita de Pexels" required><button class="btn btn--sm">Guardar</button></form><span class="hint">Se obtiene gratis en pexels.com/api. Solo se guarda en este navegador.</span>`}
 ${msg?`<span class="hint">${esc(msg)}</span>`:""}</section>`;
   }
+  const fxGet=p=>{const f=ed.cfg.bgfx;const a=p.split(".");const own=f&&f[a[0]]&&f[a[0]][a[1]];return own!==undefined?own:FX_DEFAULT[a[0]][a[1]]};
+  const fxSet=p=>{};
   function sync(root){
+    root.querySelectorAll("[data-fx]").forEach(el=>{if(el===document.activeElement)return;const v=fxGet(el.dataset.fx);if(el.type==="checkbox")el.checked=!!v;else el.value=v});
     const c=cfg();root.querySelectorAll("[data-b]").forEach(el=>{if(el!==document.activeElement&&c[el.dataset.b]!==undefined)el.value=c[el.dataset.b]});
   }
   async function reExtract(){
@@ -56,7 +67,16 @@ ${msg?`<span class="hint">${esc(msg)}</span>`:""}</section>`;
     const url=await db.upload(`bg/${key}.jpg`,file);
     return store.addBackground({name:file.name.replace(/\.[^.]+$/,"").slice(0,40)||"Fondo",tag:tagV||tag||"",url});
   }
+  let raf=0;
+  function setFx(el){
+    const [g,k]=el.dataset.fx.split(".");const f=ed.cfg.bgfx||(ed.cfg.bgfx=JSON.parse(JSON.stringify(FX_DEFAULT)));
+    f[g]={...f[g],[k]:el.type==="checkbox"?el.checked:el.type==="range"?+el.value:el.value};
+    if(g==="vig"&&k!=="on"&&!f.vig.on&&el.type==="range"){}
+    cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>ed.applyBgFx());
+  }
   function bind(root,rebuild){
+    root.addEventListener("input",e=>{if(e.target.dataset.fx)setFx(e.target)});
+    root.addEventListener("change",e=>{if(e.target.dataset.fx){setFx(e.target);setTimeout(()=>ed.commit(),80)}});
     root.addEventListener("input",e=>{const el=e.target;if(!el.dataset.b)return;const k=el.dataset.b;apply({[k]:el.type==="range"?+el.value:el.value,...(k==="solid"?{mode:"solid"}:{})});if(k==="solid"){ed.canvas.backgroundColor=el.value;ed.canvas.requestRenderAll()}
       if(el.dataset.col!==undefined)return});
     root.addEventListener("input",e=>{const el=e.target;if(el.dataset.col===undefined)return;const cs=ed.colors();cs[+el.dataset.col]=el.value;apply({colors:cs})});

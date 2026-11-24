@@ -1,8 +1,16 @@
-import {Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261124l";
-import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261124l";
-import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261124l";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261124l";
-const PROPS=["name","locked","role","field","pattern","rule","orig"];
+import {Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261124o";
+import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261124o";
+import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261124o";
+import {renderOverlay,overlayById} from "../img/overlays.js?v=20261124o";
+import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261124o";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261124o";
+const PROPS=["name","locked","role","field","pattern","rule","orig","gen","globalCompositeOperation"];
+const PLACE="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEAAAAALAAAAAABAAEAAAIA";
+export const BLENDS=[["source-over","Normal"],["multiply","Multiplicar"],["screen","Trama"],["overlay","Superponer"],["soft-light","Luz suave"],["hard-light","Luz fuerte"],["darken","Oscurecer"],["lighten","Aclarar"],["color-dodge","Sobreexponer color"],["color-burn","Subexponer color"]];
+const _toObj=FabricImage.prototype.toObject;FabricImage.prototype.toObject=function(p){const j=_toObj.call(this,p);if(this.gen)j.src=PLACE;return j};
+const BLOBS=new Map();
+async function genUrl(k,s){const key=k+":"+s;if(BLOBS.has(key))return BLOBS.get(key);const c=renderOverlay(k,1080,1440,s);const u=URL.createObjectURL(await new Promise(r=>c.toBlob(r,"image/png")));BLOBS.set(key,u);return u}
+const DERIVED=["bgfx","floorshadow"];
 export const FIELDS={name:"Nombre del producto",number:"Número",collection:"Colección",price:"Precio",category:"Categoría",web:"snackgame.es",hashtag:"#Hashtag",tagline:"Frase del producto",desc:"Descripción breve"};
 FabricObject.customProperties=PROPS;
 const PAD=48,MAX_HIST=50;
@@ -15,8 +23,9 @@ export class Editor{
     this.snapCfg=loadSnap();this.initSelectionFx();
     this.bgSel=false;this.product={};this.cfg={};this.palette=[];this.slides=null;this.cur=0;
     ["selection:created","selection:updated"].forEach(e=>this.canvas.on(e,()=>{this.bgSel=false}));
-    ["object:added","object:removed","object:modified","selection:created","selection:updated","selection:cleared","text:changed"].forEach(e=>this.canvas.on(e,()=>this.emit("change")));
-    ["object:added","object:removed","object:modified"].forEach(e=>this.canvas.on(e,()=>this.snap()));
+    ["object:added","object:removed","object:modified","selection:created","selection:updated","selection:cleared","text:changed"].forEach(e=>this.canvas.on(e,ev=>{if(this._derived||(ev&&ev.target&&DERIVED.includes(ev.target.role)))return;this.emit("change")}));
+    ["object:added","object:removed","object:modified"].forEach(e=>this.canvas.on(e,ev=>{if(this._derived||(ev&&ev.target&&DERIVED.includes(ev.target.role)))return;this.snap()}));
+    ["object:moving","object:scaling","object:rotating","object:modified"].forEach(e=>this.canvas.on(e,ev=>{if(ev.target&&ev.target.role==="product")this.applyFloorShadow()}));
     this.ro=new ResizeObserver(()=>this.fit());this.ro.observe(stageEl);
     this.fit();this.snap(true);
     this.canvas.on("object:moving",e=>this.snapMove(e.target,e.e));["object:scaling","object:resizing"].forEach(n=>this.canvas.on(n,e=>snapResize(this,e)));this.canvas.on("object:added",e=>this.styleControls(e.target));
@@ -41,6 +50,7 @@ export class Editor{
     if(this.slides&&!this.slides[0])this.slides[0]=this.canvas.toObject(PROPS);
     this.canvas.getObjects().forEach(o=>{if(o.locked)o.set({selectable:false,evented:false})});
     this.counter={};this.applyFields();this.canvas.getObjects().forEach(o=>{const m=/^(.*) (\d+)$/.exec(o.name||"");if(m)this.counter[m[1]]=Math.max(this.counter[m[1]]||0,+m[2])});
+    await this.rebuild();
     this.busy=false;this.hist=[];this.hi=-1;this.fit();this.snap(true);this.emit("change");this.emit("format");
   }
   shot(format,quality,outW){
@@ -56,7 +66,7 @@ export class Editor{
   async thumbBlob(w=360){return (await fetch(this.shot("jpeg",.72,w))).blob()}
   on(e,f){(this.listeners[e]??=[]).push(f)}
   emit(e,d){(this.listeners[e]||[]).forEach(f=>f(d))}
-  async setFormat(w,h){this.W=w;this.H=h;this.fit();await this.applyBg();this.snap();this.emit("change")}
+  async setFormat(w,h){this.W=w;this.H=h;this.fit();await this.applyBg();this.applyBgFx();this.applyFloorShadow();this.snap();this.emit("change")}
   fit(){
     const r=this.stage.getBoundingClientRect();
     const pb=parseFloat(getComputedStyle(this.stage).paddingBottom)||0;
@@ -99,7 +109,7 @@ export class Editor{
   }
   setProduct(patch){Object.assign(this.product,patch);this.applyFields();this.snap();this.emit("change")}
   selectBackground(){this.canvas.discardActiveObject();this.bgSel=true;this.canvas.requestRenderAll();this.emit("change")}
-  commit(){this.canvas.requestRenderAll();this.snap();this.emit("change")}
+  commit(){this.applyFloorShadow();this.canvas.requestRenderAll();this.snap();this.emit("change")}
   xy(o){const p=o.getPointByOrigin("left","top");return{x:p.x,y:p.y}}
   setXY(o,x,y){o.setPositionByOrigin(new Point(x,y),"left","top");o.setCoords()}
   align(k){
@@ -133,6 +143,59 @@ export class Editor{
     m.offsetY=-36;m.withConnection=true;m.sizeX=m.sizeY=30;
     m.render=(ctx,left,top)=>{ctx.save();ctx.translate(left,top);ctx.beginPath();ctx.arc(0,0,14,0,Math.PI*2);ctx.fillStyle="#ffffff";ctx.fill();ctx.lineWidth=2.5;ctx.strokeStyle="#ffb400";ctx.stroke();ctx.beginPath();ctx.arc(0,0,6.5,-0.4,Math.PI*1.45);ctx.lineWidth=2.4;ctx.strokeStyle="#1a1300";ctx.lineCap="round";ctx.stroke();ctx.beginPath();ctx.moveTo(5.2,-6.6);ctx.lineTo(7.8,-2.2);ctx.lineTo(2.4,-2.6);ctx.closePath();ctx.fillStyle="#1a1300";ctx.fill();ctx.restore()};
   }
+  async addOverlay(id,{seed=Math.floor(Math.random()*9000)+1}={}){
+    const d=overlayById(id);if(!d)return;const url=await genUrl(id,seed);
+    const img=await FabricImage.fromURL(url,{crossOrigin:"anonymous"});
+    const k=Math.max(this.W/img.width,this.H/img.height);
+    img.set({scaleX:k,scaleY:k,left:(this.W-img.width*k)/2,top:(this.H-img.height*k)/2,originX:"left",originY:"top",name:d.name,role:"overlay",gen:{k:id,s:seed},globalCompositeOperation:d.blend,opacity:d.opacity});
+    img.set("name",this.nextName(d.name));this.canvas.add(img);this.canvas.setActiveObject(img);img.setCoords();this.canvas.requestRenderAll();this.snap();this.emit("change");return img;
+  }
+  async addOverlayImage(url,name="Overlay"){
+    const img=await FabricImage.fromURL(url,{crossOrigin:"anonymous"});
+    const k=Math.max(this.W/img.width,this.H/img.height);
+    img.set({scaleX:k,scaleY:k,left:(this.W-img.width*k)/2,top:(this.H-img.height*k)/2,originX:"left",originY:"top",name:this.nextName(name),role:"overlay",globalCompositeOperation:"source-over",opacity:1});
+    this.canvas.add(img);this.canvas.setActiveObject(img);img.setCoords();this.canvas.requestRenderAll();this.snap();this.emit("change");return img;
+  }
+  async reseedOverlay(o){if(!o||!o.gen)return;const s=Math.floor(Math.random()*9000)+1,el=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;genUrl(o.gen.k,s).then(u=>i.src=u)});o.set("gen",{k:o.gen.k,s});o.setElement(el);o.dirty=true;this.canvas.requestRenderAll();this.commit()}
+  setBlend(o,mode){o.set("globalCompositeOperation",mode);o.dirty=true;this.canvas.requestRenderAll()}
+  async regenGen(){
+    for(const o of this.canvas.getObjects()){
+      if(!o.gen||o.type.toLowerCase()!=="image")continue;
+      const u=await genUrl(o.gen.k,o.gen.s),el=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=u});
+      o.setElement(el);o.dirty=true;
+    }
+  }
+  applyBgFx(){
+    const f=this.cfg.bgfx,c=fxActive(f)?renderBgFx(this.W,this.H,f):null;
+    let o=this.canvas.getObjects().find(x=>x.role==="bgfx");
+    this._derived=true;
+    try{
+      if(!c){if(o)this.canvas.remove(o)}
+      else if(o){o.setElement(c);o.set({width:c.width,height:c.height,left:0,top:0});o.dirty=true;o.setCoords()}
+      else{const img=new FabricImage(c,{left:0,top:0,originX:"left",originY:"top",selectable:false,evented:false,excludeFromExport:true,role:"bgfx",name:"Efectos de fondo",hoverCursor:"default"});const bg=this.bgLayer(),i=bg?this.canvas.getObjects().indexOf(bg)+1:0;this.canvas.insertAt(i,img)}
+    }finally{this._derived=false}
+    this.canvas.requestRenderAll();
+  }
+  floorOf(o){return {...FLOOR_DEFAULT,...((o&&o.rule&&o.rule.floor)||{})}}
+  applyFloorShadow(){
+    const p=this.productLayer();let sh=this.canvas.getObjects().find(x=>x.role==="floorshadow");
+    const rf=p&&p.rule&&p.rule.floor,el=p&&p.getElement&&p.getElement();
+    this._derived=true;
+    try{
+      if(!p||!rf||rf.on===false||!el||p.visible===false){if(sh)this.canvas.remove(sh);return}
+      const q=p.getCoords(),xs=q.map(a=>a.x),ys=q.map(a=>a.y),x=Math.min(...xs),y=Math.min(...ys);
+      const r=renderFloorShadow(el,{x,y,w:Math.max(...xs)-x,h:Math.max(...ys)-y},this.floorOf(p));
+      if(!r){if(sh)this.canvas.remove(sh);return}
+      if(sh){sh.setElement(r.canvas);sh.set({width:r.canvas.width,height:r.canvas.height,left:r.left,top:r.top});sh.dirty=true;sh.setCoords()}
+      else{sh=new FabricImage(r.canvas,{left:r.left,top:r.top,originX:"left",originY:"top",selectable:false,evented:false,excludeFromExport:true,role:"floorshadow",name:"Sombra de suelo",hoverCursor:"default"})}
+      if(!sh.canvas)this.canvas.insertAt(Math.max(0,this.canvas.getObjects().indexOf(p)),sh);
+      else{const i=this.canvas.getObjects().indexOf(p),j=this.canvas.getObjects().indexOf(sh);if(j!==i-1&&i>0)this.canvas.moveObjectTo(sh,j<i?i-1:i)}
+    }finally{this._derived=false}
+    this.canvas.requestRenderAll();
+  }
+  setFloor(patch,{commit=true}={}){const p=this.productLayer();if(!p)return;p.set("rule",{...this.ruleOf(p),floor:{...FLOOR_DEFAULT,...(p.rule&&p.rule.floor||{}),...patch}});this.applyFloorShadow();if(commit)this.commit()}
+  autoFloor(){const p=this.productLayer();if(!p)return;const w=p.getScaledWidth();this.setFloor({...FLOOR_DEFAULT,on:true,blur:Math.round(w*.045),opacity:60,dy:0,dx:0,z:0,size:100,persp:35,intensity:70,soft:50,spread:0,angle:90,color:"#000000"})}
+  async rebuild(){await this.regenGen();this.applyBgFx();this.applyFloorShadow()}
   setSnap(p){this.snapCfg={...this.snapCfg,...p};this.emit("snap")}
   addShape(kind){
     const W=this.W,u=Math.round(W*.3),C="#ffb400",poly=(pts,n)=>new Polygon(pts.map(([x,y])=>({x:x*u,y:y*u})),{fill:C,strokeLineJoin:"round"});
@@ -170,7 +233,7 @@ export class Editor{
     const was=this.busy;this.busy=true;
     if(old)this.canvas.remove(old);
     this.canvas.add(img);this.canvas.sendObjectToBack(img);img.setCoords();this.busy=was;
-    this.canvas.requestRenderAll();this.applyColorRules();
+    this.canvas.requestRenderAll();this.applyColorRules();this.applyBgFx();
     if(snap)this.commit();else this.emit("change");
   }
   productLayer(){return this.canvas.getObjects().find(o=>o.role==="product")||null}
@@ -180,7 +243,7 @@ export class Editor{
     const k=Math.min(r.maxW*this.W/o.width,r.maxH*this.H/o.height);
     o.set({scaleX:k,scaleY:k,angle:r.angle||0,shadow:r.shadow?new Shadow({color:"rgba(0,0,0,0.45)",blur:40,offsetX:0,offsetY:24}):null});
     o.setPositionByOrigin(new Point(r.cx*this.W,r.cy*this.H),"center","center");o.setCoords();
-    this.canvas.requestRenderAll();
+    this.applyFloorShadow();this.canvas.requestRenderAll();
   }
   captureProductRule(o=this.productLayer()){
     if(!o)return;const c=o.getCenterPoint(),w=o.getScaledWidth(),h=o.getScaledHeight();
@@ -249,7 +312,7 @@ export class Editor{
   async gotoSlideRaw(i){
     this.cur=i;this.busy=true;this.canvas.discardActiveObject();await this.canvas.loadFromJSON(this.slides[i]);
     this.canvas.getObjects().forEach(o=>{if(o.locked)o.set({selectable:false,evented:false})});
-    this.applyFields();this.busy=false;this.hist=[];this.hi=-1;this.snap(true);this.emit("change");this.emit("slides");
+    this.applyFields();await this.rebuild();this.busy=false;this.hist=[];this.hi=-1;this.snap(true);this.emit("change");this.emit("slides");
   }
   moveSlide(d){
     const j=this.cur+d;if(!this.slides||j<0||j>=this.slides.length)return;
@@ -261,7 +324,7 @@ export class Editor{
     for(let i=0;i<this.slides.length;i++){await this.gotoSlideRaw(i);out.push({name:String(i+1),blob:await this.exportBlob(type)})}
     this.slides[this.cur]=this.canvas.toObject(PROPS);await this.gotoSlideRaw(keep);return out;
   }
-  layers(){return this.canvas.getObjects().filter(o=>o.role!=="background").reverse()}
+  layers(){return this.canvas.getObjects().filter(o=>o.role!=="background"&&!DERIVED.includes(o.role)).reverse()}
   get active(){return this.canvas.getActiveObject()||null}
   select(o){this.bgSel=false;if(o.selectable!==false){this.canvas.setActiveObject(o);this.canvas.requestRenderAll()}}
   moveTo(o,topIndex){
@@ -269,14 +332,14 @@ export class Editor{
     this.canvas.moveObjectTo(o,Math.max(this.bgLayer()?1:0,Math.min(n-1,topIndex)));
     this.canvas.requestRenderAll();this.snap();this.emit("change");
   }
-  patch(o,props){o.set(props);o.setCoords();this.canvas.requestRenderAll();this.snap();this.emit("change")}
+  patch(o,props){o.set(props);o.setCoords();if(o.role==='product')this.applyFloorShadow();this.canvas.requestRenderAll();this.snap();this.emit("change")}
   toggleVisible(o){this.patch(o,{visible:o.visible===false});if(o.visible===false)this.canvas.discardActiveObject()}
   toggleLock(o){const l=!o.locked;this.patch(o,{locked:l,selectable:!l,evented:!l});if(l)this.canvas.discardActiveObject()}
   remove(o){this.canvas.discardActiveObject();this.canvas.remove(o)}
   async duplicate(o){
-    const c=await o.clone(PROPS);
+    const c=await o.clone(PROPS);if(o.gen){c.set('gen',{...o.gen});}
     c.set({name:o.name+" copia",left:o.left+24,top:o.top+24});
-    this.canvas.add(c);this.canvas.setActiveObject(c);this.canvas.requestRenderAll();
+    this.canvas.add(c);this.canvas.setActiveObject(c);if(o.gen)await this.regenGen();this.canvas.requestRenderAll();
   }
   nudge(dx,dy){const o=this.active;if(!o)return;o.set({left:o.left+dx,top:o.top+dy});o.setCoords();this.canvas.requestRenderAll();this.snap()}
   snap(init){
@@ -297,6 +360,6 @@ export class Editor{
     this.W=d.W;this.H=d.H;this.cfg=d.cfg||{};this.palette=d.pal||[];
     await this.canvas.loadFromJSON(d.c);
     this.canvas.getObjects().forEach(o=>{if(o.locked)o.set({selectable:false,evented:false})});
-    this.fit();this.busy=false;this.emit("history");this.emit("change");this.emit("format");
+    await this.rebuild();this.fit();this.busy=false;this.emit("history");this.emit("change");this.emit("format");
   }
 }
