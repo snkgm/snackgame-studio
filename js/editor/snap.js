@@ -6,7 +6,7 @@ function targets(ed,o){
   const W=ed.W,H=ed.H,m=ed.margins();
   const tx=[[0,"e"],[m.l,"m"],[W/2,"c"],[W-m.r,"m"],[W,"e"]],ty=[[0,"e"],[m.t,"m"],[H/2,"c"],[H-m.b,"m"],[H,"e"]];
   (ed.cfg.guides||[]).forEach(g=>{if(g.x!=null)tx.push([g.x,"g"]);if(g.y!=null)ty.push([g.y,"g"])});
-  ed.canvas.getObjects().forEach(x=>{if(x===o||x.role==="background"||x.visible===false)return;const q=x.getCoords(),xs=q.map(p=>p.x),ys=q.map(p=>p.y),a=Math.min(...xs),b=Math.max(...xs),c=Math.min(...ys),d=Math.max(...ys);tx.push([a,"o"],[(a+b)/2,"o"],[b,"o"]);ty.push([c,"o"],[(c+d)/2,"o"],[d,"o"])});
+  ed.canvas.getObjects().forEach(x=>{if(x===o||x.role==="background"||x.role==="bgfx"||x.role==="floorshadow"||x.role==="overlay"||x.visible===false)return;const q=x.getCoords(),xs=q.map(p=>p.x),ys=q.map(p=>p.y),a=Math.min(...xs),b=Math.max(...xs),c=Math.min(...ys),d=Math.max(...ys);tx.push([a,"o"],[(a+b)/2,"o"],[b,"o"]);ty.push([c,"o"],[(c+d)/2,"o"],[d,"o"])});
   return {tx,ty};
 }
 const box=o=>{const q=o.getCoords(),xs=q.map(p=>p.x),ys=q.map(p=>p.y);return {L:Math.min(...xs),R:Math.max(...xs),T:Math.min(...ys),B:Math.max(...ys)}};
