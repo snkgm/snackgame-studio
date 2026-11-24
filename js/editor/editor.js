@@ -1,6 +1,7 @@
-import {Canvas,Rect,Circle,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261124j";
-import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261124j";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261124j";
+import {Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261124l";
+import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261124l";
+import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261124l";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261124l";
 const PROPS=["name","locked","role","field","pattern","rule","orig"];
 export const FIELDS={name:"Nombre del producto",number:"Número",collection:"Colección",price:"Precio",category:"Categoría",web:"snackgame.es",hashtag:"#Hashtag",tagline:"Frase del producto",desc:"Descripción breve"};
 FabricObject.customProperties=PROPS;
@@ -10,31 +11,21 @@ export class Editor{
     this.stage=stageEl;this.box=boxEl;this.W=1080;this.H=1350;this.scale=1;
     this.listeners={};this.hist=[];this.hi=-1;this.busy=false;this.counter={};
     this.canvas=new Canvas(canvasEl,{width:this.W,height:this.H,backgroundColor:"#ffffff",preserveObjectStacking:true,selection:true,renderOnAddRemove:true});
-    FabricObject.prototype.set({transparentCorners:false,cornerColor:"#ffb400",cornerStrokeColor:"#1a1300",borderColor:"#ffb400",cornerSize:14,padding:0});
+    FabricObject.prototype.set({transparentCorners:false,cornerStyle:"circle",cornerColor:"#ffffff",cornerStrokeColor:"#ff3d9a",borderColor:"#ffb400",cornerSize:18,touchCornerSize:32,borderScaleFactor:3,padding:2});
+    this.snapCfg=loadSnap();this.initSelectionFx();
     this.bgSel=false;this.product={};this.cfg={};this.palette=[];this.slides=null;this.cur=0;
     ["selection:created","selection:updated"].forEach(e=>this.canvas.on(e,()=>{this.bgSel=false}));
     ["object:added","object:removed","object:modified","selection:created","selection:updated","selection:cleared","text:changed"].forEach(e=>this.canvas.on(e,()=>this.emit("change")));
     ["object:added","object:removed","object:modified"].forEach(e=>this.canvas.on(e,()=>this.snap()));
     this.ro=new ResizeObserver(()=>this.fit());this.ro.observe(stageEl);
     this.fit();this.snap(true);
-    this.canvas.on("object:moving",e=>this.snapMove(e.target));
+    this.canvas.on("object:moving",e=>this.snapMove(e.target,e.e));["object:scaling","object:resizing"].forEach(n=>this.canvas.on(n,e=>snapResize(this,e)));this.canvas.on("object:added",e=>this.styleControls(e.target));
     this.canvas.on("mouse:up",()=>this.setGuides([]));
   }
   margins(){const f=this.fmt&&this.fmt.safe||{};const c=this.cfg.safe||{};return {t:c.t??f.t??0,b:c.b??f.b??0,l:c.l??f.l??48,r:c.r??f.r??48}}
   setGuides(g){const a=JSON.stringify(g);if(a===this._g)return;this._g=a;this.emit("guides",g)}
-  snapMove(o){
-    if(!o||o.role==="background"||o.locked)return;
-    const W=this.W,H=this.H,m=this.margins(),thr=8/Math.max(.05,this.scale),w=o.getScaledWidth(),h=o.getScaledHeight(),rot=(o.angle||0)%90!==0;
-    const others=this.canvas.getObjects().filter(x=>x!==o&&x.role!=="background"&&x.visible!==false);
-    const tx=[[m.l,"m"],[W/2,"c"],[W-m.r,"m"]],ty=[[m.t,"m"],[H/2,"c"],[H-m.b,"m"]];
-    others.forEach(x=>{const c=x.getCenterPoint(),ww=x.getScaledWidth(),hh=x.getScaledHeight();tx.push([c.x-ww/2,"o"],[c.x,"o"],[c.x+ww/2,"o"]);ty.push([c.y-hh/2,"o"],[c.y,"o"],[c.y+hh/2,"o"])});
-    const c=o.getCenterPoint(),ex=rot?[c.x]:[c.x-w/2,c.x,c.x+w/2],ey=rot?[c.y]:[c.y-h/2,c.y,c.y+h/2];
-    const best=(es,ts)=>{let b=null;es.forEach(e=>ts.forEach(([t])=>{const d=t-e;if(Math.abs(d)<=thr&&(!b||Math.abs(d)<Math.abs(b.d)))b={d,t}}));return b};
-    const bx=best(ex,tx),by=best(ey,ty),g=[];
-    if(bx){o.set("left",o.left+bx.d);g.push({x:bx.t})}if(by){o.set("top",o.top+by.d);g.push({y:by.t})}
-    if(bx||by)o.setCoords();this.setGuides(g);
-  }
-  destroy(){this.ro.disconnect();this.listeners={};this.canvas.dispose()}
+  snapMove(o,ev){snapMove(this,o,ev)}
+  destroy(){clearInterval(this._fx);this.ro.disconnect();this.listeners={};this.canvas.dispose()}
   toData(){
     const o={W:this.W,H:this.H,v:3,cfg:this.cfg,palette:this.palette};
     if(this.slides){this.slides[this.cur]=this.canvas.toObject(PROPS);o.slides=this.slides.slice()}else o.c=this.canvas.toObject(PROPS);
@@ -85,7 +76,7 @@ export class Editor{
     this.canvas.setActiveObject(o);this.canvas.requestRenderAll();return o;
   }
   addText(opt={}){
-    const t=new Textbox(opt.text||"Texto",{width:Math.round(this.W*.8),fontFamily:"Montserrat",fontWeight:700,fontSize:72,fill:"#ffffff",textAlign:"center",lineHeight:1.1,charSpacing:0,field:opt.field||null,pattern:"{valor}",...(opt.props||{})});
+    const t=new Textbox(opt.text||"Texto",{width:Math.round(this.W*.8),fontFamily:"Montserrat",fontWeight:700,fontSize:72,fill:"#ffffff",textAlign:"center",lineHeight:1,charSpacing:0,field:opt.field||null,pattern:"{valor}",...(opt.props||{})});
     const o=this.place(t,opt.name||"Texto",opt.role||"text");
     if(opt.top!=null)o.set({top:opt.top});
     if(opt.field)this.applyFields();
@@ -127,6 +118,39 @@ export class Editor{
     if(v.sat)f.push(new FX.Saturation({saturation:v.sat/100}));
     if(v.blur)f.push(new FX.Blur({blur:v.blur/100}));
     o.set("filters",f);o.applyFilters();this.canvas.requestRenderAll();
+  }
+  initSelectionFx(){
+    if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+    let t=0;const c1=[255,180,0],c2=[255,61,154];
+    this._fx=setInterval(()=>{const o=this.canvas.getActiveObject();if(!o||document.hidden)return;t=(t+1)%36;const k=(Math.sin(t/36*Math.PI*2)+1)/2;
+      o.set("borderColor",`rgb(${c1.map((v,i)=>Math.round(v+(c2[i]-v)*k)).join(",")})`);this.canvas.requestRenderAll()},90);
+  }
+  styleControls(o){
+    if(o&&o.set&&!o.__sgs){o.__sgs=1;o.set({transparentCorners:false,cornerStyle:"circle",cornerColor:"#ffffff",cornerStrokeColor:"#ff3d9a",borderColor:"#ffb400",cornerSize:18,touchCornerSize:32,borderScaleFactor:3,padding:2})}
+    const m=o&&o.controls&&o.controls.mtr;if(!m||m.__sg)return;m.__sg=1;
+    const svg=encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="white" stroke="#1a1300" stroke-width="1.5"/><path d="M17 12a5 5 0 1 1-1.6-3.7M17 6v3h-3" fill="none" stroke="#1a1300" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    m.cursorStyleHandler=()=>`url("data:image/svg+xml,${svg}") 14 14, grab`;
+    m.offsetY=-36;m.withConnection=true;m.sizeX=m.sizeY=30;
+    m.render=(ctx,left,top)=>{ctx.save();ctx.translate(left,top);ctx.beginPath();ctx.arc(0,0,14,0,Math.PI*2);ctx.fillStyle="#ffffff";ctx.fill();ctx.lineWidth=2.5;ctx.strokeStyle="#ffb400";ctx.stroke();ctx.beginPath();ctx.arc(0,0,6.5,-0.4,Math.PI*1.45);ctx.lineWidth=2.4;ctx.strokeStyle="#1a1300";ctx.lineCap="round";ctx.stroke();ctx.beginPath();ctx.moveTo(5.2,-6.6);ctx.lineTo(7.8,-2.2);ctx.lineTo(2.4,-2.6);ctx.closePath();ctx.fillStyle="#1a1300";ctx.fill();ctx.restore()};
+  }
+  setSnap(p){this.snapCfg={...this.snapCfg,...p};this.emit("snap")}
+  addShape(kind){
+    const W=this.W,u=Math.round(W*.3),C="#ffb400",poly=(pts,n)=>new Polygon(pts.map(([x,y])=>({x:x*u,y:y*u})),{fill:C,strokeLineJoin:"round"});
+    const star=[];for(let i=0;i<10;i++){const r=i%2?.2:.5,a=-Math.PI/2+i*Math.PI/5;star.push([.5+r*Math.cos(a),.5+r*Math.sin(a)])}
+    const hex=[];for(let i=0;i<6;i++){const a=Math.PI/6+i*Math.PI/3;hex.push([.5+.5*Math.cos(a),.5+.5*Math.sin(a)])}
+    const M={
+      rect:["Rectángulo",()=>new Rect({width:Math.round(W*.4),height:Math.round(W*.26),fill:C})],
+      rrect:["Rect. redondeado",()=>new Rect({width:Math.round(W*.4),height:Math.round(W*.26),fill:C,rx:48,ry:48})],
+      square:["Cuadrado",()=>new Rect({width:u,height:u,fill:C})],
+      circle:["Círculo",()=>new Circle({radius:Math.round(u/2),fill:C})],
+      ellipse:["Elipse",()=>new Ellipse({rx:Math.round(u*.7),ry:Math.round(u*.42),fill:C})],
+      triangle:["Triángulo",()=>new Triangle({width:u,height:Math.round(u*.9),fill:C})],
+      rhombus:["Rombo",()=>poly([[.5,0],[1,.5],[.5,1],[0,.5]])],
+      star:["Estrella",()=>poly(star)],
+      hexagon:["Hexágono",()=>poly(hex)],
+      line:["Línea",()=>new Line([0,0,Math.round(W*.5),0],{stroke:C,strokeWidth:10,strokeLineCap:"round",fill:null})]
+    };
+    const m=M[kind];if(!m)return;const o=this.place(m[1](),m[0],"shape");this.snap();this.emit("change");return o;
   }
   addRect(){this.place(new Rect({width:Math.round(this.W*.4),height:Math.round(this.W*.4),fill:"#ffb400",rx:0,ry:0}),"Rectángulo");this.snap()}
   addCircle(){this.place(new Circle({radius:Math.round(this.W*.2),fill:"#4da3ff"}),"Círculo");this.snap()}

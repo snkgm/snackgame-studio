@@ -1,15 +1,17 @@
-import {I} from "../app/icons.js?v=20261124j";
-import {esc} from "../app/ui.js?v=20261124j";
-import {FONTS,loadFont} from "../app/fonts.js?v=20261124j";
-import {FORMATS} from "../app/formats.js?v=20261124j";
-import {safeOf} from "../studio/skeleton.js?v=20261124j";
-import {mountBgPanel} from "./bgpanel.js?v=20261124j";
-import {applyProductImage,openProductPicker} from "./product.js?v=20261124j";
-import {toast} from "../app/ui.js?v=20261124j";
-import {mattingDefaults} from "../img/matting.js?v=20261124j";
-import {store} from "../app/store.js?v=20261124j";
-import {FIELDS} from "./editor.js?v=20261124j";
-import {Shadow} from "../../vendor/fabric.min.mjs?v=20261124j";
+import {I} from "../app/icons.js?v=20261124l";
+import {esc} from "../app/ui.js?v=20261124l";
+import {FONTS,loadFont} from "../app/fonts.js?v=20261124l";
+import {FORMATS} from "../app/formats.js?v=20261124l";
+import {safeOf} from "../studio/skeleton.js?v=20261124l";
+import {mountBgPanel} from "./bgpanel.js?v=20261124l";
+import {applyProductImage,openProductPicker} from "./product.js?v=20261124l";
+import {toast} from "../app/ui.js?v=20261124l";
+import {mattingDefaults} from "../img/matting.js?v=20261124l";
+import {store} from "../app/store.js?v=20261124l";
+import {FIELDS} from "./editor.js?v=20261124l";
+import {enhance} from "./accordion.js?v=20261124l";
+import {saveSnap} from "./snap.js?v=20261124l";
+import {Shadow} from "../../vendor/fabric.min.mjs?v=20261124l";
 const num=(k,l,extra="")=>`<div class="field"><label for="i-${k}">${l}</label><input class="input" type="number" id="i-${k}" data-k="${k}" ${extra}></div>`;
 const rng=(k,l,min,max,step=1)=>`<div class="field"><label for="i-${k}">${l}</label><input type="range" id="i-${k}" data-k="${k}" min="${min}" max="${max}" step="${step}"></div>`;
 const rnum=(k,l,pct)=>`<div class="field"><label for="r-${k}">${l}</label><input class="input" type="number" id="r-${k}" data-r="${k}"${pct?" data-pct":""} step="${pct?1:"any"}"></div>`;
@@ -32,14 +34,14 @@ function textHtml(o){
 <div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`)+
   sec("Reglas de plantilla",`<label class="chk"><input type="checkbox" data-r="fit"> Ajustar tamaño a la caja</label><div class="row">${rnum("max","Tamaño máx.")}${rnum("maxH","Alto máx.")}</div>${COLRULE}`)+
   sec("Dato dinámico",`<div class="field"><label for="i-field">Vincular a</label><select class="select" id="i-field" data-k="field"><option value="">Texto fijo</option>${Object.entries(FIELDS).map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select></div>
-<div class="field" id="pat"><label for="i-pattern">Formato</label><input class="input" id="i-pattern" data-k="pattern" placeholder="{valor}"><span class="hint">Usa {valor}. Ej.: «Nº {valor}» o «{valor} €».</span></div>`);
+<div class="field" id="pv"><label for="i-pval">Valor del dato</label><input class="input" id="i-pval" data-pv><span class="hint">Cambia el dato del producto: se actualiza en todas las capas que lo usan y en las listas automáticas.</span></div><div class="field" id="pat"><label for="i-pattern">Formato</label><input class="input" id="i-pattern" data-k="pattern" placeholder="{valor}"><span class="hint">Usa {valor}. Ej.: «Nº {valor}» o «{valor} €».</span></div>`);
 }
-const shapeHtml=o=>sec("Reglas de plantilla",COLRULE)+sec("Relleno",`<div class="row">${col("fill","Relleno")}${col("stroke","Contorno")}</div><div class="row">${num("strokeWidth","Grosor","min=0 max=80")}${o.type.toLowerCase()==="rect"?num("rx","Radio","min=0 max=600"):"<span></span>"}</div>`)+
+const shapeHtml=o=>sec("Reglas de plantilla",COLRULE)+(o.type.toLowerCase()==="line"?sec("Línea",`<div class="row">${col("stroke","Color")}${num("strokeWidth","Grosor","min=1 max=200")}</div>`):sec("Relleno",`<div class="row">${col("fill","Relleno")}${col("stroke","Contorno")}</div><div class="row">${num("strokeWidth","Grosor","min=0 max=80")}${o.type.toLowerCase()==="rect"?num("rx","Radio","min=0 max=600"):"<span></span>"}</div>`))+
   sec("Sombra",`<label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label><div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`);
 const productHtml=()=>sec("Producto",`<div class="row"><button class="btn btn--sm" data-pact="remove">Quitar fondo</button><button class="btn btn--sm" data-pact="remove-ai" title="Recorte con IA, más lento (~40 s la primera vez). Útil si el fondo no es liso.">Quitar con IA</button></div><div class="field"><label for="m-tol">Umbral de fondo: <b id="m-tolv">${mattingDefaults.tol}</b></label><input type="range" id="m-tol" min="2" max="60" value="${mattingDefaults.tol}"><span class="hint">Bajo: protege cajas blancas. Alto: quita sombras y restos de fondo.</span></div><label class="chk"><input type="checkbox" id="m-holes"${mattingDefaults.holes?" checked":""}> Quitar huecos interiores (entre piernas, asas)</label><div class="row"><button class="btn btn--sm" data-pact="retol">Aplicar a esta imagen</button><button class="btn btn--sm" data-pact="tolglobal" title="Usa este umbral en todas las imágenes nuevas, también en las listas automáticas">Usar como general</button></div><button class="btn btn--sm" data-pact="orig">Restaurar original</button><button class="btn btn--sm" data-pact="change">Cambiar producto…</button>`)+sec("Colocación (regla de plantilla)",`<div class="row">${rnum("cx","Centro X %",1)}${rnum("cy","Centro Y %",1)}</div><div class="row">${rnum("maxW","Ancho máx. %",1)}${rnum("maxH","Alto máx. %",1)}</div><div class="row">${rnum("angle","Rotación inicial")}<label class="chk"><input type="checkbox" data-r="shadow"> Sombra auto</label></div><div class="row"><button class="btn btn--sm" data-pact="apply">Aplicar regla</button><button class="btn btn--sm" data-pact="capture">Usar posición actual</button></div>`);
 const imageHtml=o=>(o.role==="product"?productHtml():"")+sec("Recorte",`<div class="row">${num("cropX","Izq.","min=0")}${num("cropY","Arriba","min=0")}</div><div class="row">${num("cropW","Ancho","min=1")}${num("cropH","Alto","min=1")}</div>`)+sec("Ajustes de imagen",`${rng("fx_bright","Brillo",-100,100)}${rng("fx_contrast","Contraste",-100,100)}${rng("fx_sat","Saturación",-100,100)}${rng("fx_blur","Desenfoque",0,50)}<div class="row"><button class="btn btn--sm" data-pact="flipx">Voltear ↔</button><button class="btn btn--sm" data-pact="flipy">Voltear ↕</button></div><button class="btn btn--sm" data-pact="fxreset">Restablecer ajustes</button>`)+sec("Sombra",`<label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label><div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`);
 const transformHtml=o=>sec("Posición y tamaño",`${alignBar}<div class="row">${num("x","X")}${num("y","Y")}</div><div class="row">${num("w","Ancho","min=1")}${isText(o)?"<span></span>":num("h","Alto","min=1")}</div><div class="row">${num("angle","Rotación","min=-360 max=360")}${isText(o)?"":rng("opacity","Opacidad",0,100)}</div>`);
-export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProduct=()=>{}){
+export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProduct=()=>{},getPreset=()=>null){
   let key="";const bgp=mountBgPanel(ed);
   const sh=o=>o.shadow||null;
   const read={
@@ -85,10 +87,12 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
       const f=getFmt(),sf=safeOf(f.id,ed.cfg);
       return sec("Lienzo",`<div class="field"><label for="fmt">Formato</label><select class="select" id="fmt">${FORMATS.filter(x=>!x.slides||x.id===f.id).map(x=>`<option value="${x.id}">${x.label} · ${x.w}×${x.h}</option>`).join("")}</select></div>`)+
       sec("Zonas seguras (px)",`<div class="row"><div class="field"><label for="s-t">Arriba</label><input class="input" type="number" id="s-t" data-safe="t" min="0" value="${sf.t}"></div><div class="field"><label for="s-b">Abajo</label><input class="input" type="number" id="s-b" data-safe="b" min="0" value="${sf.b}"></div></div><div class="row"><div class="field"><label for="s-l">Izquierda</label><input class="input" type="number" id="s-l" data-safe="l" min="0" value="${sf.l}"></div><div class="field"><label for="s-r">Derecha</label><input class="input" type="number" id="s-r" data-safe="r" min="0" value="${sf.r}"></div></div><span class="hint">Se dibujan con el botón Zonas. Las plantillas nuevas las respetan.</span>`)+
+      sec("Ajuste magnético",`<label class="chk"><input type="checkbox" data-snap="on"${ed.snapCfg.on?" checked":""}> Activar al mover y redimensionar</label><div class="field"><label for="sn-tol">Tolerancia: <b id="sn-v">${ed.snapCfg.tol}</b> px</label><input type="range" id="sn-tol" data-snap="tol" min="2" max="24" value="${ed.snapCfg.tol}"></div><span class="hint">Mantén Alt al arrastrar para desactivarlo un momento.</span>`)+
+      sec("Guías personalizadas",`<div class="row"><input class="input" type="number" id="g-x" placeholder="X (px)" aria-label="Posición X de la guía vertical"><button class="btn btn--sm" data-gadd="x">Guía vertical</button></div><div class="row"><input class="input" type="number" id="g-y" placeholder="Y (px)" aria-label="Posición Y de la guía horizontal"><button class="btn btn--sm" data-gadd="y">Guía horizontal</button></div><div class="glist">${(ed.cfg.guides||[]).map((g,i)=>`<span class="gtag">${g.x!=null?"X "+g.x:"Y "+g.y}<button data-gdel="${i}" aria-label="Quitar guía">${I.x}</button></span>`).join("")||'<span class="hint">Sin guías. Se guardan con la plantilla.</span>'}</div>`)+
       sec("Plantilla",`<label class="chk"><input type="checkbox" data-cfg="removeBg"${!ed.cfg.product||ed.cfg.product.removeBg!==false?" checked":""}> Quitar el fondo del producto automáticamente</label><span class="hint">Selecciona una capa para editarla, o «Fondo» en la lista de capas.</span>`);
     }
     const t=isText(o),img=o.type.toLowerCase()==="image";
-    return `<div class="insp__role">${esc(ROLE[o.role]||"Elemento")}<b>${esc(o.name||"")}</b></div>${t?textHtml(o):img?imageHtml(o):shapeHtml(o)}${transformHtml(o)}`;
+    return `<div class="insp__role">${esc(ROLE[o.role]||"Elemento")}<b>${esc(o.name||"")}</b></div>${t?textHtml(o):img?imageHtml(o)+(o.role==="product"&&getPreset()?sec("Preset del producto",`<button class="btn btn--sm" data-pact="preset" title="Guarda textos y fondo de este producto para reutilizarlos">Guardar como preset del producto</button>`):""):shapeHtml(o)}${transformHtml(o)}`;
   }
   function sync(){
     const o=ed.active;
@@ -104,16 +108,18 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
     });
     root.querySelectorAll("[data-r]").forEach(el=>{if(el===document.activeElement)return;const r=o.role==="product"?ed.ruleOf(o):(o.rule||{});let v=r[el.dataset.r];if(el.dataset.pct)v=Math.round((v??0)*100);if(el.type==="checkbox")el.checked=!!v;else el.value=v??""});
     root.querySelectorAll(".sh").forEach(r=>r.hidden=!read.shadowOn(o));
-    const pat=root.querySelector("#pat");if(pat)pat.hidden=!o.field;
+    const pat=root.querySelector("#pat");if(pat)pat.hidden=!o.field;const pv=root.querySelector("#pv");if(pv){pv.hidden=!o.field;const pi=pv.querySelector("input");if(pi&&pi!==document.activeElement)pi.value=ed.product[o.field]??""}
   }
   function render(){
     const o=ed.active;
-    const k=(o?(o.__uid??=Math.random().toString(36).slice(2))+o.type+o.fontFamily:"")+"|"+(ed.bgSel?"bg":"")+(o?"":ed.W+"x"+ed.H+getFmt().id)+(ed.bgSel?(ed.cfg.bg&&ed.cfg.bg.mode)+(ed.cfg.bg&&ed.cfg.bg.n):"");
-    if(k!==key){key=k;root.innerHTML=html();}
+    const k=(o?(o.__uid??=Math.random().toString(36).slice(2))+o.type+o.fontFamily:"")+"|"+(ed.bgSel?"bg":"")+(o?"":ed.W+"x"+ed.H+getFmt().id)+(ed.bgSel?(ed.cfg.bg&&ed.cfg.bg.mode)+(ed.cfg.bg&&ed.cfg.bg.n):"")+(o?"":JSON.stringify(ed.cfg.guides||[]));
+    if(k!==key){key=k;root.innerHTML=html();enhance(root)}
     sync();
   }
   root.addEventListener("input",e=>{
     const el=e.target;
+    if(el.dataset.pv!==undefined&&ed.active&&ed.active.field){ed.setProduct({[ed.active.field]:el.value});return}
+    if(el.dataset.snap){const v=el.type==="checkbox"?el.checked:+el.value;ed.setSnap({[el.dataset.snap]:v});saveSnap(ed.snapCfg);const sv=root.querySelector("#sn-v");if(sv)sv.textContent=ed.snapCfg.tol;return}
     if(el.id==="m-tol"){root.querySelector("#m-tolv").textContent=el.value;return}
     if(el.dataset.safe){ed.cfg.safe={...safeOf(getFmt().id,ed.cfg),[el.dataset.safe]:Math.max(0,+el.value||0)};ed.emit("safe");return}
     if(el.dataset.cfg){(ed.cfg.product??={})[el.dataset.cfg]=el.checked;ed.commit();return}
@@ -156,9 +162,14 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
         else if(pa==="change")openProductPicker(ed,afterProduct);
         else if(pa==="apply"){ed.placeProduct(o);ed.commit()}
         else if(pa==="capture"){ed.captureProductRule(o)}
+        else if(pa==="preset"){const f=getPreset();if(f)await f()}
       }catch(err){toast(err.message,{kind:"err"})}
       return;
     }
+    const ga=e.target.closest("[data-gadd]");
+    if(ga){const ax=ga.dataset.gadd,v=root.querySelector("#g-"+ax).value;if(v==="")return;ed.cfg.guides=[...(ed.cfg.guides||[]),{[ax]:Math.round(+v)}];ed.emit("cguides");ed.commit();key="";render();return}
+    const gd=e.target.closest("[data-gdel]");
+    if(gd){ed.cfg.guides=(ed.cfg.guides||[]).filter((_,i)=>i!==+gd.dataset.gdel);ed.emit("cguides");ed.commit();key="";render();return}
     const a=e.target.closest("[data-align]");if(a){ed.align(a.dataset.align);return}
     const b=e.target.closest(".seg[data-k] button");if(b&&ed.active){apply(b.parentElement.dataset.k,b.dataset.v,ed.active);ed.commit();sync()}
   });

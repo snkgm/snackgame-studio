@@ -1,17 +1,17 @@
-import {Editor} from "./editor.js?v=20261124j";
-import {LayersPanel} from "./layers.js?v=20261124j";
-import {mountInspector} from "./inspector.js?v=20261124j";
-import {logoUrl,uploadLogo} from "../app/brand.js?v=20261124j";
-import {loadAllFonts} from "../app/fonts.js?v=20261124j";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261124j";
-import {safeOf} from "../studio/skeleton.js?v=20261124j";
-import {openProductPicker} from "./product.js?v=20261124j";
-import {zipBlobs} from "../app/zip.js?v=20261124j";
-import {I} from "../app/icons.js?v=20261124j";
-import {db} from "../app/db.js?v=20261124j";
-import {store} from "../app/store.js?v=20261124j";
-import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261124j";
-import {toInput,fromInput} from "../app/dates.js?v=20261124j";
+import {Editor} from "./editor.js?v=20261124l";
+import {LayersPanel} from "./layers.js?v=20261124l";
+import {mountInspector} from "./inspector.js?v=20261124l";
+import {loadAllFonts} from "../app/fonts.js?v=20261124l";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261124l";
+import {safeOf} from "../studio/skeleton.js?v=20261124l";
+import {openProductPicker} from "./product.js?v=20261124l";
+import {openImageTool,openShapes,closePop} from "./tools.js?v=20261124l";
+import {zipBlobs} from "../app/zip.js?v=20261124l";
+import {I} from "../app/icons.js?v=20261124l";
+import {db} from "../app/db.js?v=20261124l";
+import {store} from "../app/store.js?v=20261124l";
+import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261124l";
+import {toInput,fromInput} from "../app/dates.js?v=20261124l";
 export async function mountEditor(root,id,{template=false}={}){
   const table=template?"templates":"posts";
   root.innerHTML='<div class="empty">Cargando…</div>';
@@ -39,24 +39,13 @@ export async function mountEditor(root,id,{template=false}={}){
 </header>
 <aside class="tools">
  <button class="tool" id="t-text" title="Añadir texto">${I.type}<span>Texto</span></button>
- <button class="tool" id="t-web" title="Dirección web como capa">${I.globe}<span>Web</span></button>
- <button class="tool" id="t-logo" title="Logotipo como capa">${I.image}<span>Logo</span></button>
- <button class="tool" id="t-prod" title="Elegir o cambiar producto">${I.image}<span>Producto</span></button>
- <button class="tool" id="t-rect" title="Rectángulo">${I.square}<span>Rect.</span></button>
- <button class="tool" id="t-circle" title="Círculo">${I.circle}<span>Círculo</span></button>
+ <button class="tool" id="t-img" title="Subir imagen, elegir de la biblioteca o añadir un producto">${I.image}<span>Imagen</span></button>
+ <button class="tool" id="t-shapes" data-pop title="Formas">${I.square}<span>Formas</span></button>
  <button class="tool" id="t-safe" title="Mostrar zonas seguras">${I.square}<span>Zonas</span></button>
 </aside>
-<main class="stage" id="stage"><div class="stage__box" id="box"><canvas id="cv"></canvas><div class="safe" id="safe" hidden></div><div class="guides" id="guides"></div></div><div class="slides" id="slides" hidden></div></main>
+<main class="stage" id="stage"><div class="stage__box" id="box"><canvas id="cv"></canvas><div class="safe" id="safe" hidden></div><div class="guides" id="guides"></div><div class="guides" id="cg"></div></div><div class="slides" id="slides" hidden></div></main>
 <aside class="panel">
  <div class="panel__scroll" id="insp"></div>
- <section class="sec"><div class="sec__head"><span class="label">Datos del producto</span></div>
-  <div class="field"><input class="input" data-p="name" placeholder="Nombre del producto" aria-label="Nombre del producto"></div>
-  <div class="row"><input class="input" data-p="number" placeholder="Número" aria-label="Número"><input class="input" data-p="price" placeholder="Precio" aria-label="Precio"></div>
-  <div class="row"><input class="input" data-p="collection" placeholder="Colección" aria-label="Colección"><input class="input" data-p="category" placeholder="Categoría" aria-label="Categoría"></div>
-  <div class="row"><input class="input" data-p="hashtag" placeholder="#Hashtag" aria-label="Hashtag"><input class="input" data-p="web" placeholder="Web" aria-label="Web"></div>
-  <input class="input" data-p="tagline" placeholder="Frase del producto" aria-label="Frase del producto">
-  <textarea class="input input--area" data-p="desc" rows="2" placeholder="Descripción breve" aria-label="Descripción"></textarea>
-  ${template?"":`<button class="btn btn--sm" id="p-save" title="Guarda textos y fondo de este producto para reutilizarlos">${I.save}Guardar como preset del producto</button>`}</section>
  <section class="sec sec--layers"><div class="sec__head"><span class="label">Capas</span></div><div class="layers" id="layers"></div></section>
 </aside></div>`;
   const $=s=>root.querySelector(s);
@@ -70,23 +59,13 @@ export async function mountEditor(root,id,{template=false}={}){
   if(!document.body.contains(root)){ed.destroy();return()=>{}}
   const layers=new LayersPanel($("#layers"),ed);
   const setFmt=async id=>{const f=fmtById(id);post.format=f.id;await ed.setFormat(f.w,f.h);insp.reset()};
-  const syncP=()=>root.querySelectorAll("[data-p]").forEach(i=>{if(i!==document.activeElement)i.value=ed.product[i.dataset.p]||""});
-  const insp=mountInspector($("#insp"),ed,setFmt,fmtOf,syncP);
+  const syncP=()=>insp&&insp.reset();
+  let savePreset=null;const insp=mountInspector($("#insp"),ed,setFmt,fmtOf,syncP,()=>savePreset);
   if(!template)ed.product=post.product||{};ed.applyFields();
-  root.querySelectorAll("[data-p]").forEach(i=>{i.value=ed.product[i.dataset.p]||"";i.oninput=()=>{ed.setProduct({[i.dataset.p]:i.value})}});
-  $("#t-prod").onclick=()=>openProductPicker(ed,syncP);
+  $("#t-img").onclick=()=>openImageTool(ed,syncP);
+  $("#t-shapes").onclick=e=>openShapes(e.currentTarget,ed);
   const addText=()=>ed.addText({text:"Título",name:"Título",top:Math.round(ed.H*.06),props:{fontSize:84}});
   $("#t-text").onclick=addText;
-  $("#t-web").onclick=()=>ed.addText({text:"snackgame.es",name:"Dirección web",role:"web",field:"web",top:Math.round(ed.H*.93),props:{fontSize:36,fontWeight:600}});
-  $("#t-logo").onclick=async()=>{
-    try{
-      let u=await logoUrl();
-      if(!u){const f=await pickFile();if(!f)return;toast("Subiendo logotipo…");u=await uploadLogo(f)}
-      await ed.addImage(u,{role:"logo",name:"Logotipo",maxFrac:.22});
-    }catch(e){toast("No se pudo añadir el logotipo: "+e.message,{kind:"err"})}
-  };
-  const pickFile=()=>new Promise(r=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=()=>r(i.files[0]||null);i.click()});
-  $("#t-rect").onclick=()=>ed.addRect();$("#t-circle").onclick=()=>ed.addCircle();
   $("#undo").onclick=()=>ed.undo();$("#redo").onclick=()=>ed.redo();
   const hist=()=>{$("#undo").disabled=!ed.canUndo;$("#redo").disabled=!ed.canRedo};ed.on("history",hist);hist();
   ed.on("zoom",s=>{$("#zoom").textContent=Math.round(s*100)+"%"});$("#zoom").textContent=Math.round(ed.scale*100)+"%";
@@ -127,7 +106,7 @@ export async function mountEditor(root,id,{template=false}={}){
       const iso=fromInput($("#when").value);if(!iso){toast("Elige fecha y hora",{kind:"err"});return}
       await meta({scheduled_at:iso,status:"scheduled"});$("#status").value="scheduled";toast("Programada para "+new Date(iso).toLocaleString("es-ES",{dateStyle:"medium",timeStyle:"short"}));
     };
-    $("#p-save").onclick=async()=>{try{const f={};["name","tagline","desc","number","collection","price"].forEach(k=>{if(ed.product[k])f[k]=ed.product[k]});const b=ed.cfg.bg;await store.savePreset(ed.product,{fields:f,bg:b&&b.mode==="image"?b:null,image:ed.product.image});toast("Preset guardado: se aplicará cada vez que uses este producto")}catch(e){toast(e.message,{kind:"err"})}};
+    savePreset=async()=>{try{const f={};["name","tagline","desc","number","collection","price"].forEach(k=>{if(ed.product[k])f[k]=ed.product[k]});const b=ed.cfg.bg;await store.savePreset(ed.product,{fields:f,bg:b&&b.mode==="image"?b:null,image:ed.product.image});toast("Preset guardado: se aplicará cada vez que uses este producto")}catch(e){toast(e.message,{kind:"err"})}};
     $("#totpl").onclick=()=>{
       const opt=(arr,sel)=>`<option value="">—</option>`+arr.map(x=>`<option value="${x.id}"${x.id===sel?" selected":""}>${esc(x.name)}</option>`).join("");
       modal("Guardar como plantilla",`<div class="field"><label for="p-n">Nombre</label><input class="input" id="p-n" value="${esc(post.title.replace(/ · .*$/,""))}" required></div><div class="row"><div class="field"><label for="p-t">Tipo de contenido</label><select class="select" id="p-t">${opt(store.types,post.type_id)}</select></div><div class="field"><label for="p-c">Categoría de producto</label><select class="select" id="p-c">${opt(store.cats,post.category_id)}</select></div></div><p class="hint">Formato: ${esc(fmtById(post.format).label)}. Se guardan capas, fondo y sus reglas, colocación del producto, zonas seguras, logotipo y web. Las publicaciones ya creadas no cambian.</p><label class="chk"><input type="checkbox" id="p-d" checked> Usar como predeterminada de esta combinación</label>`,{ok:"Guardar plantilla",onOk:async f=>{
@@ -170,6 +149,9 @@ export async function mountEditor(root,id,{template=false}={}){
   };
   ed.on("slides",drawSlides);drawSlides();
   ed.on("guides",g=>{$("#guides").innerHTML=g.map(a=>a.x!==undefined?`<i style="left:${(a.x/ed.W*100).toFixed(3)}%;top:0;bottom:0;width:0;border-left:1px solid #ff3d9a"></i>`:`<i style="top:${(a.y/ed.H*100).toFixed(3)}%;left:0;right:0;height:0;border-top:1px solid #ff3d9a"></i>`).join("")});
+  const drawCg=()=>{$("#cg").innerHTML=(ed.cfg.guides||[]).map(g=>g.x!=null?`<i style="left:${(g.x/ed.W*100).toFixed(3)}%;top:0;bottom:0;border-left:1px dashed #19d3ff"></i>`:`<i style="top:${(g.y/ed.H*100).toFixed(3)}%;left:0;right:0;border-top:1px dashed #19d3ff"></i>`).join("")};
+  ed.on("cguides",drawCg);ed.on("format",drawCg);drawCg();
+  $("#stage").addEventListener("mousedown",e=>{if(e.target.closest(".canvas-container,.slides,.shapes"))return;ed.canvas.discardActiveObject();ed.bgSel=false;ed.canvas.requestRenderAll();ed.emit("change");closePop()});
   const safeEl=$("#safe");let safeOn=false;
   function drawSafe(){
     safeEl.hidden=!safeOn;$("#t-safe").classList.toggle("is-on",safeOn);if(!safeOn)return;
@@ -180,6 +162,7 @@ export async function mountEditor(root,id,{template=false}={}){
   const key=e=>{
     if(/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&document.activeElement.type!=="color"&&document.activeElement.type!=="range")return;
     const m=e.ctrlKey||e.metaKey,o=ed.active,k=e.key.toLowerCase();
+    if(e.key==="Escape"&&!document.querySelector(".modal")){ed.canvas.discardActiveObject();ed.bgSel=false;ed.canvas.requestRenderAll();ed.emit("change");closePop();return}
     if(m&&k==="s"){e.preventDefault();if(dirty)$("#savebtn").click();return}
     if(m&&k==="z"){e.preventDefault();e.shiftKey?ed.redo():ed.undo();return}
     if(m&&k==="y"){e.preventDefault();ed.redo();return}

@@ -1,11 +1,11 @@
-import {db} from "../app/db.js?v=20261124j";
-import {store} from "../app/store.js?v=20261124j";
-import {lightbox} from "../app/lightbox.js?v=20261124j";
-import {I} from "../app/icons.js?v=20261124j";
-import {esc,toast,modal} from "../app/ui.js?v=20261124j";
-import {fmtById} from "../app/formats.js?v=20261124j";
-import {STAGES} from "../studio/pipeline.js?v=20261124j";
-import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261124j";
+import {db} from "../app/db.js?v=20261124l";
+import {store} from "../app/store.js?v=20261124l";
+import {lightbox} from "../app/lightbox.js?v=20261124l";
+import {I} from "../app/icons.js?v=20261124l";
+import {esc,toast,modal} from "../app/ui.js?v=20261124l";
+import {fmtById} from "../app/formats.js?v=20261124l";
+import {STAGES} from "../studio/pipeline.js?v=20261124l";
+import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261124l";
 const WORK=["downloading","removing_bg","analyzing","background","composing","saving"];
 const CST={draft:"Borrador",running:"En marcha",paused:"Pausada",cancelled:"Cancelada",done:"Completada"};
 const q=(t,s)=>db.list(t,s);
@@ -58,13 +58,17 @@ ${banner}${errs}
 <div class="prog"><div class="bar-p bar-p--lg"><i style="width:${pct}%"></i></div><span>${pct}% · ${sch.length}/${items.length} programadas</span></div>
 <p class="hint">Inicio: ${fmtMadrid(C.started_at)} · Se procesa en la nube (GitHub Actions) y sigue aunque cierres el navegador; este panel se actualiza solo.</p>
 <div class="irows">${items.map(i=>{const ps=posts.filter(p=>p.item_id===i.id),w=(i.product&&i.product.warnings)||[];
-  return `<div class="irow"><span class="irow__n">${i.pos}</span><span class="irow__t" ${ps[0]?`data-z="${i.id}"`:""}>${ps[0]&&ps[0].thumb_url?`<img src="${esc(ps[0].thumb_url)}" alt="">`:""}</span><div class="irow__m"><b>${esc(i.name)}</b><small>${esc(i.subtitle||"")}${w.length?` <i class="over">⚠ ${esc(w.join(" · "))}</i>`:""}${i.error?` <i class="over">${esc(i.error)}</i>`:""}</small></div><span class="irow__d">${fmtMadrid(i.scheduled_at)}</span><span class="stc stc--${i.status}${WORK.includes(i.status)?" is-work":""}">${STAGES[i.status]||i.status}${i.attempts>1&&i.status!=="scheduled"?` (${i.attempts})`:""}</span><span class="irow__a">${ps[0]?`<a class="btn btn--sm" href="#/editor/${ps[0].id}">Abrir en editor</a>`:""}${i.status==="error"&&C.status!=="cancelled"?`<button class="btn btn--sm" data-r="${i.id}">Reintentar</button>`:""}</span></div>`}).join("")}</div>`;
+  return `<div class="irow"><span class="irow__n">${i.pos}</span><span class="irow__t" ${ps[0]?`data-z="${i.id}"`:""}>${ps[0]&&ps[0].thumb_url?`<img src="${esc(ps[0].thumb_url)}" alt="">`:""}</span><div class="irow__m"><b>${esc(i.name)}</b><small>${esc(i.subtitle||"")}${w.length?` <i class="over">⚠ ${esc(w.join(" · "))}</i>`:""}${i.error?` <i class="over">${esc(i.error)}</i>`:""}</small></div><span class="irow__d">${fmtMadrid(i.scheduled_at)}</span><span class="stc stc--${i.status}${WORK.includes(i.status)?" is-work":""}">${STAGES[i.status]||i.status}${i.attempts>1&&i.status!=="scheduled"?` (${i.attempts})`:""}</span><span class="irow__a">${ps[0]?`<a class="btn btn--sm" href="#/editor/${ps[0].id}">Abrir en editor</a>`:""}${i.status==="error"&&C.status!=="cancelled"?`<button class="btn btn--sm" data-r="${i.id}">Reintentar</button>`:""}${WORK.includes(i.status)?"":`<button class="btn btn--sm btn--danger" data-del="${i.id}" title="Eliminar este producto de la lista">Eliminar</button>`}</span></div>`}).join("")}</div>`;
   }
   P.addEventListener("click",async e=>{
     const z=e.target.closest("[data-z]");
     if(z){const ps=posts.filter(p=>p.item_id===z.dataset.z),it=items.find(i=>i.id===z.dataset.z);lightbox(ps.flatMap(p=>(p.assets&&p.assets.finals)||[p.thumb_url]).filter(Boolean),it&&it.name);return}
     const b=e.target.closest("button");if(!b)return;
     try{
+      if(b.dataset.del){const it=items.find(x=>x.id===b.dataset.del),np=posts.filter(p=>p.item_id===b.dataset.del).length;
+        modal("Eliminar producto",`<p>Se quita «${esc(it?it.name:"")}» de la lista${np?` y se borran sus ${np} publicación${np>1?"es":""} programada${np>1?"s":""}`:""}. No se puede deshacer.</p>`,{ok:"Eliminar",onOk:async()=>{
+          if(np)await fetch(`${db.REST}posts?item_id=eq.${b.dataset.del}`,{method:"DELETE",headers:db.H});
+          await fetch(`${db.REST}campaign_items?id=eq.${b.dataset.del}`,{method:"DELETE",headers:db.H});await load();toast("Producto eliminado")}});return}
       if(b.dataset.r){await db.update("campaign_items",b.dataset.r,{status:"pending",attempts:0,error:null,locked_by:null});await setC({status:"running"});toast("Reintento en cola")}
       else if(b.dataset.a==="start"){await setC({status:"running",started_at:new Date().toISOString()});toast("Iniciada")}
       else if(b.dataset.a==="pause")await setC({status:"paused"});

@@ -1,6 +1,6 @@
-import {db,COLS,TCOLS} from "./db.js?v=20261124j";
-import {mattingDefaults} from "../img/matting.js?v=20261124j";
-import {toast} from "./ui.js?v=20261124j";
+import {db,COLS,TCOLS} from "./db.js?v=20261124l";
+import {mattingDefaults} from "../img/matting.js?v=20261124l";
+import {toast} from "./ui.js?v=20261124l";
 const L=new Set();
 const pending=new Map();
 export const store={
@@ -51,6 +51,9 @@ export const store={
     if(old){const r=await db.update("product_presets",old.id,row);Object.assign(old,r)}else this.presets.push(await db.insert("product_presets",row));
     this.emit();
   },
+  assets(kind){return this.presets.filter(x=>x.key.startsWith("asset:")&&x.fields&&x.fields.kind===kind).sort((a,b)=>(b.created_at||"").localeCompare(a.created_at||""))},
+  async addAsset(kind,name,url,extra={}){const r=await db.insert("product_presets",{key:`asset:${kind}:${Date.now().toString(36)}${Math.random().toString(36).slice(2,6)}`,name,fields:{kind,url,...extra}});this.presets.push(r);this.emit();return r},
+  async removeAsset(id){await db.remove("product_presets",id);this.presets=this.presets.filter(x=>x.id!==id);this.emit()},
   async setMatting(tol,holes){
     mattingDefaults.tol=tol;mattingDefaults.holes=holes;
     const old=this.presets.find(x=>x.key==="__global"),row={key:"__global",name:"Ajustes generales",fields:{tol,holes}};
