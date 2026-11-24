@@ -1,17 +1,17 @@
-import {I} from "../app/icons.js?v=20261124u";
-import {esc} from "../app/ui.js?v=20261124u";
-import {FONTS,loadFont} from "../app/fonts.js?v=20261124u";
-import {FORMATS} from "../app/formats.js?v=20261124u";
-import {safeOf} from "../studio/skeleton.js?v=20261124u";
-import {mountBgPanel} from "./bgpanel.js?v=20261124u";
-import {applyProductImage,openProductPicker} from "./product.js?v=20261124u";
-import {toast} from "../app/ui.js?v=20261124u";
-import {mattingDefaults} from "../img/matting.js?v=20261124u";
-import {store} from "../app/store.js?v=20261124u";
-import {FIELDS,BLENDS} from "./editor.js?v=20261124u";
-import {enhance} from "./accordion.js?v=20261124u";
-import {saveSnap} from "./snap.js?v=20261124u";
-import {Shadow} from "../../vendor/fabric.min.mjs?v=20261124u";
+import {I} from "../app/icons.js?v=20261124x";
+import {esc} from "../app/ui.js?v=20261124x";
+import {FONTS,loadFont} from "../app/fonts.js?v=20261124x";
+import {FORMATS} from "../app/formats.js?v=20261124x";
+import {safeOf} from "../studio/skeleton.js?v=20261124x";
+import {mountBgPanel} from "./bgpanel.js?v=20261124x";
+import {applyProductImage,openProductPicker} from "./product.js?v=20261124x";
+import {toast} from "../app/ui.js?v=20261124x";
+import {mattingDefaults} from "../img/matting.js?v=20261124x";
+import {store} from "../app/store.js?v=20261124x";
+import {FIELDS,BLENDS} from "./editor.js?v=20261124x";
+import {enhance} from "./accordion.js?v=20261124x";
+import {saveSnap} from "./snap.js?v=20261124x";
+import {Shadow} from "../../vendor/fabric.min.mjs?v=20261124x";
 const num=(k,l,extra="")=>`<div class="field"><label for="i-${k}">${l}</label><input class="input" type="number" id="i-${k}" data-k="${k}" ${extra}></div>`;
 const rng=(k,l,min,max,step=1)=>`<div class="field"><label for="i-${k}">${l}</label><input type="range" id="i-${k}" data-k="${k}" min="${min}" max="${max}" step="${step}"></div>`;
 const rnum=(k,l,pct)=>`<div class="field"><label for="r-${k}">${l}</label><input class="input" type="number" id="r-${k}" data-r="${k}"${pct?" data-pct":""} step="${pct?1:"any"}"></div>`;
@@ -32,7 +32,7 @@ function textHtml(o){
   sec("Contorno y sombra",`<div class="row">${col("stroke","Contorno")}${num("strokeWidth","Grosor","min=0 max=40")}</div>
 <label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label>
 <div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`,"tstroke")+
-  sec("Reglas de plantilla",`<label class="chk"><input type="checkbox" data-r="fit"> Ajustar tamaño a la caja</label><div class="row">${rnum("max","Tamaño máx.")}${rnum("maxH","Alto máx.")}</div>${COLRULE}`)+
+  sec("Reglas de plantilla",`<label class="chk"><input type="checkbox" data-r="fit"> Ajustar tamaño a la caja</label><div class="row">${rnum("min","Tamaño mín.")}${rnum("max","Tamaño máx.")}</div><div class="row">${rnum("maxH","Alto máx.")}${rnum("chars","Límite de caracteres")}</div><div class="field"><label for="r-empty">Si el producto no tiene el dato</label><select class="select" id="r-empty" data-r="empty"><option value="">Dejar vacío</option><option value="hide">Ocultar el elemento</option><option value="alt">Usar texto alternativo</option></select></div><div class="field"><label for="r-alt">Texto alternativo</label><input class="input" id="r-alt" data-r="alt"></div>${COLRULE}`)+
   sec("Dato dinámico",`<div class="field"><label for="i-field">Vincular a</label><select class="select" id="i-field" data-k="field"><option value="">Texto fijo</option>${Object.entries(FIELDS).map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select></div>
 <div class="field" id="pv"><label for="i-pval">Valor del dato</label><input class="input" id="i-pval" data-pv><span class="hint">Cambia el dato del producto: se actualiza en todas las capas que lo usan y en las listas automáticas.</span></div><div class="field" id="pat"><label for="i-pattern">Formato</label><input class="input" id="i-pattern" data-k="pattern" placeholder="{valor}"><span class="hint">Usa {valor}. Ej.: «Nº {valor}» o «{valor} €».</span></div>`);
 }
@@ -136,7 +136,7 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
       const base=o.role==="product"?ed.ruleOf(o):(o.rule||{});const r={...base,[k]:v};
       if(k==="fit"&&v){r.max=r.max||Math.round(o.fontSize);r.maxH=r.maxH||Math.round(o.height*(o.scaleY||1))}
       o.set("rule",r);
-      if(k==="color")ed.applyColorRules();if(k==="fit"||k==="max"||k==="maxH")ed.applyFields();
+      if(k==="color")ed.applyColorRules();if(["fit","max","min","maxH","chars","empty","alt"].includes(k))ed.applyFields();
       if(el.type==="checkbox"||el.tagName==="SELECT")ed.commit();return;
     }
     const o=ed.active;if(!o||!el.dataset.k)return;

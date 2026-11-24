@@ -1,9 +1,9 @@
-import {Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261124u";
-import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261124u";
-import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261124u";
-import {renderOverlay,overlayById} from "../img/overlays.js?v=20261124u";
-import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261124u";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261124u";
+import {Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261124x";
+import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261124x";
+import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261124x";
+import {renderOverlay,overlayById} from "../img/overlays.js?v=20261124x";
+import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261124x";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261124x";
 const PROPS=["name","locked","role","field","pattern","rule","orig","gen","globalCompositeOperation"];
 const PLACE="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEAAAAALAAAAAABAAEAAAIA";
 export const BLENDS=[["source-over","Normal"],["multiply","Multiplicar"],["screen","Trama"],["overlay","Superponer"],["soft-light","Luz suave"],["hard-light","Luz fuerte"],["darken","Oscurecer"],["lighten","Aclarar"],["color-dodge","Sobreexponer color"],["color-burn","Subexponer color"]];
@@ -102,7 +102,9 @@ export class Editor{
     this.canvas.getObjects().forEach(o=>{
       if(!o.field||o.type.toLowerCase()!=="textbox")return;
       const v=(p[o.field]??"").toString().trim();
-      let t=v?(o.pattern||"{valor}").replace("{valor}",v):(this.tplMode?FIELDS[o.field]||"":"");if(o.rule&&o.rule.upper)t=t.toUpperCase();o.set("text",t);
+      const R=o.rule||{};let vv=v;if(R.chars>0&&vv.length>R.chars)vv=vv.slice(0,R.chars-1).trimEnd()+"…";
+      let t=vv?(o.pattern||"{valor}").replace("{valor}",vv):(this.tplMode?FIELDS[o.field]||"":(R.empty==="alt"?R.alt||"":""));if(R.upper)t=t.toUpperCase();o.set("text",t);
+      if(!this.tplMode&&!v&&R.empty==="hide"){o.__eh=1;o.set("visible",false)}else if(o.__eh){o.__eh=0;o.set("visible",true)}
     });
     this.canvas.getObjects().forEach(o=>this.fitText(o));
     this.canvas.requestRenderAll();
@@ -233,7 +235,7 @@ export class Editor{
     const was=this.busy;this.busy=true;
     if(old)this.canvas.remove(old);
     this.canvas.add(img);this.canvas.sendObjectToBack(img);img.setCoords();this.busy=was;
-    this.canvas.requestRenderAll();this.applyColorRules();this.applyBgFx();
+    this.canvas.requestRenderAll();this.applyBgFx();this.applyColorRules();
     if(snap)this.commit();else this.emit("change");
   }
   productLayer(){return this.canvas.getObjects().find(o=>o.role==="product")||null}
@@ -271,6 +273,7 @@ export class Editor{
       const kx=bl.scaleX||1,ky=bl.scaleY||1;
       const c=document.createElement("canvas");c.width=c.height=8;const g=c.getContext("2d",{willReadFrequently:true});
       g.drawImage(el,Math.max(0,(x0-bl.left)/kx),Math.max(0,(y0-bl.top)/ky),Math.max(1,w/kx),Math.max(1,h/ky),0,0,8,8);
+      const fx=this.canvas.getObjects().find(x=>x.role==='bgfx'),fe=fx&&fx.getElement&&fx.getElement();if(fe)g.drawImage(fe,Math.max(0,x0),Math.max(0,y0),Math.max(1,w),Math.max(1,h),0,0,8,8);
       const d=g.getImageData(0,0,8,8).data;let L=0;
       for(let i=0;i<d.length;i+=4)L+=lumOf(rgbToHex(d[i],d[i+1],d[i+2]));
       return L/64;
@@ -293,7 +296,7 @@ export class Editor{
   fitText(o){
     const r=o.rule;if(!r||!r.fit||o.type.toLowerCase()!=="textbox")return;
     let sz=r.max||o.fontSize;o.set({fontSize:sz,scaleX:1,scaleY:1});o.initDimensions();
-    while(o.height>r.maxH&&sz>20){sz-=4;o.set("fontSize",sz);o.initDimensions()}
+    while(o.height>r.maxH&&sz>(r.min||20)){sz-=4;o.set("fontSize",sz);o.initDimensions()}
   }
   fitReport(){return this.canvas.getObjects().filter(o=>o.rule&&o.rule.fit&&o.type.toLowerCase()==="textbox"&&(o.text||"").length&&o.height>o.rule.maxH+1).map(o=>o.name||o.field)}
   newSlide(dup=true){

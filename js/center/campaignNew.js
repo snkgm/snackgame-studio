@@ -1,11 +1,11 @@
-import {store} from "../app/store.js?v=20261124u";
-import {db} from "../app/db.js?v=20261124u";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261124u";
-import {lightbox} from "../app/lightbox.js?v=20261124u";
-import {I} from "../app/icons.js?v=20261124u";
-import {esc,toast} from "../app/ui.js?v=20261124u";
-import {scheduleDates,fmtMadrid,parseList} from "../studio/schedule.js?v=20261124u";
-import {fetchProduct,validateGallery,usable} from "../studio/gallery.js?v=20261124u";
+import {store} from "../app/store.js?v=20261124x";
+import {db} from "../app/db.js?v=20261124x";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261124x";
+import {lightbox} from "../app/lightbox.js?v=20261124x";
+import {I} from "../app/icons.js?v=20261124x";
+import {esc,toast} from "../app/ui.js?v=20261124x";
+import {scheduleDates,fmtMadrid,parseList} from "../studio/schedule.js?v=20261124x";
+import {fetchProduct,validateGallery,usable} from "../studio/gallery.js?v=20261124x";
 const LIM={name:40,sub:60},DAYS=["L","M","X","J","V","S","D"],pad=n=>String(n).padStart(2,"0");
 const thumb=(src,w=140)=>{try{const u=new URL(src);u.searchParams.set("width",w);return u.toString()}catch{return src}};
 export function mountCampaignNew(root){
@@ -27,7 +27,7 @@ export function mountCampaignNew(root){
     const ds=dates(),nF=S.fmts.size,bad=S.rows.filter(r=>r.err||(r.gallery&&r.sel.length<S.n)).length;
     B.innerHTML=`
 <section class="blk"><h2><span>1</span>Tipo de publicación</h2>${pills(store.types,S.typeId,"ty")}</section>
-<section class="blk"><h2><span>2</span>Categoría y plantilla</h2>${pills(store.cats,S.catId,"ca")}<p class="hint">La plantilla se elige por formato en el bloque siguiente (se propone la predeterminada de esta combinación).</p></section>
+<section class="blk"><h2><span>2</span>Categoría y preset de producción</h2>${pills(store.cats,S.catId,"ca")}<p class="hint">El preset (plantilla) se elige por formato en el bloque siguiente; se propone el predeterminado de esta combinación. Todo se genera con una copia: editar una publicación no cambia el preset.</p></section>
 <section class="blk"><h2><span>3</span>Formato e imágenes</h2><div class="fmts">${FORMATS.map(fmtRow).join("")}</div><div class="field"><label>Imágenes por publicación</label><div class="seg" id="seg-n">${[1,2,3,4].map(n=>`<button type="button" data-n="${n}" class="${S.n===n?"is-on":""}">${n}</button>`).join("")}</div><p class="hint">Con 2 o más imágenes se crea un carrusel: mismo diseño en todas las diapositivas, solo cambia el producto.</p></div></section>
 <section class="blk"><h2><span>4</span>Frecuencia y horario</h2>
 <div class="seg" id="seg-m"><button type="button" data-m="weekdays" class="${S.sched.mode==="weekdays"?"is-on":""}">Días de la semana</button><button type="button" data-m="interval" class="${S.sched.mode==="interval"?"is-on":""}">Cada N días</button></div>
