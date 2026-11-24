@@ -1,6 +1,6 @@
-import {Canvas,Rect,Circle,FabricObject,Textbox,FabricImage,Point,Shadow} from "../../vendor/fabric.min.mjs?v=20261124c";
-import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261124c";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261124c";
+import {Canvas,Rect,Circle,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261124f";
+import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261124f";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261124f";
 const PROPS=["name","locked","role","field","pattern","rule","orig"];
 export const FIELDS={name:"Nombre del producto",number:"Número",collection:"Colección",price:"Precio",category:"Categoría",web:"snackgame.es",hashtag:"#Hashtag",tagline:"Frase del producto",desc:"Descripción breve"};
 FabricObject.customProperties=PROPS;
@@ -17,6 +17,22 @@ export class Editor{
     ["object:added","object:removed","object:modified"].forEach(e=>this.canvas.on(e,()=>this.snap()));
     this.ro=new ResizeObserver(()=>this.fit());this.ro.observe(stageEl);
     this.fit();this.snap(true);
+    this.canvas.on("object:moving",e=>this.snapMove(e.target));
+    this.canvas.on("mouse:up",()=>this.setGuides([]));
+  }
+  margins(){const f=this.fmt&&this.fmt.safe||{};const c=this.cfg.safe||{};return {t:c.t??f.t??0,b:c.b??f.b??0,l:c.l??f.l??48,r:c.r??f.r??48}}
+  setGuides(g){const a=JSON.stringify(g);if(a===this._g)return;this._g=a;this.emit("guides",g)}
+  snapMove(o){
+    if(!o||o.role==="background"||o.locked)return;
+    const W=this.W,H=this.H,m=this.margins(),thr=8/Math.max(.05,this.scale),w=o.getScaledWidth(),h=o.getScaledHeight(),rot=(o.angle||0)%90!==0;
+    const others=this.canvas.getObjects().filter(x=>x!==o&&x.role!=="background"&&x.visible!==false);
+    const tx=[[m.l,"m"],[W/2,"c"],[W-m.r,"m"]],ty=[[m.t,"m"],[H/2,"c"],[H-m.b,"m"]];
+    others.forEach(x=>{const c=x.getCenterPoint(),ww=x.getScaledWidth(),hh=x.getScaledHeight();tx.push([c.x-ww/2,"o"],[c.x,"o"],[c.x+ww/2,"o"]);ty.push([c.y-hh/2,"o"],[c.y,"o"],[c.y+hh/2,"o"])});
+    const c=o.getCenterPoint(),ex=rot?[c.x]:[c.x-w/2,c.x,c.x+w/2],ey=rot?[c.y]:[c.y-h/2,c.y,c.y+h/2];
+    const best=(es,ts)=>{let b=null;es.forEach(e=>ts.forEach(([t])=>{const d=t-e;if(Math.abs(d)<=thr&&(!b||Math.abs(d)<Math.abs(b.d)))b={d,t}}));return b};
+    const bx=best(ex,tx),by=best(ey,ty),g=[];
+    if(bx){o.set("left",o.left+bx.d);g.push({x:bx.t})}if(by){o.set("top",o.top+by.d);g.push({y:by.t})}
+    if(bx||by)o.setCoords();this.setGuides(g);
   }
   destroy(){this.ro.disconnect();this.listeners={};this.canvas.dispose()}
   toData(){
@@ -27,7 +43,7 @@ export class Editor{
   async loadData(d,fmt){
     this.busy=true;
     if(d&&d.W){this.W=d.W;this.H=d.H}else if(fmt){this.W=fmt.w;this.H=fmt.h}
-    this.cfg=d&&d.cfg?JSON.parse(JSON.stringify(d.cfg)):{};this.palette=(d&&d.palette)||[];
+    this.fmt=fmt||this.fmt;this.cfg=d&&d.cfg?JSON.parse(JSON.stringify(d.cfg)):{};this.palette=(d&&d.palette)||[];
     this.slides=d&&d.slides&&d.slides.length?d.slides.slice():(fmt&&fmt.slides?[null]:null);this.cur=0;
     const c0=this.slides?this.slides[0]:d&&d.c;
     if(c0)await this.canvas.loadFromJSON(c0);
@@ -96,12 +112,21 @@ export class Editor{
   xy(o){const p=o.getPointByOrigin("left","top");return{x:p.x,y:p.y}}
   setXY(o,x,y){o.setPositionByOrigin(new Point(x,y),"left","top");o.setCoords()}
   align(k){
-    const o=this.active;if(!o)return;const c=o.getCoords();
+    const o=this.active;if(!o)return;const c=o.getCoords(),m=this.margins();
     const xs=c.map(p=>p.x),ys=c.map(p=>p.y),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
     let dx=0,dy=0;
-    if(k==="left")dx=-x0;if(k==="hcenter")dx=this.W/2-(x0+x1)/2;if(k==="right")dx=this.W-x1;
-    if(k==="top")dy=-y0;if(k==="vcenter")dy=this.H/2-(y0+y1)/2;if(k==="bottom")dy=this.H-y1;
+    if(k==="left")dx=m.l-x0;if(k==="hcenter")dx=this.W/2-(x0+x1)/2;if(k==="right")dx=this.W-m.r-x1;
+    if(k==="top")dy=m.t-y0;if(k==="vcenter")dy=this.H/2-(y0+y1)/2;if(k==="bottom")dy=this.H-m.b-y1;
     o.set({left:o.left+dx,top:o.top+dy});o.setCoords();this.commit();
+  }
+  getFx(o){const f=(o.filters||[]),g=n=>f.find(x=>x.type===n);return {bright:g("Brightness")?Math.round(g("Brightness").brightness*100):0,contrast:g("Contrast")?Math.round(g("Contrast").contrast*100):0,sat:g("Saturation")?Math.round(g("Saturation").saturation*100):0,blur:g("Blur")?Math.round(g("Blur").blur*100):0}}
+  setFx(o,patch){
+    const v={...this.getFx(o),...patch},f=[];
+    if(v.bright)f.push(new FX.Brightness({brightness:v.bright/100}));
+    if(v.contrast)f.push(new FX.Contrast({contrast:v.contrast/100}));
+    if(v.sat)f.push(new FX.Saturation({saturation:v.sat/100}));
+    if(v.blur)f.push(new FX.Blur({blur:v.blur/100}));
+    o.set("filters",f);o.applyFilters();this.canvas.requestRenderAll();
   }
   addRect(){this.place(new Rect({width:Math.round(this.W*.4),height:Math.round(this.W*.4),fill:"#ffb400",rx:0,ry:0}),"Rectángulo");this.snap()}
   addCircle(){this.place(new Circle({radius:Math.round(this.W*.2),fill:"#4da3ff"}),"Círculo");this.snap()}

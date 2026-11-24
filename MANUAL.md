@@ -39,17 +39,26 @@ Resumen de la lista, barra de progreso, estado de cada producto, contador de **Q
 - **LISTA AGOTADA** (rojo): no quedan publicaciones por salir. Usa **Añadir productos**.
 - Botones: Pausar / Reanudar, Reintentar errores, Regenerar imágenes (rehace todo con el diseño actual), Cancelar (conserva lo ya creado), Abrir en editor, clic en la miniatura para vista previa.
 
+## 4b. Editor: novedades
+- **Versión** de la web en la esquina inferior derecha (comprueba que se cargó la última).
+- **Guardado manual**: botón *Guardar* (o Ctrl+S). Si sales con cambios sin guardar, aparece un aviso: *Guardar y salir* / *Salir sin guardar*.
+- **Guías y márgenes**: al mover una capa se imanta (línea rosa) a los márgenes, al centro y a los bordes/centros de otras capas. Los botones de alineación pegan la capa a los márgenes (izq., der., arriba, abajo) o la centran.
+- **Imágenes (estilo Canva)**: brillo, contraste, saturación, desenfoque, voltear ↔ ↕, sombra, opacidad, recorte, rotación y posición exacta.
+- **Recorte de fondo**: *Umbral de fondo* (bajo = protege cajas blancas; alto = quita sombras y restos) y *Quitar huecos interiores* (entre piernas). *Aplicar a esta imagen* recorta solo esa; *Usar como general* lo guarda para todas las imágenes nuevas, también en las listas automáticas.
+
 ## 5. Consejos
 - Si un recorte sale mal, abre la publicación en el editor y sustituye/ajusta la capa de producto.
 - Para cambiar el diseño de todas: edita/crea la plantilla, márcala predeterminada y usa **Regenerar imágenes**.
 - Meta/Instagram: la preparación está hecha (producto, campaña, fecha, formato, plantilla, imágenes en orden, texto). **Todavía no se publica en Instagram**; "Programada" significa programada en el calendario interno.
 
 ## 6. Seguridad
-La web está abierta a quien conozca la URL hasta que actives el inicio de sesión:
-1. Supabase → Authentication → Users → Add user (tu email y contraseña, Auto confirm).
-2. Authentication → Sign In / Providers → desactiva "Allow new users to sign up".
-3. GitHub → repo → Settings → Secrets and variables → Actions → crea `STUDIO_EMAIL` y `STUDIO_PASSWORD`.
-4. Avísame y activo el bloqueo (`AUTH_REQUIRED` y las políticas de `supabase/auth.sql`).
+- La web pide email y contraseña; tras 5 intentos fallidos se bloquea con espera creciente; tiene campo trampa anti-bots y `noindex` (no sale en buscadores). Opcional: Cloudflare Turnstile (poner la clave del sitio en `TURNSTILE_SITEKEY` y activar CAPTCHA en Supabase → Authentication → Attack Protection).
+- No hay contraseñas ni claves secretas en el código. La clave «publicable» de Supabase es pública por diseño; lo que protege los datos son las políticas de la base de datos.
+- **Pasos para activar el bloqueo de datos (una sola vez):**
+  1. Supabase → SQL Editor: pega y ejecuta el contenido de `supabase/auth.sql`.
+  2. Authentication → Sign In / Providers: desactiva «Allow new users to sign up».
+  3. GitHub → repo → Settings → Secrets and variables → Actions: crea `STUDIO_EMAIL` y `STUDIO_PASSWORD` (los mismos que tu usuario) para que el trabajador automático pueda entrar.
+  4. Authentication → Rate Limits: deja los límites de inicio de sesión por IP bajos.
 
 ## 7. Pexels (opcional, pendiente)
 Solo para fondos ambientales (nunca sustituye las fotos del producto). La clave se guardará como secreto de GitHub, nunca en el código.

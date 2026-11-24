@@ -1,8 +1,8 @@
-import {withHeadless} from "./headless.js?v=20261124c";
-import {buildSkeleton} from "./skeleton.js?v=20261124c";
-import {fmtById} from "../app/formats.js?v=20261124c";
-import {cutoutFor} from "../img/matting.js?v=20261124c";
-import {extractPalette} from "../img/color.js?v=20261124c";
+import {withHeadless} from "./headless.js?v=20261124f";
+import {buildSkeleton} from "./skeleton.js?v=20261124f";
+import {fmtById} from "../app/formats.js?v=20261124f";
+import {cutoutFor} from "../img/matting.js?v=20261124f";
+import {extractPalette} from "../img/color.js?v=20261124f";
 const loadImg=u=>new Promise((res,rej)=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>rej(new Error("No se pudo cargar la imagen del producto"));i.src=u});
 export async function composePost({tplData,fmtId,product,names,blob,onProgress,cutUrl,bgOverride}){
   const fmt=fmtById(fmtId);

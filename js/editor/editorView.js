@@ -1,17 +1,17 @@
-import {Editor} from "./editor.js?v=20261124c";
-import {LayersPanel} from "./layers.js?v=20261124c";
-import {mountInspector} from "./inspector.js?v=20261124c";
-import {logoUrl,uploadLogo} from "../app/brand.js?v=20261124c";
-import {loadAllFonts} from "../app/fonts.js?v=20261124c";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261124c";
-import {safeOf} from "../studio/skeleton.js?v=20261124c";
-import {openProductPicker} from "./product.js?v=20261124c";
-import {zipBlobs} from "../app/zip.js?v=20261124c";
-import {I} from "../app/icons.js?v=20261124c";
-import {db} from "../app/db.js?v=20261124c";
-import {store} from "../app/store.js?v=20261124c";
-import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261124c";
-import {toInput,fromInput} from "../app/dates.js?v=20261124c";
+import {Editor} from "./editor.js?v=20261124f";
+import {LayersPanel} from "./layers.js?v=20261124f";
+import {mountInspector} from "./inspector.js?v=20261124f";
+import {logoUrl,uploadLogo} from "../app/brand.js?v=20261124f";
+import {loadAllFonts} from "../app/fonts.js?v=20261124f";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261124f";
+import {safeOf} from "../studio/skeleton.js?v=20261124f";
+import {openProductPicker} from "./product.js?v=20261124f";
+import {zipBlobs} from "../app/zip.js?v=20261124f";
+import {I} from "../app/icons.js?v=20261124f";
+import {db} from "../app/db.js?v=20261124f";
+import {store} from "../app/store.js?v=20261124f";
+import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261124f";
+import {toInput,fromInput} from "../app/dates.js?v=20261124f";
 export async function mountEditor(root,id,{template=false}={}){
   const table=template?"templates":"posts";
   root.innerHTML='<div class="empty">Cargando…</div>';
@@ -30,6 +30,7 @@ export async function mountEditor(root,id,{template=false}={}){
  <button class="btn btn--icon" id="redo" title="Rehacer (Ctrl+Shift+Z)">${I["redo-2"]}</button>
  <span class="grow"></span>
  <span class="save" id="save"></span>
+ <button class="btn" id="savebtn" title="Guardar (Ctrl+S)">Guardar</button>
  <span class="top__zoom" id="zoom"></span>
  ${template?`<button class="btn" id="tdef">${I.check||""}Predeterminada</button>`:`<select class="select etop__status" id="status" aria-label="Estado">${STATUS_KEYS.map(s=>`<option value="${s}"${s===post.status?" selected":""}>${STATUS[s].label}</option>`).join("")}</select>
  <input class="input etop__date" type="datetime-local" id="when" value="${toInput(post.scheduled_at)}" aria-label="Fecha y hora">
@@ -46,7 +47,7 @@ export async function mountEditor(root,id,{template=false}={}){
  <button class="tool" id="t-circle" title="Círculo">${I.circle}<span>Círculo</span></button>
  <button class="tool" id="t-safe" title="Mostrar zonas seguras">${I.square}<span>Zonas</span></button>
 </aside>
-<main class="stage" id="stage"><div class="stage__box" id="box"><canvas id="cv"></canvas><div class="safe" id="safe" hidden></div></div><div class="slides" id="slides" hidden></div></main>
+<main class="stage" id="stage"><div class="stage__box" id="box"><canvas id="cv"></canvas><div class="safe" id="safe" hidden></div><div class="guides" id="guides"></div></div><div class="slides" id="slides" hidden></div></main>
 <aside class="panel">
  <div class="panel__scroll" id="insp"></div>
  <section class="sec"><div class="sec__head"><span class="label">Datos del producto</span></div>
@@ -96,18 +97,21 @@ export async function mountEditor(root,id,{template=false}={}){
   const upd=(patch)=>template?(store.loaded?store.patchTemplate(post.id,patch):db.update("templates",post.id,patch)):(store.loaded?store.patchPost(post.id,patch):db.update("posts",post.id,patch));
   const bodyOf=thumb=>{const data=ed.toData();return template?{data:{...data,sample:ed.product},format:post.format,thumb_url:thumb}:{data,format:post.format,thumb_url:thumb,product:ed.product}};
   async function persist(){
-    if(saving){dirty=true;return}
+    if(saving)return;
     saving=true;dirty=false;setSave("Guardando…");
     try{
       const blob=await ed.thumbBlob();
       let thumb=post.thumb_url;
       try{thumb=await db.upload(`thumbs/${template?"t-":""}${post.id}.jpg`,blob)}catch{}
       await upd(bodyOf(thumb));
-      post.thumb_url=thumb;setSave("Guardado");
-    }catch(e){setSave("Error al guardar",true);toast(e.message,{kind:"err"})}
-    saving=false;if(dirty)persist();
+      post.thumb_url=thumb;mark();setSave("Guardado");$("#savebtn")&&$("#savebtn").classList.remove("btn--accent");
+    }catch(e){dirty=true;setSave("Error al guardar",true);toast(e.message,{kind:"err"})}
+    saving=false;
   }
-  const queue=()=>{if(ed.busy)return;dirty=true;setSave("Sin guardar…");clearTimeout(timer);timer=setTimeout(persist,900)};
+  let base=null;const mark=()=>{base=JSON.stringify(ed.toData())};setTimeout(mark,1200);
+  const queue=()=>{if(ed.busy||base===null)return;dirty=JSON.stringify(ed.toData())!==base;setSave(dirty?"Cambios sin guardar":"Guardado",dirty);$("#savebtn").classList.toggle("btn--accent",dirty)};
+  const lockBtn=()=>$("#savebtn").classList.toggle("btn--accent",dirty);
+  $("#savebtn").onclick=async()=>{clearTimeout(timer);await persist();lockBtn()};
   ed.on("history",queue);
   const meta=async patch=>{
     try{await upd(patch);Object.assign(post,patch);if(patch.name)post.title=patch.name;setSave("Guardado")}
@@ -148,7 +152,7 @@ export async function mountEditor(root,id,{template=false}={}){
     }catch(e){toast("No se pudo exportar: "+e.message,{kind:"err"})}
   };
   $("#export").onclick=e=>openMenu(e.currentTarget,[{label:ed.slides?"Descargar PNG (ZIP)":"Descargar PNG",icon:"image",run:()=>download("png")},{label:ed.slides?"Descargar JPG (ZIP)":"Descargar JPG",icon:"image",run:()=>download("jpg")}]);
-  $("#back").onclick=async()=>{if(dirty||saving){clearTimeout(timer);await persist()}location.hash=template?"#/plantillas":"#/"};
+  $("#back").onclick=()=>{location.hash=template?"#/plantillas":"#/"};
   const slidesEl=$("#slides");
   function drawSlides(){
     const had=!slidesEl.hidden;
@@ -166,6 +170,7 @@ export async function mountEditor(root,id,{template=false}={}){
     drawSlides();
   };
   ed.on("slides",drawSlides);drawSlides();
+  ed.on("guides",g=>{$("#guides").innerHTML=g.map(a=>a.x!==undefined?`<i style="left:${(a.x/ed.W*100).toFixed(3)}%;top:0;bottom:0;width:0;border-left:1px solid #ff3d9a"></i>`:`<i style="top:${(a.y/ed.H*100).toFixed(3)}%;left:0;right:0;height:0;border-top:1px solid #ff3d9a"></i>`).join("")});
   const safeEl=$("#safe");let safeOn=false;
   function drawSafe(){
     safeEl.hidden=!safeOn;$("#t-safe").classList.toggle("is-on",safeOn);if(!safeOn)return;
@@ -176,6 +181,7 @@ export async function mountEditor(root,id,{template=false}={}){
   const key=e=>{
     if(/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&document.activeElement.type!=="color"&&document.activeElement.type!=="range")return;
     const m=e.ctrlKey||e.metaKey,o=ed.active,k=e.key.toLowerCase();
+    if(m&&k==="s"){e.preventDefault();$("#savebtn").click();return}
     if(m&&k==="z"){e.preventDefault();e.shiftKey?ed.redo():ed.undo();return}
     if(m&&k==="y"){e.preventDefault();ed.redo();return}
     if(m&&k==="d"&&o){e.preventDefault();ed.duplicate(o);return}
@@ -184,9 +190,16 @@ export async function mountEditor(root,id,{template=false}={}){
     if(d&&o){e.preventDefault();ed.nudge(...d)}
   };
   addEventListener("keydown",key);
+  const bu=e=>{if(dirty){e.preventDefault();e.returnValue=""}};addEventListener("beforeunload",bu);
+  window.__leaveGuard=(go)=>{
+    if(!dirty)return false;
+    modal("Hay cambios sin guardar","<p>Has modificado esta imagen y los cambios todavía no están guardados.</p>",{ok:"Guardar y salir",onOk:async()=>{await persist();if(dirty)throw new Error("No se pudo guardar");go()}}).el.querySelector(".modal__foot").insertAdjacentHTML("afterbegin",'<button type="button" class="btn btn--ghost" data-discard>Salir sin guardar</button>');
+    const el=document.querySelector(".modal");el.querySelector("[data-discard]").onclick=()=>{dirty=false;el.remove();go()};
+    return true;
+  };
   return ()=>{
+    removeEventListener("beforeunload",bu);window.__leaveGuard=null;
     removeEventListener("keydown",key);clearTimeout(timer);
-    if(dirty){const d=ed.toData();db.update(table,post.id,{data:template?{...d,sample:ed.product}:d,format:post.format}).catch(()=>{})}
     ed.destroy();delete window.studio;
   };
 }

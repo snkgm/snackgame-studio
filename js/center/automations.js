@@ -1,10 +1,10 @@
-import {db} from "../app/db.js?v=20261124c";
-import {store} from "../app/store.js?v=20261124c";
-import {lightbox} from "../app/lightbox.js?v=20261124c";
-import {esc,toast,modal} from "../app/ui.js?v=20261124c";
-import {fmtById} from "../app/formats.js?v=20261124c";
-import {STAGES} from "../studio/pipeline.js?v=20261124c";
-import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261124c";
+import {db} from "../app/db.js?v=20261124f";
+import {store} from "../app/store.js?v=20261124f";
+import {lightbox} from "../app/lightbox.js?v=20261124f";
+import {esc,toast,modal} from "../app/ui.js?v=20261124f";
+import {fmtById} from "../app/formats.js?v=20261124f";
+import {STAGES} from "../studio/pipeline.js?v=20261124f";
+import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261124f";
 const WORK=["downloading","removing_bg","analyzing","background","composing","saving"];
 const CST={draft:"Borrador",running:"En marcha",paused:"Pausada",cancelled:"Cancelada",done:"Completada"};
 const q=(t,s)=>db.list(t,s);

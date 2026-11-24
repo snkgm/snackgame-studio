@@ -91,3 +91,4 @@
 .btn--sm{height:32px;padding:0 var(--sp-2);font-size:var(--fs-12)}
 .etop .btn{white-space:nowrap}.etop__title{min-width:120px}
 .panel{overflow-y:auto}.panel__scroll{flex:none;overflow:visible}.sec--layers{flex:none;max-height:none}.sec--layers .layers{overflow:visible}
+.guides{position:absolute;inset:0;pointer-events:none}.guides i{position:absolute}

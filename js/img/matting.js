@@ -1,8 +1,8 @@
-import {db,publicUrl} from "../app/db.js?v=20261124c";
+import {db,publicUrl} from "../app/db.js?v=20261124f";
 let worker,seq=0;const waits=new Map();
 function getWorker(){
   if(worker)return worker;
-  worker=new Worker(new URL("./matting.worker.js?v=20261124c",import.meta.url),{type:"module"});
+  worker=new Worker(new URL("./matting.worker.js?v=20261124f",import.meta.url),{type:"module"});
   worker.onmessage=e=>{const w=waits.get(e.data.id);if(!w)return;if(e.data.progress){w.onp?.(e.data.progress);return}waits.delete(e.data.id);e.data.error?w.rej(new Error(e.data.error)):w.res(e.data)};
   worker.onerror=e=>{waits.forEach(w=>w.rej(new Error("El modelo no se pudo iniciar")));waits.clear();worker=null};
   return worker;
@@ -23,7 +23,8 @@ export function trimCanvas(c,pad=2){
   const x=Math.max(0,b.x-pad),y=Math.max(0,b.y-pad),w=Math.min(c.width-x,b.w+pad*2),h=Math.min(c.height-y,b.h+pad*2);
   const o=document.createElement("canvas");o.width=w;o.height=h;o.getContext("2d").drawImage(c,x,y,w,h,0,0,w,h);return o;
 }
-export function flatMask(c,tol=10){
+export const mattingDefaults={tol:10,holes:true};
+export function flatMask(c,tol=mattingDefaults.tol,holes=mattingDefaults.holes){
   const w=c.width,h=c.height,d=c.getContext("2d",{willReadFrequently:true}).getImageData(0,0,w,h).data;
   const px=(x,y)=>(y*w+x)*4,border=[];
   for(let x=0;x<w;x++){border.push(px(x,0),px(x,h-1))}for(let y=1;y<h-1;y++){border.push(px(0,y),px(w-1,y))}
@@ -44,8 +45,8 @@ export function flatMask(c,tol=10){
   while(sp){const i=st[--sp],x=i%w,y=(i/w)|0;if(x>0)push(x-1,y);if(x<w-1)push(x+1,y);if(y>0)push(x,y-1);if(y<h-1)push(x,y+1)}
   for(let k=0;k<R;k++){const add=[];for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x;if(!isbg[i]&&cand[i]&&(isbg[i-1]||isbg[i+1]||isbg[i-w]||isbg[i+w]))add.push(i)}add.forEach(i=>isbg[i]=1)}
   let fa=0;for(let i=0;i<N;i++)if(!isbg[i])fa++;
-  const seen=new Uint8Array(N),tight=i=>dist(i*4)<=4&&d[i*4+3]>200;
-  for(let i0=0;i0<N;i0++){
+  const seen=new Uint8Array(N),htol=Math.max(4,Math.min(24,Math.round(tol/2.5))),tight=i=>dist(i*4)<=htol&&d[i*4+3]>200;
+  for(let i0=0;holes&&i0<N;i0++){
     if(isbg[i0]||seen[i0]||!tight(i0))continue;
     const comp=[i0];seen[i0]=1;
     for(let k=0;k<comp.length;k++){const i=comp[k],x=i%w,y=(i/w)|0;
@@ -60,9 +61,9 @@ export function flatMask(c,tol=10){
   return m;
 }
 export const mattingInfo={method:""};
-export async function removeBackground(blob,onProgress,method="auto"){
+export async function removeBackground(blob,onProgress,method="auto",opt={}){
   const c=await toBitmapCanvas(blob);
-  let mask=method==="ai"?null:flatMask(c);mattingInfo.method=mask?"plano":"ia";
+  let mask=method==="ai"?null:flatMask(c,opt.tol??mattingDefaults.tol,opt.holes??mattingDefaults.holes);mattingInfo.method=mask?"plano":"ia";
   if(!mask){
     if(globalThis.__mockMatting){mask=await globalThis.__mockMatting(c)}
     else{
@@ -80,11 +81,12 @@ export async function removeBackground(blob,onProgress,method="auto"){
 async function sha1(s){const b=await crypto.subtle.digest("SHA-1",typeof s==="string"?new TextEncoder().encode(s):s);return [...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,"0")).join("")}
 export const hashKey=sha1;
 const exists=async u=>{try{return (await fetch(u,{method:"HEAD"})).ok}catch{return false}};
-export async function cutoutFor(srcUrl,{blob,onProgress,method="auto"}={}){
-  const key=await sha1(srcUrl);const path=`cut/${key}${method==="ai"?"-ai":""}.png`;const url=publicUrl(path);
-  if(await exists(url))return url;
+export async function cutoutFor(srcUrl,{blob,onProgress,method="auto",tol,holes,force}={}){
+  const t=tol??mattingDefaults.tol,h=holes??mattingDefaults.holes;
+  const key=await sha1(srcUrl);const path=`cut/${key}${method==="ai"?"-ai":`${t!==10?"-t"+t:""}${h?"":"-nh"}`}.png`;const url=publicUrl(path);
+  if(!force&&await exists(url))return url;
   const b=blob||await (await fetch(srcUrl,{mode:"cors"})).blob();
-  const cut=await removeBackground(b,onProgress,method);
+  const cut=await removeBackground(b,onProgress,method,{tol:t,holes:h});
   return db.upload(path,cut);
 }
 export async function uploadOriginal(file){

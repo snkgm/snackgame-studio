@@ -1,13 +1,15 @@
-import {I} from "../app/icons.js?v=20261124c";
-import {esc} from "../app/ui.js?v=20261124c";
-import {FONTS,loadFont} from "../app/fonts.js?v=20261124c";
-import {FORMATS} from "../app/formats.js?v=20261124c";
-import {safeOf} from "../studio/skeleton.js?v=20261124c";
-import {mountBgPanel} from "./bgpanel.js?v=20261124c";
-import {applyProductImage,openProductPicker} from "./product.js?v=20261124c";
-import {toast} from "../app/ui.js?v=20261124c";
-import {FIELDS} from "./editor.js?v=20261124c";
-import {Shadow} from "../../vendor/fabric.min.mjs?v=20261124c";
+import {I} from "../app/icons.js?v=20261124f";
+import {esc} from "../app/ui.js?v=20261124f";
+import {FONTS,loadFont} from "../app/fonts.js?v=20261124f";
+import {FORMATS} from "../app/formats.js?v=20261124f";
+import {safeOf} from "../studio/skeleton.js?v=20261124f";
+import {mountBgPanel} from "./bgpanel.js?v=20261124f";
+import {applyProductImage,openProductPicker} from "./product.js?v=20261124f";
+import {toast} from "../app/ui.js?v=20261124f";
+import {mattingDefaults} from "../img/matting.js?v=20261124f";
+import {store} from "../app/store.js?v=20261124f";
+import {FIELDS} from "./editor.js?v=20261124f";
+import {Shadow} from "../../vendor/fabric.min.mjs?v=20261124f";
 const num=(k,l,extra="")=>`<div class="field"><label for="i-${k}">${l}</label><input class="input" type="number" id="i-${k}" data-k="${k}" ${extra}></div>`;
 const rng=(k,l,min,max,step=1)=>`<div class="field"><label for="i-${k}">${l}</label><input type="range" id="i-${k}" data-k="${k}" min="${min}" max="${max}" step="${step}"></div>`;
 const rnum=(k,l,pct)=>`<div class="field"><label for="r-${k}">${l}</label><input class="input" type="number" id="r-${k}" data-r="${k}"${pct?" data-pct":""} step="${pct?1:"any"}"></div>`;
@@ -34,8 +36,8 @@ function textHtml(o){
 }
 const shapeHtml=o=>sec("Reglas de plantilla",COLRULE)+sec("Relleno",`<div class="row">${col("fill","Relleno")}${col("stroke","Contorno")}</div><div class="row">${num("strokeWidth","Grosor","min=0 max=80")}${o.type.toLowerCase()==="rect"?num("rx","Radio","min=0 max=600"):"<span></span>"}</div>`)+
   sec("Sombra",`<label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label><div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`);
-const productHtml=()=>sec("Producto",`<div class="row"><button class="btn btn--sm" data-pact="remove">Quitar fondo</button><button class="btn btn--sm" data-pact="remove-ai" title="Recorte con IA, más lento (~40 s la primera vez). Útil si el fondo no es liso.">Quitar con IA</button></div><button class="btn btn--sm" data-pact="orig">Restaurar original</button><button class="btn btn--sm" data-pact="change">Cambiar producto…</button>`)+sec("Colocación (regla de plantilla)",`<div class="row">${rnum("cx","Centro X %",1)}${rnum("cy","Centro Y %",1)}</div><div class="row">${rnum("maxW","Ancho máx. %",1)}${rnum("maxH","Alto máx. %",1)}</div><div class="row">${rnum("angle","Rotación inicial")}<label class="chk"><input type="checkbox" data-r="shadow"> Sombra auto</label></div><div class="row"><button class="btn btn--sm" data-pact="apply">Aplicar regla</button><button class="btn btn--sm" data-pact="capture">Usar posición actual</button></div>`);
-const imageHtml=o=>(o.role==="product"?productHtml():"")+sec("Recorte",`<div class="row">${num("cropX","Izq.","min=0")}${num("cropY","Arriba","min=0")}</div><div class="row">${num("cropW","Ancho","min=1")}${num("cropH","Alto","min=1")}</div>`)+sec("Imagen",`<label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label><div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`);
+const productHtml=()=>sec("Producto",`<div class="row"><button class="btn btn--sm" data-pact="remove">Quitar fondo</button><button class="btn btn--sm" data-pact="remove-ai" title="Recorte con IA, más lento (~40 s la primera vez). Útil si el fondo no es liso.">Quitar con IA</button></div><div class="field"><label for="m-tol">Umbral de fondo: <b id="m-tolv">${mattingDefaults.tol}</b></label><input type="range" id="m-tol" min="2" max="60" value="${mattingDefaults.tol}"><span class="hint">Bajo: protege cajas blancas. Alto: quita sombras y restos de fondo.</span></div><label class="chk"><input type="checkbox" id="m-holes"${mattingDefaults.holes?" checked":""}> Quitar huecos interiores (entre piernas, asas)</label><div class="row"><button class="btn btn--sm" data-pact="retol">Aplicar a esta imagen</button><button class="btn btn--sm" data-pact="tolglobal" title="Usa este umbral en todas las imágenes nuevas, también en las listas automáticas">Usar como general</button></div><button class="btn btn--sm" data-pact="orig">Restaurar original</button><button class="btn btn--sm" data-pact="change">Cambiar producto…</button>`)+sec("Colocación (regla de plantilla)",`<div class="row">${rnum("cx","Centro X %",1)}${rnum("cy","Centro Y %",1)}</div><div class="row">${rnum("maxW","Ancho máx. %",1)}${rnum("maxH","Alto máx. %",1)}</div><div class="row">${rnum("angle","Rotación inicial")}<label class="chk"><input type="checkbox" data-r="shadow"> Sombra auto</label></div><div class="row"><button class="btn btn--sm" data-pact="apply">Aplicar regla</button><button class="btn btn--sm" data-pact="capture">Usar posición actual</button></div>`);
+const imageHtml=o=>(o.role==="product"?productHtml():"")+sec("Recorte",`<div class="row">${num("cropX","Izq.","min=0")}${num("cropY","Arriba","min=0")}</div><div class="row">${num("cropW","Ancho","min=1")}${num("cropH","Alto","min=1")}</div>`)+sec("Ajustes de imagen",`${rng("fx_bright","Brillo",-100,100)}${rng("fx_contrast","Contraste",-100,100)}${rng("fx_sat","Saturación",-100,100)}${rng("fx_blur","Desenfoque",0,50)}<div class="row"><button class="btn btn--sm" data-pact="flipx">Voltear ↔</button><button class="btn btn--sm" data-pact="flipy">Voltear ↕</button></div><button class="btn btn--sm" data-pact="fxreset">Restablecer ajustes</button>`)+sec("Sombra",`<label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label><div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`);
 const transformHtml=o=>sec("Posición y tamaño",`${alignBar}<div class="row">${num("x","X")}${num("y","Y")}</div><div class="row">${num("w","Ancho","min=1")}${isText(o)?"<span></span>":num("h","Alto","min=1")}</div><div class="row">${num("angle","Rotación","min=-360 max=360")}${isText(o)?"":rng("opacity","Opacidad",0,100)}</div>`);
 export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProduct=()=>{}){
   let key="";const bgp=mountBgPanel(ed);
@@ -47,6 +49,7 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
     shadowOn:o=>!!sh(o),shColor:o=>sh(o)?.color?.startsWith("#")?sh(o).color:"#000000",shBlur:o=>sh(o)?.blur??30,shX:o=>sh(o)?.offsetX??0,shY:o=>sh(o)?.offsetY??10,
     field:o=>o.field||"",pattern:o=>o.pattern||"{valor}",
     cropX:o=>Math.round(o.cropX||0),cropY:o=>Math.round(o.cropY||0),cropW:o=>Math.round(o.width),cropH:o=>Math.round(o.height),
+    fx_bright:o=>ed.getFx(o).bright,fx_contrast:o=>ed.getFx(o).contrast,fx_sat:o=>ed.getFx(o).sat,fx_blur:o=>ed.getFx(o).blur,
     x:o=>Math.round(ed.xy(o).x),y:o=>Math.round(ed.xy(o).y),w:o=>Math.round(o.getScaledWidth()),h:o=>Math.round(o.getScaledHeight()),angle:o=>Math.round(o.angle||0)
   };
   const setShadow=(o,patch)=>{const c=o.shadow||{};const s=new Shadow({color:patch.color??c.color??"#000000",blur:patch.blur??c.blur??30,offsetX:patch.x??c.offsetX??0,offsetY:patch.y??c.offsetY??10});o.set("shadow",s)};
@@ -57,6 +60,7 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
       case"fontFamily":{const f=FONTS.find(x=>x.family===v);const w=f.weights.includes(+o.fontWeight)?+o.fontWeight:f.weights.includes(700)?700:f.weights[0];o.set({fontFamily:v,fontWeight:w});loadFont(v,w).then(()=>{o.initDimensions?.();o.dirty=true;ed.canvas.requestRenderAll()});key="";break}
       case"fontWeight":o.set("fontWeight",+v);loadFont(o.fontFamily,+v).then(()=>{o.initDimensions?.();ed.canvas.requestRenderAll()});break;
       case"fontSize":o.set({fontSize:+v,scaleX:1,scaleY:1});break;
+      case"fx_bright":case"fx_contrast":case"fx_sat":case"fx_blur":ed.setFx(o,{[k.slice(3)]:+v});break;
       case"fill":case"stroke":o.set(k,v);if(k==="stroke"&&!o.strokeWidth)o.set("strokeWidth",t?2:4);break;
       case"textAlign":case"lineHeight":case"charSpacing":o.set(k,k==="textAlign"?v:+v);break;
       case"opacity":o.set("opacity",+v/100);break;
@@ -110,6 +114,7 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
   }
   root.addEventListener("input",e=>{
     const el=e.target;
+    if(el.id==="m-tol"){root.querySelector("#m-tolv").textContent=el.value;return}
     if(el.dataset.safe){ed.cfg.safe={...safeOf(getFmt().id,ed.cfg),[el.dataset.safe]:Math.max(0,+el.value||0)};ed.emit("safe");return}
     if(el.dataset.cfg){(ed.cfg.product??={})[el.dataset.cfg]=el.checked;ed.commit();return}
     if(el.dataset.r&&ed.active){
@@ -138,7 +143,15 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
     const pa=e.target.closest("[data-pact]")?.dataset.pact,o=ed.active;
     if(pa&&o){
       try{
-        if(pa==="remove"||pa==="remove-ai"){const t=toast("Quitando fondo…",{ms:600000});try{await applyProductImage(ed,{orig:o.orig||o.getSrc(),remove:true,method:pa==="remove-ai"?"ai":"auto"},m=>{t.querySelector("span").textContent=m})}finally{t.close()}}
+        if(pa==="retol"||pa==="tolglobal"){
+          const tol=+root.querySelector("#m-tol").value,holes=root.querySelector("#m-holes").checked;
+          if(pa==="tolglobal"){await store.setMatting(tol,holes);toast("Umbral general guardado: "+tol)}
+          else{const t=toast("Recortando…",{ms:600000});try{await applyProductImage(ed,{orig:o.orig||o.getSrc(),remove:true,tol,holes,force:true},m=>{t.querySelector("span").textContent=m})}finally{t.close()}}
+        }
+        else if(pa==="flipx"){o.set("flipX",!o.flipX);ed.commit()}
+        else if(pa==="flipy"){o.set("flipY",!o.flipY);ed.commit()}
+        else if(pa==="fxreset"){ed.setFx(o,{bright:0,contrast:0,sat:0,blur:0});ed.commit();sync()}
+        else if(pa==="remove"||pa==="remove-ai"){const t=toast("Quitando fondo…",{ms:600000});try{await applyProductImage(ed,{orig:o.orig||o.getSrc(),remove:true,method:pa==="remove-ai"?"ai":"auto"},m=>{t.querySelector("span").textContent=m})}finally{t.close()}}
         else if(pa==="orig"){await ed.setProductImage(o.orig||o.getSrc(),{orig:o.orig});ed.commit()}
         else if(pa==="change")openProductPicker(ed,afterProduct);
         else if(pa==="apply"){ed.placeProduct(o);ed.commit()}

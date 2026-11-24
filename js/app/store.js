@@ -1,5 +1,6 @@
-import {db,COLS,TCOLS} from "./db.js?v=20261124c";
-import {toast} from "./ui.js?v=20261124c";
+import {db,COLS,TCOLS} from "./db.js?v=20261124f";
+import {mattingDefaults} from "../img/matting.js?v=20261124f";
+import {toast} from "./ui.js?v=20261124f";
 const L=new Set();
 const pending=new Map();
 export const store={
@@ -9,7 +10,7 @@ export const store={
   async load(){
     try{
       const [p,t,c,tp,bg,pr]=await Promise.all([db.list("posts",`select=${COLS}&order=created_at.desc`),db.list("post_types","select=*&order=sort.asc,name.asc"),db.list("categories","select=*&order=sort.asc,name.asc"),db.list("templates",`select=${TCOLS}&order=created_at.desc`),db.list("backgrounds","select=*&order=created_at.desc"),db.list("product_presets","select=*").catch(()=>[])]);
-      this.posts=p;this.types=t;this.cats=c;this.templates=tp;this.backgrounds=bg;this.presets=pr;this.loaded=true;this.error=null;
+      this.posts=p;this.types=t;this.cats=c;this.templates=tp;this.backgrounds=bg;this.presets=pr;{const g=pr.find(x=>x.key==="__global");if(g&&g.fields){if(g.fields.tol!=null)mattingDefaults.tol=+g.fields.tol;if(g.fields.holes!=null)mattingDefaults.holes=!!g.fields.holes}}this.loaded=true;this.error=null;
     }catch(e){this.error=e.message||"Sin conexión"}
     this.emit();
   },
@@ -49,6 +50,11 @@ export const store={
     const old=this.presets.find(x=>x.key===key);
     if(old){const r=await db.update("product_presets",old.id,row);Object.assign(old,r)}else this.presets.push(await db.insert("product_presets",row));
     this.emit();
+  },
+  async setMatting(tol,holes){
+    mattingDefaults.tol=tol;mattingDefaults.holes=holes;
+    const old=this.presets.find(x=>x.key==="__global"),row={key:"__global",name:"Ajustes generales",fields:{tol,holes}};
+    if(old){const r=await db.update("product_presets",old.id,row);Object.assign(old,r)}else this.presets.push(await db.insert("product_presets",row));
   },
   async addBackground(row){const r=await db.insert("backgrounds",row);this.backgrounds.unshift(r);this.emit();return r},
   async patchBackground(id,patch){const r=await db.update("backgrounds",id,patch);const b=this.backgrounds.find(x=>x.id===id);if(b&&r)Object.assign(b,r);this.emit()},

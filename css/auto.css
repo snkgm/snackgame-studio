@@ -67,3 +67,5 @@
 .lbx__row{display:flex;gap:var(--sp-2);max-width:100%;max-height:calc(100vh - 96px);overflow:auto;justify-content:center}
 .lbx__row img{max-height:calc(100vh - 96px);max-width:min(100%,640px);width:auto;border-radius:var(--r-sm);display:block}
 .lbx small{color:var(--c-muted)}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.ver{position:fixed;right:8px;bottom:8px;z-index:400;padding:2px 8px;border-radius:8px;background:rgba(0,0,0,.55);color:var(--c-muted);font-size:11px;line-height:16px;pointer-events:none}
