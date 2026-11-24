@@ -1,13 +1,13 @@
-import {store} from "./store.js?v=20261123o";
-import {mountCenter} from "../center/center.js?v=20261123o";
-import {mountSettings} from "../center/settings.js?v=20261123o";
-import {mountEditor} from "../editor/editorView.js?v=20261123o";
-import {mountTemplates} from "../center/templates.js?v=20261123o";
-import {mountAutomations,mountCampaign} from "../center/automations.js?v=20261123o";
-import {mountCampaignNew} from "../center/campaignNew.js?v=20261123o";
-import {CONFIG} from "./config.js?v=20261123o";
-import {auth} from "./auth.js?v=20261123o";
-import {closeMenu} from "./ui.js?v=20261123o";
+import {store} from "./store.js?v=20261124c";
+import {mountCenter} from "../center/center.js?v=20261124c";
+import {mountSettings} from "../center/settings.js?v=20261124c";
+import {mountEditor} from "../editor/editorView.js?v=20261124c";
+import {mountTemplates} from "../center/templates.js?v=20261124c";
+import {mountAutomations,mountCampaign} from "../center/automations.js?v=20261124c";
+import {mountCampaignNew} from "../center/campaignNew.js?v=20261124c";
+import {CONFIG} from "./config.js?v=20261124c";
+import {auth} from "./auth.js?v=20261124c";
+import {closeMenu} from "./ui.js?v=20261124c";
 let view=document.getElementById("view");
 let cleanup=null,token=0;
 async function route(){

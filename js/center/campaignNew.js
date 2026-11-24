@@ -1,9 +1,10 @@
-import {store} from "../app/store.js?v=20261123o";
-import {db} from "../app/db.js?v=20261123o";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261123o";
-import {esc,toast} from "../app/ui.js?v=20261123o";
-import {scheduleDates,fmtMadrid,parseList} from "../studio/schedule.js?v=20261123o";
-import {fetchProduct,validateGallery,usable} from "../studio/gallery.js?v=20261123o";
+import {store} from "../app/store.js?v=20261124c";
+import {db} from "../app/db.js?v=20261124c";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261124c";
+import {lightbox} from "../app/lightbox.js?v=20261124c";
+import {esc,toast} from "../app/ui.js?v=20261124c";
+import {scheduleDates,fmtMadrid,parseList} from "../studio/schedule.js?v=20261124c";
+import {fetchProduct,validateGallery,usable} from "../studio/gallery.js?v=20261124c";
 const LIM={name:40,sub:60},DAYS=["L","M","X","J","V","S","D"],pad=n=>String(n).padStart(2,"0");
 const thumb=(src,w=140)=>{try{const u=new URL(src);u.searchParams.set("width",w);return u.toString()}catch{return src}};
 export function mountCampaignNew(root){
@@ -18,7 +19,7 @@ export function mountCampaignNew(root){
   function fmtRow(f){const list=store.templates.filter(t=>t.format===f.id),cur=tplFor(f.id);
     return `<div class="fmt"><label class="chk"><input type="checkbox" data-f="${f.id}"${S.fmts.has(f.id)?" checked":""}> ${esc(f.short)} <em>${f.w}×${f.h}</em></label>${S.fmts.has(f.id)?`<select class="select" data-t="${f.id}"><option value="">Diseño básico automático</option>${opts(list,cur)}</select>`:""}</div>`}
   function rowHtml(r,i){
-    const g=(r.gallery||[]).map((p,j)=>`<button type="button" class="ph${r.sel.includes(j)?" is-sel":""}${!p.ok||p.dup?" is-bad":""}" data-r="${i}" data-p="${j}" title="${esc(p.why||(r.sel.includes(j)?"Seleccionada":"Clic para elegir"))}"><img src="${esc(thumb(p.src))}" alt="" loading="lazy">${r.sel.includes(j)?`<b>${r.sel.indexOf(j)+1}</b>`:""}</button>`).join("");
+    const g=(r.gallery||[]).map((p,j)=>`<button type="button" class="ph${r.sel.includes(j)?" is-sel":""}${!p.ok||p.dup?" is-bad":""}" data-r="${i}" data-p="${j}" title="${esc(p.why||(r.sel.includes(j)?"Seleccionada":"Clic para elegir"))}"><img src="${esc(thumb(p.src))}" alt="" loading="lazy"><span class="ph__z" data-big="${i}:${j}" title="Ampliar">⤢</span>${r.sel.includes(j)?`<b>${r.sel.indexOf(j)+1}</b>`:""}</button>`).join("");
     const st=r.err?`<span class="st st--err">✖ ${esc(r.err)}</span>`:!r.gallery?`<span class="st">Sin revisar</span>`:r.sel.length<S.n?`<span class="st st--warn">⚠ ${r.sel.length}/${S.n} fotos válidas</span>`:`<span class="st st--ok">✔ ${r.sel.length} fotos</span>`;
     return `<div class="prow"><div class="prow__f"><div class="cnt"><input class="input" data-n="${i}" value="${esc(r.name)}" aria-label="Nombre"><small class="${r.name.length>LIM.name?"over":""}">${r.name.length}/${LIM.name}</small></div><div class="cnt"><input class="input" data-s="${i}" value="${esc(r.subtitle)}" placeholder="Subtítulo (opcional)" aria-label="Subtítulo"><small class="${r.subtitle.length>LIM.sub?"over":""}">${r.subtitle.length}/${LIM.sub}</small></div></div><div class="prow__u">${esc(r.url||"Sin URL")}</div><div class="prow__g">${g}${st}</div></div>`}
   function render(){
@@ -41,6 +42,8 @@ ${S.sched.mode==="weekdays"?`<div class="pills" id="days">${DAYS.map((x,i)=>`<bu
   }
   const autoName=()=>`${store.typeName(S.typeId)||"Lista"} · ${store.catName(S.catId)||"Todas"} · ${S.sched.start}`;
   B.addEventListener("click",async e=>{
+    const bg=e.target.closest("[data-big]");
+    if(bg){const [i,j]=bg.dataset.big.split(":").map(Number),r=S.rows[i];lightbox([r.gallery[j].src],r.name);return}
     const t=e.target.closest("button");if(!t)return;
     if(t.dataset.ty!==undefined){S.typeId=t.dataset.ty;S.tpls={};render()}
     else if(t.dataset.ca!==undefined){S.catId=t.dataset.ca;S.tpls={};render()}

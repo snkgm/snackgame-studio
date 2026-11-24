@@ -1,9 +1,10 @@
-import {db} from "../app/db.js?v=20261123o";
-import {store} from "../app/store.js?v=20261123o";
-import {esc,toast,modal} from "../app/ui.js?v=20261123o";
-import {fmtById} from "../app/formats.js?v=20261123o";
-import {STAGES} from "../studio/pipeline.js?v=20261123o";
-import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261123o";
+import {db} from "../app/db.js?v=20261124c";
+import {store} from "../app/store.js?v=20261124c";
+import {lightbox} from "../app/lightbox.js?v=20261124c";
+import {esc,toast,modal} from "../app/ui.js?v=20261124c";
+import {fmtById} from "../app/formats.js?v=20261124c";
+import {STAGES} from "../studio/pipeline.js?v=20261124c";
+import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261124c";
 const WORK=["downloading","removing_bg","analyzing","background","composing","saving"];
 const CST={draft:"Borrador",running:"En marcha",paused:"Pausada",cancelled:"Cancelada",done:"Completada"};
 const q=(t,s)=>db.list(t,s);
@@ -31,7 +32,7 @@ export function mountCampaign(root,id){
     try{
       [C]=await q("campaigns",`select=*&id=eq.${id}`);
       items=await q("campaign_items",`select=*&campaign_id=eq.${id}&order=pos.asc`);
-      posts=await q("posts",`select=id,item_id,format,thumb_url&campaign_id=eq.${id}`);
+      posts=await q("posts",`select=id,item_id,format,thumb_url,assets&campaign_id=eq.${id}`);
       if(alive)paint();
     }catch(e){if(alive)P.innerHTML=`<p class="hint">${esc(e.message)}</p>`}
   }
@@ -47,7 +48,7 @@ export function mountCampaign(root,id){
     const active=["running","done"].includes(C.status);
     const banner=remaining===0&&items.length&&active&&C.status!=="cancelled"?`<div class="banner banner--red"><b>LISTA AGOTADA</b><span>No quedan publicaciones por publicar. Añade más productos para continuar.</span></div>`:(C.status==="done"&&!err.length?`<div class="banner banner--ok"><b>COMPLETADA</b><span>Todas las publicaciones están programadas.</span></div>`:"");
     const errs=err.length?`<div class="banner banner--warn"><b>${err.length} incidencia${err.length>1?"s":""}</b><span>${[...new Set(err.map(e=>e.error||"Error"))].map(esc).join(" · ")}</span></div>`:"";
-    const btns=[C.status==="draft"?`<button class="btn btn--accent" data-a="start">Iniciar</button>`:"",C.status==="running"?`<button class="btn" data-a="pause">Pausar</button>`:"",C.status==="paused"?`<button class="btn btn--accent" data-a="resume">Reanudar</button>`:"",err.length&&C.status!=="cancelled"?`<button class="btn" data-a="retry">Reintentar errores</button>`:"",C.status!=="cancelled"?`<button class="btn" data-a="add">Añadir productos</button>`:"",!["cancelled","done"].includes(C.status)?`<button class="btn btn--ghost" data-a="cancel">Cancelar</button>`:""].join("");
+    const btns=[C.status==="draft"?`<button class="btn btn--accent" data-a="start">Iniciar</button>`:"",C.status==="running"?`<button class="btn" data-a="pause">Pausar</button>`:"",C.status==="paused"?`<button class="btn btn--accent" data-a="resume">Reanudar</button>`:"",err.length&&C.status!=="cancelled"?`<button class="btn" data-a="retry">Reintentar errores</button>`:"",C.status!=="cancelled"&&sch.length?`<button class="btn" data-a="regen">Regenerar imágenes</button>`:"",C.status!=="cancelled"?`<button class="btn" data-a="add">Añadir productos</button>`:"",!["cancelled","done"].includes(C.status)?`<button class="btn btn--ghost" data-a="cancel">Cancelar</button>`:""].join("");
     const tile=(k,v,c="")=>`<div class="tile ${c}"><b>${v}</b><span>${k}</span></div>`;
     P.innerHTML=`<a class="auto__back" href="#/automatizaciones">← Automatizaciones</a>
 <div class="phead"><div><h1 class="auto__h">${esc(C.name)}</h1><span class="cst cst--${C.status}">${CST[C.status]}</span> <span class="hint">${esc(store.typeName(C.type_id))} · ${esc(store.catName(C.category_id))} · ${(C.formats||[]).map(f=>fmtById(f).short).join(", ")} · ${n} img/publicación</span></div><div class="bar">${btns}</div></div>
@@ -56,9 +57,11 @@ ${banner}${errs}
 <div class="prog"><div class="bar-p bar-p--lg"><i style="width:${pct}%"></i></div><span>${pct}% · ${sch.length}/${items.length} programadas</span></div>
 <p class="hint">Inicio: ${fmtMadrid(C.started_at)} · Se procesa en la nube (GitHub Actions) y sigue aunque cierres el navegador; este panel se actualiza solo.</p>
 <div class="irows">${items.map(i=>{const ps=posts.filter(p=>p.item_id===i.id),w=(i.product&&i.product.warnings)||[];
-  return `<div class="irow"><span class="irow__n">${i.pos}</span><span class="irow__t">${ps[0]&&ps[0].thumb_url?`<img src="${esc(ps[0].thumb_url)}" alt="">`:""}</span><div class="irow__m"><b>${esc(i.name)}</b><small>${esc(i.subtitle||"")}${w.length?` <i class="over">⚠ ${esc(w.join(" · "))}</i>`:""}${i.error?` <i class="over">${esc(i.error)}</i>`:""}</small></div><span class="irow__d">${fmtMadrid(i.scheduled_at)}</span><span class="stc stc--${i.status}${WORK.includes(i.status)?" is-work":""}">${STAGES[i.status]||i.status}${i.attempts>1&&i.status!=="scheduled"?` (${i.attempts})`:""}</span><span class="irow__a">${ps[0]?`<a class="btn btn--sm" href="#/editor/${ps[0].id}">Abrir en editor</a>`:""}${i.status==="error"&&C.status!=="cancelled"?`<button class="btn btn--sm" data-r="${i.id}">Reintentar</button>`:""}</span></div>`}).join("")}</div>`;
+  return `<div class="irow"><span class="irow__n">${i.pos}</span><span class="irow__t" ${ps[0]?`data-z="${i.id}"`:""}>${ps[0]&&ps[0].thumb_url?`<img src="${esc(ps[0].thumb_url)}" alt="">`:""}</span><div class="irow__m"><b>${esc(i.name)}</b><small>${esc(i.subtitle||"")}${w.length?` <i class="over">⚠ ${esc(w.join(" · "))}</i>`:""}${i.error?` <i class="over">${esc(i.error)}</i>`:""}</small></div><span class="irow__d">${fmtMadrid(i.scheduled_at)}</span><span class="stc stc--${i.status}${WORK.includes(i.status)?" is-work":""}">${STAGES[i.status]||i.status}${i.attempts>1&&i.status!=="scheduled"?` (${i.attempts})`:""}</span><span class="irow__a">${ps[0]?`<a class="btn btn--sm" href="#/editor/${ps[0].id}">Abrir en editor</a>`:""}${i.status==="error"&&C.status!=="cancelled"?`<button class="btn btn--sm" data-r="${i.id}">Reintentar</button>`:""}</span></div>`}).join("")}</div>`;
   }
   P.addEventListener("click",async e=>{
+    const z=e.target.closest("[data-z]");
+    if(z){const ps=posts.filter(p=>p.item_id===z.dataset.z),it=items.find(i=>i.id===z.dataset.z);lightbox(ps.flatMap(p=>(p.assets&&p.assets.finals)||[p.thumb_url]).filter(Boolean),it&&it.name);return}
     const b=e.target.closest("button");if(!b)return;
     try{
       if(b.dataset.r){await db.update("campaign_items",b.dataset.r,{status:"pending",attempts:0,error:null,locked_by:null});await setC({status:"running"});toast("Reintento en cola")}
@@ -67,6 +70,7 @@ ${banner}${errs}
       else if(b.dataset.a==="resume")await setC({status:"running"});
       else if(b.dataset.a==="retry"){await fetch(`${db.REST}campaign_items?campaign_id=eq.${id}&status=eq.error`,{method:"PATCH",headers:db.H,body:JSON.stringify({status:"pending",attempts:0,error:null,locked_by:null})});await setC({status:"running"});toast("Errores en cola")}
       else if(b.dataset.a==="cancel"){modal("Cancelar lista","<p>Se detiene el procesamiento. Las publicaciones ya creadas y la lista original se conservan.</p>",{ok:"Cancelar lista",onOk:async()=>{await fetch(`${db.REST}campaign_items?campaign_id=eq.${id}&status=eq.pending`,{method:"PATCH",headers:db.H,body:JSON.stringify({status:"cancelled"})});await setC({status:"cancelled"})}})}
+      else if(b.dataset.a==="regen"){modal("Regenerar imágenes","<p>Se vuelven a generar todas las imágenes de la lista con el diseño actual. Las fechas se mantienen y las publicaciones anteriores se sustituyen.</p>",{ok:"Regenerar",onOk:async()=>{await fetch(`${db.REST}campaign_items?campaign_id=eq.${id}&status=in.(scheduled,error)`,{method:"PATCH",headers:db.H,body:JSON.stringify({status:"pending",attempts:0,error:null,locked_by:null,photos:null})});await setC({status:"running"});toast("En cola")}})}
       else if(b.dataset.a==="add")addMore();
     }catch(er){toast(er.message,{kind:"err"})}
   });

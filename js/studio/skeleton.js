@@ -1,7 +1,7 @@
-import {withHeadless} from "./headless.js?v=20261123o";
-import {fmtById} from "../app/formats.js?v=20261123o";
-import {BG_DEFAULT} from "../img/background.js?v=20261123o";
-import {logoUrl} from "../app/brand.js?v=20261123o";
+import {withHeadless} from "./headless.js?v=20261124c";
+import {fmtById} from "../app/formats.js?v=20261124c";
+import {BG_DEFAULT} from "../img/background.js?v=20261124c";
+import {logoUrl} from "../app/brand.js?v=20261124c";
 const R=(o,rule)=>{o.set("rule",rule);return o};
 export function safeOf(fmt,cfg){return {...fmtById(fmt).safe,...((cfg&&cfg.safe)||{})}}
 async function slideContent(ed,kind,f,s,names){
@@ -22,12 +22,12 @@ async function slideContent(ed,kind,f,s,names){
   const w=ed.addText({text:"Snackgame.es",name:"Dirección web",role:"web",field:"web",top:bot-Math.round(H*.07),props:{width:tw,fontSize:Math.round(42*sc),fontWeight:400,fontFamily:"Anton"}});
   w.set({rule:{color:"contrast"},shadow:null});
 }
-const PROD={"post-3x4":{cy:.56,maxW:.88,maxH:.62},"post-4x5":{cy:.63,maxW:.9,maxH:.56},"post-1x1":{cy:.6,maxW:.8,maxH:.56},"story-9x16":{cy:.56,maxW:.9,maxH:.44},"carousel-4x5":{cy:.63,maxW:.9,maxH:.56},"reel-cover":{cy:.56,maxW:.9,maxH:.42}};
+const PROD={"post-3x4":{cy:.6,maxW:.9,maxH:.6},"post-4x5":{cy:.63,maxW:.9,maxH:.56},"post-1x1":{cy:.6,maxW:.8,maxH:.56},"story-9x16":{cy:.56,maxW:.9,maxH:.44},"carousel-4x5":{cy:.63,maxW:.9,maxH:.56},"reel-cover":{cy:.56,maxW:.9,maxH:.42}};
 export async function buildSkeleton(fmtId,names={}){
   const fmt=fmtById(fmtId);
   return withHeadless(async ed=>{
     const s=safeOf(fmtId);
-    const f={title:fmtId==="post-1x1"?130:fmtId==="story-9x16"||fmtId==="reel-cover"?170:150,titleH:fmtId==="post-1x1"?150:fmtId==="story-9x16"||fmtId==="reel-cover"?330:210};
+    const f={title:fmtId==="post-3x4"?200:fmtId==="post-1x1"?130:fmtId==="story-9x16"||fmtId==="reel-cover"?170:150,titleH:fmtId==="post-3x4"?300:fmtId==="post-1x1"?150:fmtId==="story-9x16"||fmtId==="reel-cover"?330:210};
     await ed.loadData(null,fmt);ed.tplMode=true;
     ed.cfg={bg:{...BG_DEFAULT},product:{removeBg:true},safe:{...s}};
     ed.palette=["#3b2f8f","#8f2f6a","#ffb400"];

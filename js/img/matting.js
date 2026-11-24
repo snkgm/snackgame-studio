@@ -1,8 +1,8 @@
-import {db,publicUrl} from "../app/db.js?v=20261123o";
+import {db,publicUrl} from "../app/db.js?v=20261124c";
 let worker,seq=0;const waits=new Map();
 function getWorker(){
   if(worker)return worker;
-  worker=new Worker(new URL("./matting.worker.js?v=20261123o",import.meta.url),{type:"module"});
+  worker=new Worker(new URL("./matting.worker.js?v=20261124c",import.meta.url),{type:"module"});
   worker.onmessage=e=>{const w=waits.get(e.data.id);if(!w)return;if(e.data.progress){w.onp?.(e.data.progress);return}waits.delete(e.data.id);e.data.error?w.rej(new Error(e.data.error)):w.res(e.data)};
   worker.onerror=e=>{waits.forEach(w=>w.rej(new Error("El modelo no se pudo iniciar")));waits.clear();worker=null};
   return worker;
@@ -23,36 +23,39 @@ export function trimCanvas(c,pad=2){
   const x=Math.max(0,b.x-pad),y=Math.max(0,b.y-pad),w=Math.min(c.width-x,b.w+pad*2),h=Math.min(c.height-y,b.h+pad*2);
   const o=document.createElement("canvas");o.width=w;o.height=h;o.getContext("2d").drawImage(c,x,y,w,h,0,0,w,h);return o;
 }
-export function flatMask(c,tol=30){
+export function flatMask(c,tol=10){
   const w=c.width,h=c.height,d=c.getContext("2d",{willReadFrequently:true}).getImageData(0,0,w,h).data;
   const px=(x,y)=>(y*w+x)*4,border=[];
   for(let x=0;x<w;x++){border.push(px(x,0),px(x,h-1))}for(let y=1;y<h-1;y++){border.push(px(0,y),px(w-1,y))}
   const med=k=>{const v=border.map(o=>d[o+k]).sort((a,b)=>a-b);return v[v.length>>1]};
   const bg=[med(0),med(1),med(2)];
-  const near=o=>Math.max(Math.abs(d[o]-bg[0]),Math.abs(d[o+1]-bg[1]),Math.abs(d[o+2]-bg[2]))<=tol&&d[o+3]>200;
+  const dist=o=>Math.max(Math.abs(d[o]-bg[0]),Math.abs(d[o+1]-bg[1]),Math.abs(d[o+2]-bg[2]));
+  const near=o=>dist(o)<=tol&&d[o+3]>200;
   const ok=border.filter(near).length/border.length;
   if(ok<.9)return null;
-  const isbg=new Uint8Array(w*h),st=new Int32Array(w*h);let sp=0;
-  const push=(x,y)=>{const i=y*w+x;if(!isbg[i]&&near(i*4)){isbg[i]=1;st[sp++]=i}};
-  for(let x=0;x<w;x++){push(x,0);push(x,h-1)}for(let y=0;y<h;y++){push(0,y);push(w-1,y)}
+  const N=w*h,cand=new Uint8Array(N);
+  for(let i=0;i<N;i++)if(near(i*4))cand[i]=1;
+  const shrink=(a,r)=>{let cur=a;for(let k=0;k<r;k++){const n=new Uint8Array(N);for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x;n[i]=cur[i]&&cur[i-1]&&cur[i+1]&&cur[i-w]&&cur[i+w]?1:0}cur=n}return cur};
+  const R=Math.max(2,Math.round(Math.max(w,h)/300));
+  const core=shrink(cand,R);
+  const isbg=new Uint8Array(N),st=new Int32Array(N);let sp=0;
+  const push=(x,y)=>{const i=y*w+x;if(!isbg[i]&&core[i]){isbg[i]=1;st[sp++]=i}};
+  for(let x=0;x<w;x++){for(let k=0;k<=R+1;k++){push(x,k);push(x,h-1-k)}}for(let y=0;y<h;y++){for(let k=0;k<=R+1;k++){push(k,y);push(w-1-k,y)}}
   while(sp){const i=st[--sp],x=i%w,y=(i/w)|0;if(x>0)push(x-1,y);if(x<w-1)push(x+1,y);if(y>0)push(x,y-1);if(y<h-1)push(x,y+1)}
-  {
-    let fa=0;for(let i=0;i<w*h;i++)if(!isbg[i])fa++;
-    const tight=i=>{const o=i*4;return Math.max(Math.abs(d[o]-bg[0]),Math.abs(d[o+1]-bg[1]),Math.abs(d[o+2]-bg[2]))<=14&&d[o+3]>200};
-    const seen=new Uint8Array(w*h);
-    for(let i0=0;i0<w*h;i0++){
-      if(isbg[i0]||seen[i0]||!tight(i0))continue;
-      const comp=[i0];seen[i0]=1;
-      for(let k=0;k<comp.length;k++){const i=comp[k],x=i%w,y=(i/w)|0;
-        for(const j of [x>0?i-1:-1,x<w-1?i+1:-1,y>0?i-w:-1,y<h-1?i+w:-1])if(j>=0&&!isbg[j]&&!seen[j]&&tight(j)){seen[j]=1;comp.push(j)}}
-      if(comp.length>=250&&comp.length<fa*.3)for(const i of comp)isbg[i]=1;
-    }
+  for(let k=0;k<R;k++){const add=[];for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x;if(!isbg[i]&&cand[i]&&(isbg[i-1]||isbg[i+1]||isbg[i-w]||isbg[i+w]))add.push(i)}add.forEach(i=>isbg[i]=1)}
+  let fa=0;for(let i=0;i<N;i++)if(!isbg[i])fa++;
+  const seen=new Uint8Array(N),tight=i=>dist(i*4)<=4&&d[i*4+3]>200;
+  for(let i0=0;i0<N;i0++){
+    if(isbg[i0]||seen[i0]||!tight(i0))continue;
+    const comp=[i0];seen[i0]=1;
+    for(let k=0;k<comp.length;k++){const i=comp[k],x=i%w,y=(i/w)|0;
+      for(const j of [x>0?i-1:-1,x<w-1?i+1:-1,y>0?i-w:-1,y<h-1?i+w:-1])if(j>=0&&!isbg[j]&&!seen[j]&&tight(j)){seen[j]=1;comp.push(j)}}
+    if(comp.length>=150&&comp.length<fa*.06)for(const i of comp)isbg[i]=1;
   }
-  const fg=new Uint8Array(w*h);
-  for(let i=0;i<fg.length;i++)fg[i]=isbg[i]?0:1;
-  const er=new Uint8Array(w*h);
+  const fg=new Uint8Array(N);for(let i=0;i<N;i++)fg[i]=isbg[i]?0:1;
+  const er=new Uint8Array(N);
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x;er[i]=fg[i]&&(x>0?fg[i-1]:0)&&(x<w-1?fg[i+1]:0)&&(y>0?fg[i-w]:0)&&(y<h-1?fg[i+w]:0)?1:0}
-  const m=new Uint8Array(w*h);
+  const m=new Uint8Array(N);
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){let a=0,n=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const X=x+dx,Y=y+dy;if(X>=0&&X<w&&Y>=0&&Y<h){a+=er[Y*w+X];n++}}m[y*w+x]=Math.round(a/n*255)}
   return m;
 }
