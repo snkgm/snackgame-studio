@@ -1,16 +1,17 @@
-import {db} from "../app/db.js?v=20261124f";
-import {store} from "../app/store.js?v=20261124f";
-import {lightbox} from "../app/lightbox.js?v=20261124f";
-import {esc,toast,modal} from "../app/ui.js?v=20261124f";
-import {fmtById} from "../app/formats.js?v=20261124f";
-import {STAGES} from "../studio/pipeline.js?v=20261124f";
-import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261124f";
+import {db} from "../app/db.js?v=20261124h";
+import {store} from "../app/store.js?v=20261124h";
+import {lightbox} from "../app/lightbox.js?v=20261124h";
+import {I} from "../app/icons.js?v=20261124h";
+import {esc,toast,modal} from "../app/ui.js?v=20261124h";
+import {fmtById} from "../app/formats.js?v=20261124h";
+import {STAGES} from "../studio/pipeline.js?v=20261124h";
+import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261124h";
 const WORK=["downloading","removing_bg","analyzing","background","composing","saving"];
 const CST={draft:"Borrador",running:"En marcha",paused:"Pausada",cancelled:"Cancelada",done:"Completada"};
 const q=(t,s)=>db.list(t,s);
 export function mountAutomations(root){
   root.innerHTML=`<div class="auto"><h1 class="auto__h">Automatizaciones</h1>
-<div class="tool"><div><h2>Programación por lotes</h2><p class="hint">Pega una lista de productos y se generan y programan solas las publicaciones, aunque cierres el navegador.</p></div><a class="btn btn--accent" href="#/automatizaciones/nueva">Nueva lista</a></div>
+<div class="atool"><div><h2>Programación por lotes</h2><p class="hint">Pega una lista de productos y se generan y programan solas las publicaciones, aunque cierres el navegador.</p></div><a class="btn btn--accent" href="#/automatizaciones/nueva">Nueva lista</a></div>
 <div id="list" class="clist"><p class="hint">Cargando…</p></div></div>`;
   let alive=true;
   const load=async()=>{
@@ -50,7 +51,7 @@ export function mountCampaign(root,id){
     const errs=err.length?`<div class="banner banner--warn"><b>${err.length} incidencia${err.length>1?"s":""}</b><span>${[...new Set(err.map(e=>e.error||"Error"))].map(esc).join(" · ")}</span></div>`:"";
     const btns=[C.status==="draft"?`<button class="btn btn--accent" data-a="start">Iniciar</button>`:"",C.status==="running"?`<button class="btn" data-a="pause">Pausar</button>`:"",C.status==="paused"?`<button class="btn btn--accent" data-a="resume">Reanudar</button>`:"",err.length&&C.status!=="cancelled"?`<button class="btn" data-a="retry">Reintentar errores</button>`:"",C.status!=="cancelled"&&sch.length?`<button class="btn" data-a="regen">Regenerar imágenes</button>`:"",C.status!=="cancelled"?`<button class="btn" data-a="add">Añadir productos</button>`:"",!["cancelled","done"].includes(C.status)?`<button class="btn btn--ghost" data-a="cancel">Cancelar</button>`:""].join("");
     const tile=(k,v,c="")=>`<div class="tile ${c}"><b>${v}</b><span>${k}</span></div>`;
-    P.innerHTML=`<a class="auto__back" href="#/automatizaciones">← Automatizaciones</a>
+    P.innerHTML=`<a class="btn btn--sm auto__back" href="#/automatizaciones">${I["arrow-left"]}<span>Automatizaciones</span></a>
 <div class="phead"><div><h1 class="auto__h">${esc(C.name)}</h1><span class="cst cst--${C.status}">${CST[C.status]}</span> <span class="hint">${esc(store.typeName(C.type_id))} · ${esc(store.catName(C.category_id))} · ${(C.formats||[]).map(f=>fmtById(f).short).join(", ")} · ${n} img/publicación</span></div><div class="bar">${btns}</div></div>
 ${banner}${errs}
 <div class="tiles">${tile("Productos",items.length)}${tile("Publicaciones",items.length*nF)}${tile("Imágenes",items.length*nF*n)}${tile("Generadas",sch.length*nF*n,"ok")}${tile("Pendientes",pend.length+work.length)}${tile("Errores",err.length,err.length?"bad":"")}${tile("Quedan",remaining,remaining?"":"bad")}${tile("Próxima",next?fmtMadrid(next):"—","wide")}</div>

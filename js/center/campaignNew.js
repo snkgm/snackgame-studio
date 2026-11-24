@@ -1,16 +1,17 @@
-import {store} from "../app/store.js?v=20261124f";
-import {db} from "../app/db.js?v=20261124f";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261124f";
-import {lightbox} from "../app/lightbox.js?v=20261124f";
-import {esc,toast} from "../app/ui.js?v=20261124f";
-import {scheduleDates,fmtMadrid,parseList} from "../studio/schedule.js?v=20261124f";
-import {fetchProduct,validateGallery,usable} from "../studio/gallery.js?v=20261124f";
+import {store} from "../app/store.js?v=20261124h";
+import {db} from "../app/db.js?v=20261124h";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261124h";
+import {lightbox} from "../app/lightbox.js?v=20261124h";
+import {I} from "../app/icons.js?v=20261124h";
+import {esc,toast} from "../app/ui.js?v=20261124h";
+import {scheduleDates,fmtMadrid,parseList} from "../studio/schedule.js?v=20261124h";
+import {fetchProduct,validateGallery,usable} from "../studio/gallery.js?v=20261124h";
 const LIM={name:40,sub:60},DAYS=["L","M","X","J","V","S","D"],pad=n=>String(n).padStart(2,"0");
 const thumb=(src,w=140)=>{try{const u=new URL(src);u.searchParams.set("width",w);return u.toString()}catch{return src}};
 export function mountCampaignNew(root){
   const d=new Date();d.setDate(d.getDate()+1);
   const S={typeId:(store.types.find(t=>t.name==="Diario")||{}).id||"",catId:(store.cats.find(c=>c.name==="Funkos")||{}).id||"",fmts:new Set(["post-3x4"]),n:2,tpls:{},sched:{mode:"weekdays",days:[0,2,4],every:1,time:"18:00",start:`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`},text:"",rows:[],name:""};
-  root.innerHTML=`<div class="auto"><a class="auto__back" href="#/automatizaciones">← Automatizaciones</a><h1 class="auto__h">Programación por lotes</h1><div id="blocks" class="auto__blocks"></div></div>`;
+  root.innerHTML=`<div class="auto"><a class="btn btn--sm auto__back" href="#/automatizaciones">${I["arrow-left"]}<span>Automatizaciones</span></a><h1 class="auto__h">Programación por lotes</h1><div id="blocks" class="auto__blocks"></div></div>`;
   const B=root.querySelector("#blocks");
   const opts=(arr,v)=>arr.map(t=>`<option value="${t.id}"${t.id===v?" selected":""}>${esc(t.name)}</option>`).join("");
   const pills=(arr,v,k)=>`<div class="pills">${arr.map(t=>`<button type="button" class="pill${t.id===v?" is-on":""}" data-${k}="${t.id}">${esc(t.name)}</button>`).join("")}</div>`;

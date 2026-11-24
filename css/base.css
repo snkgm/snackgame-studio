@@ -48,3 +48,8 @@ input[type=range]{width:100%;accent-color:var(--c-accent)}
 .seg button.is-on{background:var(--c-surface-2);color:var(--c-text)}
 .modal__box--wide{max-width:640px}.modal__box{max-height:90vh;display:flex;flex-direction:column}.modal__body{overflow:auto}
 .modal__body{min-height:0;flex:1 1 auto}.modal__head,.modal__foot{flex:none}
+:root{color-scheme:dark;scrollbar-color:var(--c-line) transparent;scrollbar-width:thin}
+::-webkit-scrollbar{width:12px;height:12px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--c-line);border:3px solid transparent;background-clip:content-box;border-radius:8px}
+::-webkit-scrollbar-thumb:hover{background:var(--c-muted);background-clip:content-box;border:3px solid transparent}
+::-webkit-scrollbar-corner{background:transparent}
