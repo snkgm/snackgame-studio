@@ -58,3 +58,4 @@
 .ovt:hover{border-color:var(--c-accent)}.ovt__img{display:block;aspect-ratio:3/4;background:#2a2d38;border-radius:4px;overflow:hidden}.ovt__img img{width:100%;height:100%;object-fit:cover;display:block}
 .imgt__h{margin:0;font-size:var(--fs-14)}
 .sec__head{height:auto;min-height:var(--sp-4)}
+.sec__reset{display:grid;place-items:center;width:24px;height:24px;margin-left:auto;padding:0;border:0;border-radius:var(--r-sm);background:transparent;color:var(--c-muted);flex:none}.sec__reset:hover{background:var(--c-surface-2);color:var(--c-text)}.sec__reset .ico{width:14px;height:14px}

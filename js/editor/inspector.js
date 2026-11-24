@@ -1,23 +1,23 @@
-import {I} from "../app/icons.js?v=20261124s";
-import {esc} from "../app/ui.js?v=20261124s";
-import {FONTS,loadFont} from "../app/fonts.js?v=20261124s";
-import {FORMATS} from "../app/formats.js?v=20261124s";
-import {safeOf} from "../studio/skeleton.js?v=20261124s";
-import {mountBgPanel} from "./bgpanel.js?v=20261124s";
-import {applyProductImage,openProductPicker} from "./product.js?v=20261124s";
-import {toast} from "../app/ui.js?v=20261124s";
-import {mattingDefaults} from "../img/matting.js?v=20261124s";
-import {store} from "../app/store.js?v=20261124s";
-import {FIELDS,BLENDS} from "./editor.js?v=20261124s";
-import {enhance} from "./accordion.js?v=20261124s";
-import {saveSnap} from "./snap.js?v=20261124s";
-import {Shadow} from "../../vendor/fabric.min.mjs?v=20261124s";
+import {I} from "../app/icons.js?v=20261124u";
+import {esc} from "../app/ui.js?v=20261124u";
+import {FONTS,loadFont} from "../app/fonts.js?v=20261124u";
+import {FORMATS} from "../app/formats.js?v=20261124u";
+import {safeOf} from "../studio/skeleton.js?v=20261124u";
+import {mountBgPanel} from "./bgpanel.js?v=20261124u";
+import {applyProductImage,openProductPicker} from "./product.js?v=20261124u";
+import {toast} from "../app/ui.js?v=20261124u";
+import {mattingDefaults} from "../img/matting.js?v=20261124u";
+import {store} from "../app/store.js?v=20261124u";
+import {FIELDS,BLENDS} from "./editor.js?v=20261124u";
+import {enhance} from "./accordion.js?v=20261124u";
+import {saveSnap} from "./snap.js?v=20261124u";
+import {Shadow} from "../../vendor/fabric.min.mjs?v=20261124u";
 const num=(k,l,extra="")=>`<div class="field"><label for="i-${k}">${l}</label><input class="input" type="number" id="i-${k}" data-k="${k}" ${extra}></div>`;
 const rng=(k,l,min,max,step=1)=>`<div class="field"><label for="i-${k}">${l}</label><input type="range" id="i-${k}" data-k="${k}" min="${min}" max="${max}" step="${step}"></div>`;
 const rnum=(k,l,pct)=>`<div class="field"><label for="r-${k}">${l}</label><input class="input" type="number" id="r-${k}" data-r="${k}"${pct?" data-pct":""} step="${pct?1:"any"}"></div>`;
 const COLRULE=`<div class="field"><label for="r-color">Color automático</label><select class="select" id="r-color" data-r="color"><option value="">Fijo</option><option value="contrast">Contraste con el fondo</option><option value="accent">Acento del producto</option><option value="color2">Color 2 del fondo</option></select></div>`;
 const col=(k,l)=>`<div class="field"><label for="i-${k}">${l}</label><input class="input" type="color" id="i-${k}" data-k="${k}"></div>`;
-const sec=(t,b)=>`<section class="sec"><div class="sec__head"><span class="label">${t}</span></div>${b}</section>`;
+const sec=(t,b,rk)=>`<section class="sec"><div class="sec__head"><span class="label">${t}</span>${rk?`<button class="sec__reset" data-reset="${rk}" title="Restablecer a valores de fábrica" aria-label="Restablecer ${t}">${I["rotate-ccw"]}</button>`:""}</div>${b}</section>`;
 const isText=o=>o&&o.type.toLowerCase()==="textbox";
 const ROLE={text:"Texto",web:"Dirección web",logo:"Logotipo",product:"Producto",background:"Fondo",shape:"Forma",decor:"Elemento"};
 const alignBar=`<div class="alignbar">${[["left","align-start-vertical"],["hcenter","align-center-vertical"],["right","align-end-vertical"],["top","align-start-horizontal"],["vcenter","align-center-horizontal"],["bottom","align-end-horizontal"]].map(([k,i])=>`<button class="btn btn--ghost btn--icon btn--sm" data-align="${k}" title="Alinear ${k}">${I[i]}</button>`).join("")}</div>`;
@@ -31,19 +31,19 @@ function textHtml(o){
 <div class="row">${rng("lineHeight","Interlineado",0.6,2.4,0.05)}${rng("charSpacing","Espaciado",-100,800,10)}</div>`)+
   sec("Contorno y sombra",`<div class="row">${col("stroke","Contorno")}${num("strokeWidth","Grosor","min=0 max=40")}</div>
 <label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label>
-<div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`)+
+<div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`,"tstroke")+
   sec("Reglas de plantilla",`<label class="chk"><input type="checkbox" data-r="fit"> Ajustar tamaño a la caja</label><div class="row">${rnum("max","Tamaño máx.")}${rnum("maxH","Alto máx.")}</div>${COLRULE}`)+
   sec("Dato dinámico",`<div class="field"><label for="i-field">Vincular a</label><select class="select" id="i-field" data-k="field"><option value="">Texto fijo</option>${Object.entries(FIELDS).map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select></div>
 <div class="field" id="pv"><label for="i-pval">Valor del dato</label><input class="input" id="i-pval" data-pv><span class="hint">Cambia el dato del producto: se actualiza en todas las capas que lo usan y en las listas automáticas.</span></div><div class="field" id="pat"><label for="i-pattern">Formato</label><input class="input" id="i-pattern" data-k="pattern" placeholder="{valor}"><span class="hint">Usa {valor}. Ej.: «Nº {valor}» o «{valor} €».</span></div>`);
 }
 const shapeHtml=o=>sec("Reglas de plantilla",COLRULE)+(o.type.toLowerCase()==="line"?sec("Línea",`<div class="row">${col("stroke","Color")}${num("strokeWidth","Grosor","min=1 max=200")}</div>`):sec("Relleno",`<div class="row">${col("fill","Relleno")}${col("stroke","Contorno")}</div><div class="row">${num("strokeWidth","Grosor","min=0 max=80")}${o.type.toLowerCase()==="rect"?num("rx","Radio","min=0 max=600"):"<span></span>"}</div>`))+
-  sec("Sombra",`<label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label><div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`);
+  sec("Sombra",`<label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label><div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`,"shadow");
 const productHtml=()=>sec("Producto",`<div class="row"><button class="btn btn--sm" data-pact="remove">Quitar fondo</button><button class="btn btn--sm" data-pact="remove-ai" title="Recorte con IA, más lento (~40 s la primera vez). Útil si el fondo no es liso.">Quitar con IA</button></div><div class="field"><label for="m-tol">Umbral de fondo: <b id="m-tolv">${mattingDefaults.tol}</b></label><input type="range" id="m-tol" min="2" max="60" value="${mattingDefaults.tol}"><span class="hint">Bajo: protege cajas blancas. Alto: quita sombras y restos de fondo.</span></div><label class="chk"><input type="checkbox" id="m-holes"${mattingDefaults.holes?" checked":""}> Quitar huecos interiores (entre piernas, asas)</label><div class="row"><button class="btn btn--sm" data-pact="retol">Aplicar a esta imagen</button><button class="btn btn--sm" data-pact="tolglobal" title="Usa este umbral en todas las imágenes nuevas, también en las listas automáticas">Usar como general</button></div><button class="btn btn--sm" data-pact="orig">Restaurar original</button><button class="btn btn--sm" data-pact="change">Cambiar producto…</button>`)+sec("Colocación (regla de plantilla)",`<div class="row">${rnum("cx","Centro X %",1)}${rnum("cy","Centro Y %",1)}</div><div class="row">${rnum("maxW","Ancho máx. %",1)}${rnum("maxH","Alto máx. %",1)}</div><div class="row">${rnum("angle","Rotación inicial")}<label class="chk"><input type="checkbox" data-r="shadow"> Sombra auto</label></div><div class="row"><button class="btn btn--sm" data-pact="apply">Aplicar regla</button><button class="btn btn--sm" data-pact="capture">Usar posición actual</button></div>`);
-const FL=[["dx","Desplazamiento X",-300,300],["dy","Desplazamiento Y",-300,300],["z","Elevación (Z)",0,400],["opacity","Opacidad",0,100],["blur","Difuminación",0,200],["spread","Expansión / contracción",-100,200],["size","Tamaño %",30,250],["angle","Ángulo de proyección",0,180],["intensity","Intensidad",0,100],["soft","Suavidad",0,100],["persp","Perspectiva",0,100]];
-const floorHtml=()=>sec("Sombra de suelo",`<label class="chk"><input type="checkbox" data-fl="on"> Activar sombra de contacto</label>${FL.map(([k,l,a,b])=>`<div class="field"><label for="fl-${k}">${l}: <b data-flv="${k}"></b></label><input type="range" id="fl-${k}" data-fl="${k}" min="${a}" max="${b}"></div>`).join("")}<div class="field"><label for="fl-color">Color</label><input class="input" type="color" id="fl-color" data-fl="color"></div><button class="btn btn--sm" data-pact="autofloor" title="Recalcula los valores a partir de la silueta del producto">Restablecer automático</button><span class="hint">Se calcula con la silueta del producto, sigue al producto y se guarda en la plantilla.</span>`);
-const blendHtml=o=>sec("Fusión",`<div class="field"><label for="i-blend">Modo de fusión</label><select class="select" id="i-blend" data-k="blend">${BLENDS.map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select></div>`);
-const overlayHtml=o=>sec("Overlay",`<div class="row"><button class="btn btn--sm" data-pact="ovfit">Ajustar al lienzo</button>${o.gen?'<button class="btn btn--sm" data-pact="ovseed">Nueva variación</button>':"<span></span>"}</div>${rng("opacity","Opacidad",0,100)}`);
-const imageHtml=o=>(o.role==="product"?productHtml()+floorHtml():"")+sec("Recorte",`<div class="row">${num("cropX","Izq.","min=0")}${num("cropY","Arriba","min=0")}</div><div class="row">${num("cropW","Ancho","min=1")}${num("cropH","Alto","min=1")}</div>`)+sec("Ajustes de imagen",`${rng("fx_bright","Brillo",-100,100)}${rng("fx_contrast","Contraste",-100,100)}${rng("fx_sat","Saturación",-100,100)}${rng("fx_blur","Desenfoque",0,50)}<div class="row"><button class="btn btn--sm" data-pact="flipx">Voltear ↔</button><button class="btn btn--sm" data-pact="flipy">Voltear ↕</button></div><button class="btn btn--sm" data-pact="fxreset">Restablecer ajustes</button>`)+sec("Sombra",`<label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label><div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`);
+const FL=[["dx","Desplazamiento X",-600,600],["dy","Desplazamiento Y",-600,600],["z","Elevación (Z) · negativo = detrás de la caja",-600,600],["opacity","Opacidad",0,100],["blur","Difuminación",0,200],["spread","Expansión / contracción",-100,200],["size","Tamaño %",30,250],["angle","Ángulo de proyección",0,180],["intensity","Intensidad",0,100],["soft","Suavidad",0,100],["persp","Perspectiva (aplanado)",0,100],["skew","Inclinación de perspectiva",-100,100],["vscale","Altura de la sombra %",20,300]];
+const floorHtml=()=>sec("Sombra de suelo",`<label class="chk"><input type="checkbox" data-fl="on"> Activar sombra de contacto</label>${FL.map(([k,l,a,b])=>`<div class="field"><label for="fl-${k}">${l}: <b data-flv="${k}"></b></label><input type="range" id="fl-${k}" data-fl="${k}" min="${a}" max="${b}"></div>`).join("")}<div class="field"><label for="fl-color">Color</label><input class="input" type="color" id="fl-color" data-fl="color"></div><button class="btn btn--sm" data-pact="autofloor" title="Recalcula los valores a partir de la silueta del producto">Restablecer automático</button><span class="hint">Se calcula con la silueta del producto, sigue al producto y se guarda en la plantilla.</span>`,"floor");
+const blendHtml=o=>sec("Fusión",`<div class="field"><label for="i-blend">Modo de fusión</label><select class="select" id="i-blend" data-k="blend">${BLENDS.map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select></div>`,"blend");
+const overlayHtml=o=>sec("Overlay",`<div class="row"><button class="btn btn--sm" data-pact="ovfit">Ajustar al lienzo</button>${o.gen?'<button class="btn btn--sm" data-pact="ovseed">Nueva variación</button>':"<span></span>"}</div>${rng("opacity","Opacidad",0,100)}`,"overlay");
+const imageHtml=o=>(o.role==="product"?productHtml()+floorHtml():"")+sec("Recorte",`<div class="row">${num("cropX","Izq.","min=0")}${num("cropY","Arriba","min=0")}</div><div class="row">${num("cropW","Ancho","min=1")}${num("cropH","Alto","min=1")}</div>`)+sec("Ajustes de imagen",`${rng("fx_bright","Brillo",-100,100)}${rng("fx_contrast","Contraste",-100,100)}${rng("fx_sat","Saturación",-100,100)}${rng("fx_blur","Desenfoque",0,50)}<div class="row"><button class="btn btn--sm" data-pact="flipx">Voltear ↔</button><button class="btn btn--sm" data-pact="flipy">Voltear ↕</button></div><button class="btn btn--sm" data-pact="fxreset">Restablecer ajustes</button>`,"imgfx")+sec("Sombra",`<label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label><div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`,"shadow");
 const transformHtml=o=>sec("Posición y tamaño",`${alignBar}<div class="row">${num("x","X")}${num("y","Y")}</div><div class="row">${num("w","Ancho","min=1")}${isText(o)?"<span></span>":num("h","Alto","min=1")}</div><div class="row">${num("angle","Rotación","min=-360 max=360")}${isText(o)?"":rng("opacity","Opacidad",0,100)}</div>`);
 export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProduct=()=>{},getPreset=()=>null){
   let key="";const bgp=mountBgPanel(ed);
@@ -154,6 +154,11 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
     if(ed.active&&(el.dataset.k||el.dataset.r))ed.commit();
   });
   root.addEventListener("click",async e=>{
+    const rs=e.target.closest("[data-reset]");
+    if(rs&&ed.active){const o=ed.active,k=rs.dataset.reset;
+      if(k==="floor")ed.autoFloor();else if(k==="shadow")o.set("shadow",null);else if(k==="tstroke")o.set({stroke:null,strokeWidth:0,shadow:null});
+      else if(k==="imgfx")ed.setFx(o,{bright:0,contrast:0,sat:0,blur:0});else if(k==="blend")ed.setBlend(o,"source-over");else if(k==="overlay")o.set("opacity",1);
+      o.setCoords();ed.commit();key="";render();return}
     const pa=e.target.closest("[data-pact]")?.dataset.pact,o=ed.active;
     if(pa&&o){
       try{

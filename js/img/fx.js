@@ -26,7 +26,7 @@ export function renderBgFx(W,H,fx){
   }
   return c;
 }
-export const FLOOR_DEFAULT={on:true,dx:0,dy:0,z:0,opacity:60,blur:24,spread:0,size:100,angle:90,intensity:70,color:"#000000",soft:50,persp:35};
+export const FLOOR_DEFAULT={on:true,dx:0,dy:0,z:0,opacity:60,blur:24,spread:0,size:100,angle:90,intensity:70,color:"#000000",soft:50,persp:35,skew:0,vscale:100};
 const FP=new WeakMap();
 // Silueta: banda inferior del producto (alfa) → huella de apoyo.
 function footprint(el){
@@ -47,17 +47,17 @@ export const siluetaInfo=el=>{const f=footprint(el);return f?f.box:null};
 export function renderFloorShadow(el,geom,P){
   const F=footprint(el);if(!F)return null;
   const bw=(F.box.r-F.box.l)*geom.w,bx=geom.x+(F.box.l+F.box.r)/2*geom.w,by=geom.y+F.box.b*geom.h;
-  const z=Math.max(0,P.z),th=(P.angle-90)*Math.PI/180;
-  const sc=(P.size/100)/(1+z/500),flat=.12+.5*(P.persp/100),cast=1+Math.abs(Math.sin(th))*.45;
-  const sw0=bw*sc*cast,sh0=Math.max(4,F.fp.height/F.fp.width*bw*flat*sc*2+bw*.03*flat);
+  const z=P.z,az=Math.abs(z),th=(P.angle-90)*Math.PI/180;
+  const sc=(P.size/100)/Math.max(.4,1+z/500),flat=.12+.5*(P.persp/100),cast=1+Math.abs(Math.sin(th))*.45;
+  const sw0=bw*sc*cast,sh0=Math.max(4,F.fp.height/F.fp.width*bw*flat*sc*2+bw*.03*flat)*((P.vscale||100)/100);
   const spread=P.spread,sw1=Math.max(4,sw0+spread*2),sh1=Math.max(3,sh0+spread);
-  const cx=bx+P.dx+Math.sin(th)*z*.9+Math.sin(th)*bw*.08,cy=by+P.dy+z*.6+sh1*.15;
-  const blurAmb=(P.blur+z*.22)*(.5+P.soft/100),blurCon=Math.max(1,blurAmb*.28);
+  const cx=bx+P.dx+Math.sin(th)*z*.9+Math.sin(th)*bw*.08,cy=by+P.dy+z*.6+sh1*.15;const SK=(P.skew||0)/100;
+  const blurAmb=(P.blur+az*.22)*(.5+P.soft/100),blurCon=Math.max(1,blurAmb*.28);
   const pad=Math.ceil(blurAmb*2.4+Math.abs(spread)+8),CW=Math.ceil(sw1*1.5+pad*2),CH=Math.ceil(sh1*1.8+pad*2);
-  const c=mk(CW,CH),g=c.getContext("2d"),OFF=CW+200,fade=1/(1+z/450);
+  const c=mk(CW,CH),g=c.getContext("2d"),OFF=CW+200,fade=1/(1+(z>0?z/450:az/900));
   const pass=(wf,hf,blur,alpha)=>{
     g.save();g.shadowColor=rgba(P.color,Math.min(1,alpha));g.shadowBlur=blur;g.shadowOffsetX=OFF;g.shadowOffsetY=0;
-    g.translate(CW/2-OFF,CH/2);g.transform(1,0,-Math.sin(th)*.35,1,0,0);g.scale(1,1);
+    g.translate(CW/2-OFF,CH/2);g.transform(1,0,-Math.sin(th)*.35+SK,1,0,0);g.scale(1,1);
     g.drawImage(F.fp,-sw1*wf/2,-sh1*hf/2,sw1*wf,sh1*hf);g.restore();
   };
   const op=(P.opacity/100)*fade,it=P.intensity/100;

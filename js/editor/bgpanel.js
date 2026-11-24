@@ -1,19 +1,19 @@
-import {store} from "../app/store.js?v=20261124s";
-import {db} from "../app/db.js?v=20261124s";
-import {esc,toast,modal} from "../app/ui.js?v=20261124s";
-import {I} from "../app/icons.js?v=20261124s";
-import {renderBackground,BG_DEFAULT} from "../img/background.js?v=20261124s";
-import {extractPalette} from "../img/color.js?v=20261124s";
-import {FX_DEFAULT} from "../img/fx.js?v=20261124s";
-import {hashKey} from "../img/matting.js?v=20261124s";
-import {searchBackgrounds,getKey,setKey} from "../img/bgsearch.js?v=20261124s";
+import {store} from "../app/store.js?v=20261124u";
+import {db} from "../app/db.js?v=20261124u";
+import {esc,toast,modal} from "../app/ui.js?v=20261124u";
+import {I} from "../app/icons.js?v=20261124u";
+import {renderBackground,BG_DEFAULT} from "../img/background.js?v=20261124u";
+import {extractPalette} from "../img/color.js?v=20261124u";
+import {FX_DEFAULT} from "../img/fx.js?v=20261124u";
+import {hashKey} from "../img/matting.js?v=20261124u";
+import {searchBackgrounds,getKey,setKey} from "../img/bgsearch.js?v=20261124u";
 const rng=(k,l,min,max)=>`<div class="field"><label for="b-${k}">${l}</label><input type="range" id="b-${k}" data-b="${k}" min="${min}" max="${max}"></div>`;
 const fxv=(path,def)=>path.split(".").reduce((a,k)=>a&&a[k],def);
 const fr=(p,l,min,max)=>`<div class="field"><label for="fx-${p}">${l}</label><input type="range" id="fx-${p}" data-fx="${p}" min="${min}" max="${max}"></div>`;
 const fc=(p,l)=>`<label class="chk"><input type="checkbox" data-fx="${p}"> ${l}</label>`;
 const fk=(p,l)=>`<div class="field"><label for="fx-${p}">${l}</label><input class="input" type="color" id="fx-${p}" data-fx="${p}"></div>`;
-const FXHTML=`<section class="sec"><div class="sec__head"><span class="label">Viñeta</span></div>${fc("vig.on","Activar viñeta")}${fr("vig.intensity","Intensidad",0,100)}${fr("vig.size","Tamaño del área central",0,100)}${fr("vig.soft","Suavidad",0,100)}${fr("vig.opacity","Opacidad",0,100)}${fk("vig.color","Color")}</section>
-<section class="sec"><div class="sec__head"><span class="label">Degradados desde bordes</span></div><div class="row">${fc("edges.t","Superior")}${fc("edges.b","Inferior")}</div><div class="row">${fc("edges.l","Izquierdo")}${fc("edges.r","Derecho")}</div>${fr("edges.extent","Extensión",5,100)}${fr("edges.intensity","Intensidad",0,100)}${fr("edges.opacity","Opacidad",0,100)}${fr("edges.soft","Suavidad de transición",0,100)}${fk("edges.color","Color")}<span class="hint">Se aplican sobre el fondo, debajo del producto: las fotos originales no se tocan.</span></section>`;
+const FXHTML=`<section class="sec"><div class="sec__head"><span class="label">Viñeta</span><button class="sec__reset" data-fxreset="vig" title="Restablecer a valores de fábrica" aria-label="Restablecer viñeta">${I["rotate-ccw"]}</button></div>${fc("vig.on","Activar viñeta")}${fr("vig.intensity","Intensidad",0,100)}${fr("vig.size","Tamaño del área central",0,100)}${fr("vig.soft","Suavidad",0,100)}${fr("vig.opacity","Opacidad",0,100)}${fk("vig.color","Color")}</section>
+<section class="sec"><div class="sec__head"><span class="label">Degradados desde bordes</span><button class="sec__reset" data-fxreset="edges" title="Restablecer a valores de fábrica" aria-label="Restablecer degradados">${I["rotate-ccw"]}</button></div><div class="row">${fc("edges.t","Superior")}${fc("edges.b","Inferior")}</div><div class="row">${fc("edges.l","Izquierdo")}${fc("edges.r","Derecho")}</div>${fr("edges.extent","Extensión",5,100)}${fr("edges.intensity","Intensidad",0,100)}${fr("edges.opacity","Opacidad",0,100)}${fr("edges.soft","Suavidad de transición",0,100)}${fk("edges.color","Color")}<span class="hint">Se aplican sobre el fondo, debajo del producto: las fotos originales no se tocan.</span></section>`;
 const MODES=[["auto","Automático"],["solid","Color"],["image","Imagen"]];
 export function mountBgPanel(ed){
   let pending=null,running=false,found=[],tag="",msg="";
@@ -75,6 +75,7 @@ ${msg?`<span class="hint">${esc(msg)}</span>`:""}</section>`;
     cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>ed.applyBgFx());
   }
   function bind(root,rebuild){
+    root.addEventListener("click",e=>{const b=e.target.closest("[data-fxreset]");if(!b)return;const g=b.dataset.fxreset,f=ed.cfg.bgfx||(ed.cfg.bgfx=JSON.parse(JSON.stringify(FX_DEFAULT)));f[g]={...FX_DEFAULT[g]};ed.applyBgFx();ed.commit();rebuild()});
     root.addEventListener("input",e=>{if(e.target.dataset.fx)setFx(e.target)});
     root.addEventListener("change",e=>{if(e.target.dataset.fx){setFx(e.target);setTimeout(()=>ed.commit(),80)}});
     root.addEventListener("input",e=>{const el=e.target;if(!el.dataset.b)return;const k=el.dataset.b;apply({[k]:el.type==="range"?+el.value:el.value,...(k==="solid"?{mode:"solid"}:{})});if(k==="solid"){ed.canvas.backgroundColor=el.value;ed.canvas.requestRenderAll()}
