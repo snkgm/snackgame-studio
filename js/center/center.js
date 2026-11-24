@@ -1,9 +1,9 @@
-import {openBatch} from "./batch.js?v=20261124p";
-import {store} from "../app/store.js?v=20261124p";
-import {I} from "../app/icons.js?v=20261124p";
-import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal,thumbHtml} from "../app/ui.js?v=20261124p";
-import {MONTHS,DOW,monthGrid,weekDays,same,ymd,time,longDate,toInput,fromInput,moveToDay,addDays,startOfWeek} from "../app/dates.js?v=20261124p";
-import {openWizard} from "./wizard.js?v=20261124p";
+import {openBatch} from "./batch.js?v=20261124r";
+import {store} from "../app/store.js?v=20261124r";
+import {I} from "../app/icons.js?v=20261124r";
+import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal,thumbHtml} from "../app/ui.js?v=20261124r";
+import {MONTHS,DOW,monthGrid,weekDays,same,ymd,time,longDate,toInput,fromInput,moveToDay,addDays,startOfWeek} from "../app/dates.js?v=20261124r";
+import {openWizard} from "./wizard.js?v=20261124r";
 const LS="sg.center";
 const load=()=>{try{return JSON.parse(localStorage.getItem(LS))||{}}catch{return{}}};
 const save=s=>{try{localStorage.setItem(LS,JSON.stringify(s))}catch{}};
@@ -48,7 +48,7 @@ export function mountCenter(root){
     const errs=count("error");
     root.innerHTML=`<div class="center">
 <div class="ctools">
- <div class="ctools__nav">${S.view!=="list"?`<button class="btn btn--icon" data-nav="-1" aria-label="Anterior">${I["chevron-left"]}</button><button class="btn" data-nav="0">Hoy</button><button class="btn btn--icon" data-nav="1" aria-label="Siguiente">${I["chevron-right"]}</button>`:""}<h1 class="ctools__title">${S.view==="list"?"Todas las publicaciones":title()}</h1></div>
+ <div class="ctools__nav">${(d=>`<button class="btn btn--icon" data-nav="-1" aria-label="Anterior"${d}>${I["chevron-left"]}</button><button class="btn" data-nav="0"${d}>Hoy</button><button class="btn btn--icon" data-nav="1" aria-label="Siguiente"${d}>${I["chevron-right"]}</button>`)(S.view==="list"?" disabled":"")}<h1 class="ctools__title">${S.view==="list"?"Todas las publicaciones":title()}</h1></div>
  <div class="seg" role="tablist">${[["month","Mes","calendar"],["week","Semana","calendar-days"],["list","Lista","list"]].map(([v,l])=>`<button data-view="${v}" class="${S.view===v?"is-on":""}">${l}</button>`).join("")}</div>
  <span class="grow"></span>
  <button class="btn" data-batch>${I["calendar-clock"]}Programar en lote</button>
@@ -62,10 +62,10 @@ export function mountCenter(root){
   <select class="select" id="f-status"><option value="">Todos los estados</option>${STATUS_KEYS.map(s=>`<option value="${s}"${S.f.status===s?" selected":""}>${STATUS[s].label}</option>`).join("")}</select>
   <select class="select" id="f-type"><option value="">Todos los tipos</option>${store.types.map(t=>`<option value="${t.id}"${S.f.type===t.id?" selected":""}>${esc(t.name)}</option>`).join("")}</select>
   <select class="select" id="f-cat"><option value="">Todas las categorías</option>${store.cats.map(t=>`<option value="${t.id}"${S.f.cat===t.id?" selected":""}>${esc(t.name)}</option>`).join("")}</select>
-  ${S.f.status||S.f.type||S.f.cat||S.f.q?`<button class="btn btn--icon" data-clear aria-label="Quitar filtros" title="Quitar filtros">${I["filter-x"]}</button>`:""}
+  <button class="btn btn--icon" data-clear aria-label="Quitar filtros" title="Quitar filtros"${S.f.status||S.f.type||S.f.cat||S.f.q?"":" disabled"}>${I["filter-x"]}</button>
  </div>
 </div>
-${S.view!=="list"&&undated.length?`<div class="tray"><span class="label">Sin fecha</span>${undated.map(chip).join("")}</div>`:""}
+<div class="tray"><span class="label">Sin fecha</span>${S.view!=="list"&&undated.length?undated.map(chip).join(""):`<span class="tray__empty">${S.view==="list"?"Visibles en la lista":"Sin borradores pendientes de fecha"}</span>`}</div>
 <div class="cbody">${S.view==="month"?monthHtml(list):S.view==="week"?weekHtml(list):listHtml(list)}</div>
 </div>`;
   }
