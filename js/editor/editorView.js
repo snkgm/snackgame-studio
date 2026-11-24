@@ -1,17 +1,17 @@
-import {Editor} from "./editor.js?v=20261124h";
-import {LayersPanel} from "./layers.js?v=20261124h";
-import {mountInspector} from "./inspector.js?v=20261124h";
-import {logoUrl,uploadLogo} from "../app/brand.js?v=20261124h";
-import {loadAllFonts} from "../app/fonts.js?v=20261124h";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261124h";
-import {safeOf} from "../studio/skeleton.js?v=20261124h";
-import {openProductPicker} from "./product.js?v=20261124h";
-import {zipBlobs} from "../app/zip.js?v=20261124h";
-import {I} from "../app/icons.js?v=20261124h";
-import {db} from "../app/db.js?v=20261124h";
-import {store} from "../app/store.js?v=20261124h";
-import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261124h";
-import {toInput,fromInput} from "../app/dates.js?v=20261124h";
+import {Editor} from "./editor.js?v=20261124j";
+import {LayersPanel} from "./layers.js?v=20261124j";
+import {mountInspector} from "./inspector.js?v=20261124j";
+import {logoUrl,uploadLogo} from "../app/brand.js?v=20261124j";
+import {loadAllFonts} from "../app/fonts.js?v=20261124j";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261124j";
+import {safeOf} from "../studio/skeleton.js?v=20261124j";
+import {openProductPicker} from "./product.js?v=20261124j";
+import {zipBlobs} from "../app/zip.js?v=20261124j";
+import {I} from "../app/icons.js?v=20261124j";
+import {db} from "../app/db.js?v=20261124j";
+import {store} from "../app/store.js?v=20261124j";
+import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261124j";
+import {toInput,fromInput} from "../app/dates.js?v=20261124j";
 export async function mountEditor(root,id,{template=false}={}){
   const table=template?"templates":"posts";
   root.innerHTML='<div class="empty">Cargando…</div>';
@@ -29,14 +29,13 @@ export async function mountEditor(root,id,{template=false}={}){
  <button class="btn btn--icon" id="undo" title="Deshacer (Ctrl+Z)">${I["undo-2"]}</button>
  <button class="btn btn--icon" id="redo" title="Rehacer (Ctrl+Shift+Z)">${I["redo-2"]}</button>
  <span class="grow"></span>
- <span class="save" id="save"></span>
- <button class="btn" id="savebtn" title="Guardar (Ctrl+S)">Guardar</button>
+ <button class="btn savebtn" id="savebtn" title="Guardar (Ctrl+S)" disabled>Guardado 💾</button>
  <span class="top__zoom" id="zoom"></span>
  ${template?`<button class="btn" id="tdef">${I.check||""}Predeterminada</button>`:`<select class="select etop__status" id="status" aria-label="Estado">${STATUS_KEYS.map(s=>`<option value="${s}"${s===post.status?" selected":""}>${STATUS[s].label}</option>`).join("")}</select>
  <input class="input etop__date" type="datetime-local" id="when" value="${toInput(post.scheduled_at)}" aria-label="Fecha y hora">
- <button class="btn" id="sched">${I["calendar-clock"]}Programar</button>
- <button class="btn" id="totpl" title="Guardar como plantilla">${I.copy}Plantilla</button>`}
- <button class="btn btn--accent" id="export">${I.download}Exportar</button>
+ <button class="btn" id="sched">${I["calendar-clock"]}<span>Programar</span></button>
+ <button class="btn" id="totpl" title="Guardar como plantilla">${I.copy}<span>Plantilla</span></button>`}
+ <button class="btn btn--accent" id="export">${I.download}<span>Exportar</span></button>
 </header>
 <aside class="tools">
  <button class="tool" id="t-text" title="Añadir texto">${I.type}<span>Texto</span></button>
@@ -91,8 +90,8 @@ export async function mountEditor(root,id,{template=false}={}){
   $("#undo").onclick=()=>ed.undo();$("#redo").onclick=()=>ed.redo();
   const hist=()=>{$("#undo").disabled=!ed.canUndo;$("#redo").disabled=!ed.canRedo};ed.on("history",hist);hist();
   ed.on("zoom",s=>{$("#zoom").textContent=Math.round(s*100)+"%"});$("#zoom").textContent=Math.round(ed.scale*100)+"%";
-  const saveEl=$("#save");let dirty=false,saving=false,timer;
-  const setSave=(t,err)=>{saveEl.textContent=t;saveEl.classList.toggle("is-err",!!err)};
+  let dirty=false,saving=false,timer;
+  const setSave=(t,err)=>{const b=$("#savebtn");if(!b)return;const st=t==="Guardado"?"clean":t==="Guardando…"?"saving":err&&t!=="Cambios sin guardar"?"err":"dirty";b.dataset.st=st;b.disabled=st==="clean"||st==="saving";b.classList.toggle("btn--accent",st==="dirty"||st==="err");b.textContent={clean:"Guardado 💾",saving:"Guardando…",dirty:"Guardar cambios",err:"Error · reintentar"}[st]};
   setSave("Guardado");
   const upd=(patch)=>template?(store.loaded?store.patchTemplate(post.id,patch):db.update("templates",post.id,patch)):(store.loaded?store.patchPost(post.id,patch):db.update("posts",post.id,patch));
   const bodyOf=thumb=>{const data=ed.toData();return template?{data:{...data,sample:ed.product},format:post.format,thumb_url:thumb}:{data,format:post.format,thumb_url:thumb,product:ed.product}};
@@ -104,13 +103,13 @@ export async function mountEditor(root,id,{template=false}={}){
       let thumb=post.thumb_url;
       try{thumb=await db.upload(`thumbs/${template?"t-":""}${post.id}.jpg`,blob)}catch{}
       await upd(bodyOf(thumb));
-      post.thumb_url=thumb;mark();setSave("Guardado");$("#savebtn")&&$("#savebtn").classList.remove("btn--accent");
+      post.thumb_url=thumb;mark();setSave("Guardado");
     }catch(e){dirty=true;setSave("Error al guardar",true);toast(e.message,{kind:"err"})}
     saving=false;
   }
   let base=null;const mark=()=>{base=JSON.stringify(ed.toData())};setTimeout(mark,1200);
-  const queue=()=>{if(ed.busy||base===null)return;dirty=JSON.stringify(ed.toData())!==base;setSave(dirty?"Cambios sin guardar":"Guardado",dirty);$("#savebtn").classList.toggle("btn--accent",dirty)};
-  const lockBtn=()=>$("#savebtn").classList.toggle("btn--accent",dirty);
+  const queue=()=>{if(ed.busy||base===null)return;dirty=JSON.stringify(ed.toData())!==base;setSave(dirty?"Cambios sin guardar":"Guardado",dirty)};
+  const lockBtn=()=>{};
   $("#savebtn").onclick=async()=>{clearTimeout(timer);await persist();lockBtn()};
   ed.on("history",queue);
   const meta=async patch=>{
@@ -181,7 +180,7 @@ export async function mountEditor(root,id,{template=false}={}){
   const key=e=>{
     if(/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&document.activeElement.type!=="color"&&document.activeElement.type!=="range")return;
     const m=e.ctrlKey||e.metaKey,o=ed.active,k=e.key.toLowerCase();
-    if(m&&k==="s"){e.preventDefault();$("#savebtn").click();return}
+    if(m&&k==="s"){e.preventDefault();if(dirty)$("#savebtn").click();return}
     if(m&&k==="z"){e.preventDefault();e.shiftKey?ed.redo():ed.undo();return}
     if(m&&k==="y"){e.preventDefault();ed.redo();return}
     if(m&&k==="d"&&o){e.preventDefault();ed.duplicate(o);return}
