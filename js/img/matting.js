@@ -1,8 +1,8 @@
-import {db,publicUrl} from "../app/db.js?v=20261126k";
+import {db,publicUrl} from "../app/db.js?v=20261126l";
 let worker,seq=0,noMain=false;const waits=new Map();
 function getWorker(){
   if(worker)return worker;
-  worker=new Worker(new URL("./matting.worker.js?v=20261126k",import.meta.url),{type:"module"});
+  worker=new Worker(new URL("./matting.worker.js?v=20261126l",import.meta.url),{type:"module"});
   worker.onmessage=e=>{const w=waits.get(e.data.id);if(!w)return;if(e.data.progress){w.onp?.(e.data.progress);return}waits.delete(e.data.id);e.data.error?w.rej(new Error(e.data.error)):w.res(e.data)};
   worker.onerror=e=>{waits.forEach(w=>w.rej(new Error("El modelo no se pudo iniciar")));waits.clear();worker=null};
   return worker;
@@ -105,7 +105,7 @@ export function outline(c){
   if(!ga)return null;
   const hull=hullOf(edgePts(G,w,h));if(hull.length<3)return null;
   let A=0;for(let i=0;i<hull.length;i++){const a=hull[i],b=hull[(i+1)%hull.length];A+=a[0]*b[1]-b[0]*a[1]}A=Math.abs(A)/2;
-  return {hull,solidity:ga/Math.max(1,A),w,h};
+  return {hull,solidity:ga/Math.max(1,A),w,h,G};
 }
 export function simplify(hull,maxN=14){
   const per=hull.reduce((t,p,i)=>{const q=hull[(i+1)%hull.length];return t+Math.hypot(p[0]-q[0],p[1]-q[1])},0);
@@ -151,7 +151,7 @@ export async function removeBackground(blob,onProgress,method="auto",opt={}){
       let res;try{res=await run(noMain?"ORMBG":undefined)}catch(e){if(noMain)throw e;noMain=true;try{worker?.terminate()}catch{}worker=null;onProgress?.("Modelo principal falló; usando el alternativo…");res=await run("ORMBG")}
       mask=res.mask;
     }
-    {mask=solidify(mask,c.width,c.height);
+    {mask=solidify(mask,c.width,c.height);if(mattingInfo.method!=="birefnet")mask=completeWithSilhouette(mask,c);
     }
   }
   const x=c.getContext("2d",{willReadFrequently:true}),im=x.getImageData(0,0,c.width,c.height);
@@ -175,12 +175,23 @@ export function solidify(m,w,h,r=3){
   for(let i=0;i<N;i++)if(f[i])o[i]=255;
   return o;
 }
+export function completeWithSilhouette(mask,c){
+  try{
+    const o=outline(c);if(!o||!o.G)return mask;
+    const w=c.width,h=c.height,N=w*h,bin=new Uint8Array(N);for(let i=0;i<N;i++)bin[i]=mask[i]>128?1:0;
+    const hh=hullOf(edgePts(bin,w,h));if(hh.length<3)return mask;
+    const hm=polyToMask(hh,w,h,{expand:Math.max(6,Math.round(Math.max(w,h)/80))}).getContext("2d",{willReadFrequently:true}).getImageData(0,0,w,h).data;
+    const out=new Uint8Array(mask);
+    for(let i=0;i<N;i++)if(o.G[i]&&hm[i*4+3]>128&&out[i]<255)out[i]=255;
+    return out;
+  }catch{return mask}
+}
 async function sha1(s){const b=await crypto.subtle.digest("SHA-1",typeof s==="string"?new TextEncoder().encode(s):s);return [...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,"0")).join("")}
 export const hashKey=sha1;
 const exists=async u=>{try{return (await fetch(u,{method:"HEAD"})).ok}catch{return false}};
 export async function cutoutFor(srcUrl,{blob,onProgress,method="smart",tol,holes,force}={}){
   const t=tol??mattingDefaults.tol,h=holes??mattingDefaults.holes;
-  const key=await sha1(srcUrl);const path=`cut/${key}-d10${method==="smart"?"-sm":""}${method==="ai"?"-ai":`${t!==10?"-t"+t:""}${h?"":"-nh"}`}.png`;const url=publicUrl(path);
+  const key=await sha1(srcUrl);const path=`cut/${key}-d11${method==="smart"?"-sm":""}${method==="ai"?"-ai":`${t!==10?"-t"+t:""}${h?"":"-nh"}`}.png`;const url=publicUrl(path);
   if(!force&&await exists(url))return url;
   const b=blob||await (await fetch(srcUrl,{mode:"cors"})).blob();
   const cut=await removeBackground(b,onProgress,method,{tol:t,holes:h});
