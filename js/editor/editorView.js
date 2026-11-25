@@ -1,19 +1,20 @@
-import {Editor} from "./editor.js?v=20261125d";
-import {LayersPanel} from "./layers.js?v=20261125d";
-import {mountInspector} from "./inspector.js?v=20261125d";
-import {loadAllFonts} from "../app/fonts.js?v=20261125d";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261125d";
-import {sessionStart} from "./accordion.js?v=20261125d";
-import {mountComposer} from "./composer.js?v=20261125d";
-import {safeOf} from "../studio/skeleton.js?v=20261125d";
-import {openProductPicker} from "./product.js?v=20261125d";
-import {openImageTool,openShapes,openTextStyles,openOverlayTool,closePop} from "./tools.js?v=20261125d";
-import {zipBlobs} from "../app/zip.js?v=20261125d";
-import {I} from "../app/icons.js?v=20261125d";
-import {db} from "../app/db.js?v=20261125d";
-import {store} from "../app/store.js?v=20261125d";
-import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261125d";
-import {toInput,fromInput} from "../app/dates.js?v=20261125d";
+import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125e";
+import {Editor} from "./editor.js?v=20261125e";
+import {LayersPanel} from "./layers.js?v=20261125e";
+import {mountInspector} from "./inspector.js?v=20261125e";
+import {loadAllFonts} from "../app/fonts.js?v=20261125e";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261125e";
+import {sessionStart} from "./accordion.js?v=20261125e";
+import {mountComposer} from "./composer.js?v=20261125e";
+import {safeOf} from "../studio/skeleton.js?v=20261125e";
+import {openProductPicker} from "./product.js?v=20261125e";
+import {openImageTool,openShapes,openTextStyles,openOverlayTool,closePop} from "./tools.js?v=20261125e";
+import {zipBlobs} from "../app/zip.js?v=20261125e";
+import {I} from "../app/icons.js?v=20261125e";
+import {db} from "../app/db.js?v=20261125e";
+import {store} from "../app/store.js?v=20261125e";
+import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261125e";
+import {toInput,fromInput} from "../app/dates.js?v=20261125e";
 export async function mountEditor(root,id,{template=false}={}){
   const table=template?"templates":"posts";
   root.innerHTML='<div class="empty">Cargando…</div>';
@@ -39,13 +40,15 @@ export async function mountEditor(root,id,{template=false}={}){
  <button class="btn" id="totpl" title="Guardar como plantilla">${I.copy}<span>Plantilla</span></button>`}
  <button class="btn btn--accent" id="export">${I.download}<span>Exportar</span></button>
 </header>
+<div class="lsplit" id="lsplit" role="separator" aria-orientation="vertical" aria-label="Ajustar anchura del panel izquierdo" title="Arrastra para ajustar la anchura"></div>
 <div class="bar2" id="bar2" role="toolbar" aria-label="Reglas, guías y alineación"></div>
 <aside class="tools">
  <button class="tool" id="t-text" title="Añadir texto">${I.type}<span>Texto</span></button>
  <button class="tool" id="t-img" title="Subir imagen, elegir de la biblioteca o añadir un producto">${I.image}<span>Imagen</span></button>
  <button class="tool" id="t-shapes" data-pop title="Formas">${I.square}<span>Formas</span></button>
  <button class="tool" id="t-ov" title="Overlays: destellos, grano, texturas, luces…">${I.layers}<span>Overlays</span></button>
- <div class="tools__sep"></div><div class="tools__h">Capas</div><div class="layers layers--c" id="layers"></div>
+ <div class="tools__sep"></div>
+ <div class="lyr"><div class="lyr__box" id="lbox"><div class="lyr__head"><span>Capas</span><button type="button" class="lyr__b" id="lmerge" hidden title="Fusionar capas seleccionadas" aria-label="Fusionar selección">${I.layers}</button><button type="button" class="lyr__b" id="lexp" title="Expandir o contraer capas" aria-label="Expandir capas" aria-pressed="false">${I["chevron-down"]}</button></div><div class="layers layers--c" id="layers"></div><div class="lyr__bg" id="lbg"></div></div></div>
 </aside>
 <main class="stage" id="stage"><div class="ttb" id="ttb" role="toolbar" aria-label="Herramientas de texto" hidden></div><div class="stage__box" id="box"><canvas id="cv"></canvas><div class="guides" id="guides"></div></div><div class="slides" id="slides" hidden></div></main>
 <aside class="panel">
@@ -64,6 +67,9 @@ export async function mountEditor(root,id,{template=false}={}){
   const setFmt=async id=>{const f=fmtById(id);post.format=f.id;await ed.setFormat(f.w,f.h);insp.reset()};
   const syncP=()=>insp&&insp.reset();
   sessionStart();
+  {const lw=+localStorage.getItem("sg.leftw")||0;if(lw)root.querySelector(".app")?.style.setProperty("--left-w",lw+"px");
+   const sp=$("#lsplit"),app=root.querySelector(".app")||root;
+   sp.onpointerdown=e=>{e.preventDefault();sp.setPointerCapture(e.pointerId);const mv=ev=>{const w=Math.max(96,Math.min(360,Math.round(ev.clientX-app.getBoundingClientRect().left)));app.style.setProperty("--left-w",w+"px");sp.dataset.w=w;ed.fit&&ed.fit()};const up=()=>{sp.removeEventListener("pointermove",mv);sp.removeEventListener("pointerup",up);if(sp.dataset.w)try{localStorage.setItem("sg.leftw",sp.dataset.w)}catch{}};sp.addEventListener("pointermove",mv);sp.addEventListener("pointerup",up)}}
   let savePreset=null;const insp=mountInspector($("#insp"),ed,setFmt,fmtOf,syncP,()=>savePreset);
   if(!template)ed.product=post.product||{};ed.applyFields();
   $("#t-img").onclick=()=>openImageTool(ed,syncP);
@@ -154,7 +160,23 @@ export async function mountEditor(root,id,{template=false}={}){
   };
   ed.on("slides",drawSlides);drawSlides();
   ed.on("guides",g=>{$("#guides").innerHTML=g.map(a=>a.x!==undefined?`<i style="left:${(a.x/ed.W*100).toFixed(3)}%;top:0;bottom:0;width:0;border-left:1px solid #ff3d9a"></i>`:`<i style="top:${(a.y/ed.H*100).toFixed(3)}%;left:0;right:0;height:0;border-top:1px solid #ff3d9a"></i>`).join("")});
-  $("#stage").addEventListener("mousedown",e=>{if(e.target.closest(".canvas-container,.slides,.shapes,.rul,.cmp,.ttb"))return;ed.canvas.discardActiveObject();ed.bgSel=false;ed.canvas.requestRenderAll();ed.emit("change");closePop()});
+  $("#stage").addEventListener("pointerdown",e=>{
+    if(e.button!==0||e.target.closest(".canvas-container,.slides,.shapes,.rul,.cmp,.ttb,.pop2"))return;
+    closePop();const sx=e.clientX,sy=e.clientY,add=e.shiftKey||e.ctrlKey||e.metaKey;let mq=null,moved=false;const base=add?ed.canvas.getActiveObjects().filter(o=>ed.mergeable(o)):[];
+    const rect=()=>({l:Math.min(sx,cx),t:Math.min(sy,cy),r:Math.max(sx,cx),b:Math.max(sy,cy)});let cx=sx,cy=sy;
+    const mv=ev=>{cx=ev.clientX;cy=ev.clientY;if(!moved&&Math.hypot(cx-sx,cy-sy)<5)return;moved=true;
+      if(!mq){mq=document.createElement("div");mq.className="marq";document.body.appendChild(mq)}
+      const r=rect();Object.assign(mq.style,{left:r.l+"px",top:r.t+"px",width:r.r-r.l+"px",height:r.b-r.t+"px"})};
+    const up=()=>{window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);
+      if(mq)mq.remove();
+      if(!moved){if(!add){ed.canvas.discardActiveObject();ed.bgSel=false;ed.canvas.requestRenderAll();ed.emit("change")}return}
+      const br=$("#box").getBoundingClientRect(),k=br.width/ed.W,r=rect(),R={l:(r.l-br.left)/k,r:(r.r-br.left)/k,t:(r.t-br.top)/k,b:(r.b-br.top)/k};
+      const hit=ed.canvas.getObjects().filter(o=>ed.mergeable(o)&&o.visible!==false&&o.selectable!==false&&!o.locked&&(()=>{o.setCoords();const q=o.getCoords(),xs=q.map(p=>p.x),ys=q.map(p=>p.y);return Math.min(...xs)<=R.r&&Math.max(...xs)>=R.l&&Math.min(...ys)<=R.b&&Math.max(...ys)>=R.t})());
+      const all=[...new Set([...base,...hit])];ed.canvas.discardActiveObject();ed.bgSel=false;
+      if(all.length===1)ed.canvas.setActiveObject(all[0]);else if(all.length>1)ed.canvas.setActiveObject(new ActiveSelection(all,{canvas:ed.canvas}));
+      ed.canvas.requestRenderAll();ed.emit("change")};
+    window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);
+  });
   const cmp=mountComposer($("#box").closest(".app")||document,ed);
   const key=e=>{
     if(/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&document.activeElement.type!=="color"&&document.activeElement.type!=="range")return;

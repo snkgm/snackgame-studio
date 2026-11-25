@@ -1,10 +1,10 @@
-import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125d";
-import {ZONES,MARGINS,loadPresets,savePresets,uid,zonesFor} from "./zones.js?v=20261125d";
-import {saveSnap} from "./snap.js?v=20261125d";
-import {keepAcc,setKeepAcc} from "./accordion.js?v=20261125d";
-import {I} from "../app/icons.js?v=20261125d";
-import {esc,modal,toast} from "../app/ui.js?v=20261125d";
-const VK="sg.view",DV={rulers:1,guides:1,margins:0,zones:0,meas:"drag",glock:0};
+import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125e";
+import {ZONES,MARGINS,loadPresets,savePresets,uid,zonesFor} from "./zones.js?v=20261125e";
+import {saveSnap} from "./snap.js?v=20261125e";
+import {keepAcc,setKeepAcc} from "./accordion.js?v=20261125e";
+import {I} from "../app/icons.js?v=20261125e";
+import {esc,modal,toast} from "../app/ui.js?v=20261125e";
+const VK="sg.view",DV={rulers:1,guides:1,margins:0,zones:0,meas:"drag",glock:0,mlock:1};
 const lv=()=>{try{return {...DV,...JSON.parse(localStorage.getItem(VK)||"{}")}}catch{return {...DV}}};
 const S=d=>`<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const IC={
@@ -29,6 +29,7 @@ export function mountComposer(root,ed){
   const $=s=>root.querySelector(s),box=$("#box"),stage=$("#stage"),bar=$("#bar2");
   let V=lv();const saveV=()=>{try{localStorage.setItem(VK,JSON.stringify(V))}catch{}};
   const cfg=()=>ed.cfg;
+  {let l0=V.mlock;delete V.mlock;Object.defineProperty(V,"mlock",{enumerable:true,configurable:true,get:()=>cfg().mlock!==undefined?cfg().mlock:l0,set:v=>{l0=v;cfg().mlock=v?1:0}})}
   {let m0=V.margins;delete V.margins;Object.defineProperty(V,"margins",{enumerable:true,configurable:true,get:()=>cfg().mshow!==undefined?cfg().mshow:m0,set:v=>{m0=v;cfg().mshow=v?1:0}})}
   const guides=()=>cfg().guides||(cfg().guides=[]);
   const mk=(id,cls)=>{let e=box.querySelector("#"+id);if(!e){e=document.createElement("div");e.id=id;e.className=cls;box.appendChild(e)}return e};
@@ -87,13 +88,13 @@ export function mountComposer(root,ed){
     cfg().safe=m;ed.emit("safe");if(!live)ed.commit();
   }
   function drawMargins(){
-    mEl.hidden=!V.margins;if(!V.margins){mEl.innerHTML="";return}
+    mEl.hidden=!V.margins;mEl.classList.toggle("is-locked",!!V.mlock);if(!V.margins){mEl.innerHTML="";return}
     const m=ed.margins(),W=ed.W,H=ed.H,p=(v,t)=>(v/t*100).toFixed(3)+"%";
     mEl.innerHTML=`<div class="mgbox" style="left:${p(m.l,W)};right:${p(m.r,W)};top:${p(m.t,H)};bottom:${p(m.b,H)}"></div>`+
      [["l",`left:${p(m.l,W)};top:0;bottom:0`,"x"],["r",`right:${p(m.r,W)};top:0;bottom:0`,"x"],["t",`top:${p(m.t,H)};left:0;right:0`,"y"],["b",`bottom:${p(m.b,H)};left:0;right:0`,"y"]].map(([k,st,a])=>`<i class="mgl mgl--${a}" data-k="${k}" style="${st}"><b>${R(m[k])}</b></i>`).join("");
   }
   mEl.addEventListener("pointerdown",e=>{
-    const el=e.target.closest(".mgl");if(!el)return;e.preventDefault();e.stopPropagation();const k=el.dataset.k;
+    const el=e.target.closest(".mgl");if(!el||V.mlock)return;e.preventDefault();e.stopPropagation();const k=el.dataset.k;
     const mv=ev=>{const p=doc(ev.clientX,ev.clientY);setMargin(k,k==="l"?p.x:k==="r"?ed.W-p.x:k==="t"?p.y:ed.H-p.y,true)};
     const up=()=>{window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);ed.commit()};
     window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);
@@ -108,6 +109,14 @@ export function mountComposer(root,ed){
   }
   // ---------- medidas
   const mkL=(x1,y1,x2,y2,txt,cls="")=>{const k=sc(),f=11/k,tx=(x1+x2)/2,ty=(y1+y2)/2;return `<g class="ml ${cls}"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke-width="${1/k}"/><line x1="${x1}" y1="${y1}" x2="${x1+(y1===y2?0:-4/k)}" y2="${y1+(y1===y2?-4/k:0)}" stroke-width="${1/k}"/><text x="${tx}" y="${ty-3/k}" font-size="${f}" text-anchor="middle" stroke-width="${3/k}">${txt}</text></g>`};
+  function info(){
+    const el=bar.querySelector("#b-info");if(!el)return;
+    const objs=c.getActiveObjects().filter(o=>o.visible!==false);if(!objs.length||ed.bgSel){el.textContent="";return}
+    const bs=objs.map(bx),sel={L:Math.min(...bs.map(b=>b.L)),R:Math.max(...bs.map(b=>b.R)),T:Math.min(...bs.map(b=>b.T)),B:Math.max(...bs.map(b=>b.B))},m=ed.margins(),W=ed.W,H=ed.H;
+    const ml=V.margins?m.l:0,mr=V.margins?m.r:0,mt=V.margins?m.t:0,mb=V.margins?m.b:0;
+    const dh=(sel.L-ml)-(W-mr-sel.R),dv=(sel.T-mt)-(H-mb-sel.B),oh=Math.abs(dh)<=1,ov=Math.abs(dv)<=1;
+    el.innerHTML=`<span class="${oh?"ok":"no"}">${oh?"✓":"Δ"} Horizontal${oh?" centrado":" "+R(Math.abs(dh))+" px"}</span><span class="${ov?"ok":"no"}">${ov?"✓":"Δ"} Vertical${ov?" centrado":" "+R(Math.abs(dv))+" px"}</span>`;
+  }
   function measure(){
     const mode=V.meas;meEl.innerHTML="";if(mode==="off")return;
     if(mode==="drag"&&!ed._dragging)return;
@@ -141,8 +150,6 @@ export function mountComposer(root,ed){
     // simetría
     const ml=V.margins?m.l:0,mr=V.margins?m.r:0,mt=V.margins?m.t:0,mb=V.margins?m.b:0;
     const dh=(sel.L-ml)-(W-mr-sel.R),dv=(sel.T-mt)-(H-mb-sel.B);
-    const tag=(t,ok,y)=>`<text class="sym ${ok?"ok":"no"}" x="${W/2}" y="${y}" font-size="${12/k}" text-anchor="middle" stroke-width="${3/k}">${t}</text>`;
-    out+=tag(Math.abs(dh)<=1?"✓ centrado horizontal":`Δ horizontal ${R(Math.abs(dh))} px`,Math.abs(dh)<=1,H-14/k)+tag(Math.abs(dv)<=1?"✓ centrado vertical":`Δ vertical ${R(Math.abs(dv))} px`,Math.abs(dv)<=1,H-30/k);
     // varios elementos: separaciones
     if(objs.length>1){
       const gaps=(key,a,b)=>{const s=[...boxes].sort((p,q)=>p[a]-q[a]),gs=[];let s2="";for(let i=0;i<s.length-1;i++)gs.push(s[i+1][a]-s[i][b]);const eq=gs.length>1&&gs.every(v=>Math.abs(v-gs[0])<=1);
@@ -180,13 +187,13 @@ export function mountComposer(root,ed){
   const dd=(id,ic,lab,tip)=>`<button class="b2 b2--dd" id="${id}" title="${tip}" aria-label="${tip}" aria-haspopup="true" aria-pressed="false">${ic}<span>${lab}</span>${IC.chev}</button>`;
   bar.innerHTML=`<div class="b2g">${btn("b-rul",IC.ruler,"Mostrar/ocultar reglas")}${dd("b-gui",IC.guides,"Guías","Guías: mostrar, crear y editar")}${dd("b-mar",IC.margins,"Márgenes","Márgenes: mostrar, presets y valores")}${dd("b-zon",IC.zones,"Zonas","Zonas seguras por plataforma")}</div><i class="b2s"></i>
 <div class="b2g">${btn("b-snap",IC.magnet,"Ajuste magnético (mantén Alt para desactivarlo al arrastrar)")}${dd("b-tol","" ,"","Sensibilidad del imán")}${btn("b-smart",S('<circle cx="12" cy="12" r="3"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/>'),"Guías inteligentes: alinear con bordes y centros de otros elementos")}</div><i class="b2s"></i>
-<div class="b2g">${btn("b-meas",IC.meas,"Medidas y distancias: ocultas / al mover / siempre")}${btn("b-glock",IC.lock,"Bloquear/desbloquear guías")}</div><i class="b2s"></i>
-<div class="b2g" id="b-al">${[["al",IC.al,"Alinear a la izquierda"],["ac",IC.ac,"Centrar horizontalmente"],["ar",IC.ar,"Alinear a la derecha"],["at",IC.at,"Alinear arriba"],["am",IC.am,"Centrar verticalmente"],["ab",IC.ab,"Alinear abajo"],["dh",IC.dh,"Distribuir horizontalmente (3 o más)"],["dv",IC.dv,"Distribuir verticalmente (3 o más)"],["eq",IC.eq,"Igualar espacios entre elementos (3 o más)"]].map(([k,i,t])=>btn("al-"+k,i,t,` data-al="${k}"`)).join("")}</div><i class="b2s"></i><button class="b2" id="b-keep" title="Recordar paneles abiertos/cerrados entre sesiones" aria-pressed="false"><span>Recordar paneles</span></button>`;
+<div class="b2g">${btn("b-meas",IC.meas,"Medidas y distancias: ocultas / al mover / siempre")}${btn("b-glock",IC.lock,"Bloquear/desbloquear guías")}<button class="b2 b2--t" id="b-mlock" title="Bloquear márgenes: impide moverlos arrastrando sobre el lienzo" aria-pressed="false">${IC.lock}<span>Bloquear márgenes</span></button></div><i class="b2s"></i>
+<div class="b2g" id="b-al">${[["al",IC.al,"Alinear a la izquierda"],["ac",IC.ac,"Centrar horizontalmente"],["ar",IC.ar,"Alinear a la derecha"],["at",IC.at,"Alinear arriba"],["am",IC.am,"Centrar verticalmente"],["ab",IC.ab,"Alinear abajo"],["dh",IC.dh,"Distribuir horizontalmente (3 o más)"],["dv",IC.dv,"Distribuir verticalmente (3 o más)"],["eq",IC.eq,"Igualar espacios entre elementos (3 o más)"]].map(([k,i,t])=>btn("al-"+k,i,t,` data-al="${k}"`)).join("")}</div><i class="b2s"></i><span class="b2i" id="b-info" role="status" aria-live="polite"></span><i class="b2s"></i><button class="b2" id="b-keep" title="Recordar paneles abiertos/cerrados entre sesiones" aria-pressed="false"><span>Recordar paneles</span></button>`;
   bar.querySelector("#b-tol").innerHTML=`${IC.tol}<span id="tol-l"></span>${IC.chev}`;
   const setOn=(id,on,t)=>{const b=bar.querySelector("#"+id);b.classList.toggle("is-on",!!on);b.setAttribute("aria-pressed",String(!!on));if(t)b.dataset.state=t};
   function sync(){
     setOn("b-rul",V.rulers);setOn("b-gui",V.guides);setOn("b-mar",V.margins);setOn("b-zon",V.zones&&cfg().zone);
-    setOn("b-snap",ed.snapCfg.on);setOn("b-smart",ed.snapCfg.smart!==false&&ed.snapCfg.on);setOn("b-meas",V.meas!=="off");setOn("b-keep",keepAcc());setOn("b-glock",V.glock);
+    setOn("b-snap",ed.snapCfg.on);setOn("b-smart",ed.snapCfg.smart!==false&&ed.snapCfg.on);setOn("b-meas",V.meas!=="off");setOn("b-keep",keepAcc());setOn("b-glock",V.glock);setOn("b-mlock",V.mlock);bar.querySelector("#b-mlock").innerHTML=(V.mlock?IC.lock:IC.unlock)+"<span>Bloquear márgenes</span>";info();
     const tl=bar.querySelector("#tol-l"),n=TOLS.find(t=>t[1]===ed.snapCfg.tol);tl.textContent=n?n[0]:ed.snapCfg.tol+" px";
     bar.querySelector("#b-meas").title="Medidas: "+({off:"ocultas",drag:"solo al mover",on:"siempre"}[V.meas])+" (clic para cambiar)";bar.querySelector("#b-meas").classList.toggle("is-dim",V.meas==="drag");
     bar.querySelector("#b-glock").innerHTML=V.glock?IC.lock:IC.unlock;
@@ -278,6 +285,7 @@ export function mountComposer(root,ed){
   const tgl=(id,fn)=>bar.querySelector("#"+id).addEventListener("click",()=>{closePop2();fn();saveV();redraw()});
   bar.querySelector("#b-keep").onclick=()=>{setKeepAcc(!keepAcc());sync()};
   tgl("b-rul",()=>V.rulers=V.rulers?0:1);
+  tgl("b-mlock",()=>V.mlock=V.mlock?0:1);ed.on("safe",()=>{});
   tgl("b-glock",()=>V.glock=V.glock?0:1);
   tgl("b-meas",()=>{V.meas=V.meas==="drag"?"on":V.meas==="on"?"off":"drag"});
   const snapSet=p=>{ed.setSnap(p);saveSnap(ed.snapCfg);cfg().snap={...ed.snapCfg};ed.commit()};
@@ -289,7 +297,7 @@ export function mountComposer(root,ed){
   bar.querySelectorAll("[data-al]").forEach(b=>b.onclick=()=>align(b.dataset.al));
   // ---------- eventos del editor
   const c=ed.canvas;
-  const dragOn=()=>{ed._dragging=true;measure()},dragOff=()=>{ed._dragging=false;measure()};
+  const dragOn=()=>{ed._dragging=true;measure();info()},dragOff=()=>{ed._dragging=false;measure()};
   ["object:moving","object:scaling","object:resizing","object:rotating"].forEach(n=>c.on(n,dragOn));
   ["mouse:up","object:modified"].forEach(n=>c.on(n,dragOff));
   ["selection:created","selection:updated","selection:cleared"].forEach(n=>c.on(n,()=>{measure();sync()}));

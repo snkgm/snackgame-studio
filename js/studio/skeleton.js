@@ -1,8 +1,8 @@
-import {withHeadless} from "./headless.js?v=20261125d";
-import {fmtById} from "../app/formats.js?v=20261125d";
-import {BG_DEFAULT} from "../img/background.js?v=20261125d";
-import {FLOOR_DEFAULT} from "../img/fx.js?v=20261125d";
-import {logoUrl} from "../app/brand.js?v=20261125d";
+import {withHeadless} from "./headless.js?v=20261125e";
+import {fmtById} from "../app/formats.js?v=20261125e";
+import {BG_DEFAULT} from "../img/background.js?v=20261125e";
+import {FLOOR_DEFAULT} from "../img/fx.js?v=20261125e";
+import {logoUrl} from "../app/brand.js?v=20261125e";
 const R=(o,rule)=>{o.set("rule",rule);return o};
 export function safeOf(fmt,cfg){return {...fmtById(fmt).safe,...((cfg&&cfg.safe)||{})}}
 async function slideContent(ed,kind,f,s,names){
@@ -44,6 +44,17 @@ export async function buildSkeleton(fmtId,names={}){
         o.set("rule",{...ed.ruleOf(o),...plan[i][1],shadow:false,floor:{...FLOOR_DEFAULT,blur:42}});ed.placeProduct(o);o.set("name","Producto (ejemplo)");
       }
     }
+    return ed.toData();
+  });
+}
+
+export async function buildBlank(fmtId){
+  const fmt=fmtById(fmtId);
+  return withHeadless(async ed=>{
+    await ed.loadData(null,fmt);ed.tplMode=true;
+    ed.cfg={bg:{...BG_DEFAULT,mode:"solid",solid:"#ffffff"},product:{removeBg:true},safe:{...ed.cfg.safe},msym:{h:true,v:true},mshow:1,mlock:1};
+    ed.palette=[];ed.canvas.backgroundColor="#ffffff";
+    await ed.applyBg();
     return ed.toData();
   });
 }

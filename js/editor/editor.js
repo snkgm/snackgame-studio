@@ -1,9 +1,9 @@
-import {Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261125d";
-import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261125d";
-import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261125d";
-import {renderOverlay,overlayById} from "../img/overlays.js?v=20261125d";
-import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261125d";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261125d";
+import {StaticCanvas,Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261125e";
+import {bgDataUrl,bgColors,BG_DEFAULT,gradDataUrl} from "../img/background.js?v=20261125e";
+import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261125e";
+import {renderOverlay,overlayById} from "../img/overlays.js?v=20261125e";
+import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261125e";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261125e";
 const _tid=Textbox.prototype.initDimensions;
 Textbox.prototype.initDimensions=function(){_tid.call(this);if(this.boxH&&this.boxH>this.height)this.height=this.boxH};
 const PROPS=["boxH","name","locked","role","field","pattern","rule","orig","gen","globalCompositeOperation"];
@@ -232,11 +232,14 @@ export class Editor{
     if(!this.cfg.bg||c.mode==="solid"){const was=this.busy;this.busy=true;if(old)this.canvas.remove(old);this.busy=was;if(c.mode==="solid")this.canvas.backgroundColor=c.solid;this.canvas.requestRenderAll();if(snap)this.commit();return}
     let url;
     if(c.mode==="auto")url=bgDataUrl(this.W,this.H,c,this.palette);
+    else if(c.mode==="grad")url=gradDataUrl(this.W,this.H,c.grad);
     else if(c.mode==="image"&&c.img)url=c.img;
     else return;
     const img=await FabricImage.fromURL(url,{crossOrigin:"anonymous"});
-    const k=Math.max(this.W/img.width,this.H/img.height);
-    img.set({scaleX:k,scaleY:k,left:(this.W-img.width*k)/2,top:(this.H-img.height*k)/2,originX:"left",originY:"top",name:"Fondo",role:"background",selectable:false,evented:false,hoverCursor:"default"});
+    const fit=c.mode==="image"?(c.imgFit||"cover"):"cover";
+    const k=fit==="contain"?Math.min(this.W/img.width,this.H/img.height):Math.max(this.W/img.width,this.H/img.height);
+    const man=fit==="manual";
+    img.set({scaleX:k,scaleY:k,left:(this.W-img.width*k)/2,top:(this.H-img.height*k)/2,originX:"left",originY:"top",name:"Fondo",role:"background",selectable:man,evented:man,hoverCursor:man?"move":"default"});
     const was=this.busy;this.busy=true;
     if(old)this.canvas.remove(old);
     this.canvas.add(img);this.canvas.sendObjectToBack(img);img.setCoords();this.busy=was;
@@ -344,6 +347,42 @@ export class Editor{
   toggleVisible(o){this.patch(o,{visible:o.visible===false});if(o.visible===false)this.canvas.discardActiveObject()}
   toggleLock(o){const l=!o.locked;this.patch(o,{locked:l,selectable:!l,evented:!l});if(l)this.canvas.discardActiveObject()}
   remove(o){this.canvas.discardActiveObject();this.canvas.remove(o)}
+  mergeable(o){return o&&o.role!=="background"&&!DERIVED.includes(o.role)}
+  async mergeLayers(objs,{keep=false}={}){
+    const c=this.canvas,all=c.getObjects();objs=objs.filter(o=>this.mergeable(o)).sort((a,b)=>all.indexOf(a)-all.indexOf(b));
+    if(objs.length<2)return null;
+    const W=this.W,H=this.H;let L=1e9,T=1e9,R=-1e9,B=-1e9;
+    objs.forEach(o=>{o.setCoords();const q=o.getCoords(),sh=o.shadow,pad=sh?(sh.blur||0)*1.5+Math.max(Math.abs(sh.offsetX||0),Math.abs(sh.offsetY||0)):0;q.forEach(p=>{L=Math.min(L,p.x-pad);R=Math.max(R,p.x+pad);T=Math.min(T,p.y-pad);B=Math.max(B,p.y+pad)})});
+    L=Math.max(L,-W);T=Math.max(T,-H);R=Math.min(R,2*W);B=Math.min(B,2*H);
+    const w=Math.max(2,Math.ceil(R-L)),h=Math.max(2,Math.ceil(B-T)),m=Math.min(2,4096/Math.max(w,h));
+    const sc=new StaticCanvas(null,{width:Math.round(w*m),height:Math.round(h*m),enableRetinaScaling:false});sc.setZoom(m);
+    for(const o of objs){const cl=await o.clone(PROPS);cl.set({left:o.left-L,top:o.top-T,visible:true});sc.add(cl)}
+    sc.renderAll();const url=sc.toDataURL({format:"png",multiplier:1});sc.dispose();
+    const img=await FabricImage.fromURL(url);
+    const top=Math.max(...objs.map(o=>all.indexOf(o)));
+    img.set({left:L,top:T,scaleX:1/m,scaleY:1/m,name:"Capa combinada",role:"decor"});
+    this._derived=true;
+    if(keep)objs.forEach(o=>{o.set({visible:false,name:(o.name||"Capa")+" (original)"})});else objs.forEach(o=>c.remove(o));
+    c.add(img);c.moveObjectTo(img,Math.min(c.getObjects().length-1,top-(keep?0:objs.length-1)+(keep?1:0)));
+    this._derived=false;
+    c.discardActiveObject();c.setActiveObject(img);img.setCoords();
+    await this.rebuild();this.commit();return img;
+  }
+  async setBgFromLayer(o,fit="cover"){
+    const src=o.orig||(o.getSrc&&o.getSrc());if(!src)return;
+    this.canvas.discardActiveObject();
+    this._derived=true;this.canvas.remove(o);this._derived=false;
+    await this.applyBg({mode:"image",img:src,imgFit:fit,fromLayer:{name:o.name||"Imagen",orig:o.orig||null}},{snap:true});
+  }
+  async separateBg(){
+    const c=this.bgCfg;if(c.mode!=="image"||!c.img)return;
+    const bl=this.bgLayer();const img=await FabricImage.fromURL(c.img,{crossOrigin:"anonymous"});
+    const k=bl?bl.scaleX:Math.max(this.W/img.width,this.H/img.height);
+    img.set({scaleX:k,scaleY:k,left:bl?bl.left:(this.W-img.width*k)/2,top:bl?bl.top:(this.H-img.height*k)/2,name:(c.fromLayer&&c.fromLayer.name)||"Imagen",role:"decor"});
+    if(c.fromLayer&&c.fromLayer.orig)img.set("orig",c.fromLayer.orig);
+    await this.applyBg({mode:"solid",solid:"#ffffff",img:"",fromLayer:null});
+    this.canvas.add(img);this.canvas.setActiveObject(img);this.commit();
+  }
   async duplicate(o){
     const c=await o.clone(PROPS);if(o.gen){c.set('gen',{...o.gen});}
     c.set({name:o.name+" copia",left:o.left+24,top:o.top+24});

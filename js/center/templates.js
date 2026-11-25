@@ -1,9 +1,9 @@
-import {store} from "../app/store.js?v=20261125d";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261125d";
-import {I} from "../app/icons.js?v=20261125d";
-import {esc,toast,modal,openMenu} from "../app/ui.js?v=20261125d";
-import {db} from "../app/db.js?v=20261125d";
-import {buildSkeleton} from "../studio/skeleton.js?v=20261125d";
+import {store} from "../app/store.js?v=20261125e";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261125e";
+import {I} from "../app/icons.js?v=20261125e";
+import {esc,toast,modal,openMenu} from "../app/ui.js?v=20261125e";
+import {db} from "../app/db.js?v=20261125e";
+import {buildSkeleton,buildBlank} from "../studio/skeleton.js?v=20261125e";
 export function mountTemplates(root){
   const S={ty:"",ca:"",fm:""};
   const opt=(arr,sel,all)=>`<option value="">${all}</option>`+arr.map(x=>`<option value="${x.id}"${x.id===sel?" selected":""}>${esc(x.name)}</option>`).join("");
@@ -29,7 +29,7 @@ ${t?`<p class="hint">Formato: ${esc(fmtById(t.format).label)} (no se puede cambi
       if(t){await store.patchTemplate(t.id,{name,type_id:ty,category_id:ca});if(t.is_default){t.is_default=false;db.update("templates",t.id,{is_default:false}).catch(()=>{})}return}
       const fm=f.querySelector("#t-fm").value,w=toast("Creando plantilla…",{ms:600000});
       try{
-        const data=await buildSkeleton(fm,{type:store.typeName(ty),cat:store.catName(ca)});
+        const data=await buildBlank(fm);
         const r=await store.createTemplate({name,type_id:ty,category_id:ca,format:fm,data,is_default:false});
         w.close();location.hash=`#/plantilla/${r.id}`;
       }catch(e){w.close();throw e}
