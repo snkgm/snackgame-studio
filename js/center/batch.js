@@ -1,8 +1,8 @@
-import {store} from "../app/store.js?v=20261126f";
-import {FORMATS} from "../app/formats.js?v=20261126f";
-import {esc,toast,modal} from "../app/ui.js?v=20261126f";
-import {searchCatalog} from "../app/catalog.js?v=20261126f";
-import {createVariants} from "../studio/create.js?v=20261126f";
+import {store} from "../app/store.js?v=20261126g";
+import {FORMATS} from "../app/formats.js?v=20261126g";
+import {esc,toast,modal} from "../app/ui.js?v=20261126g";
+import {searchCatalog} from "../app/catalog.js?v=20261126g";
+import {createVariants} from "../studio/create.js?v=20261126g";
 const pad=n=>String(n).padStart(2,"0");
 export function openBatch(){
   const opts=arr=>`<option value="">—</option>`+arr.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("");
