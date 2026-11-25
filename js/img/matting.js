@@ -1,8 +1,8 @@
-import {db,publicUrl} from "../app/db.js?v=20261125r";
+import {db,publicUrl} from "../app/db.js?v=20261125s";
 let worker,seq=0;const waits=new Map();
 function getWorker(){
   if(worker)return worker;
-  worker=new Worker(new URL("./matting.worker.js?v=20261125r",import.meta.url),{type:"module"});
+  worker=new Worker(new URL("./matting.worker.js?v=20261125s",import.meta.url),{type:"module"});
   worker.onmessage=e=>{const w=waits.get(e.data.id);if(!w)return;if(e.data.progress){w.onp?.(e.data.progress);return}waits.delete(e.data.id);e.data.error?w.rej(new Error(e.data.error)):w.res(e.data)};
   worker.onerror=e=>{waits.forEach(w=>w.rej(new Error("El modelo no se pudo iniciar")));waits.clear();worker=null};
   return worker;
@@ -124,7 +124,7 @@ export function boxMask(c){
       for(let dy=-3;dy<=3&&!ok;dy++)for(let dx=-3;dx<=3;dx++){const X=x+dx,Y=y+dy;if(X>=0&&Y>=0&&X<w&&Y<h&&W.m[Y*w+X]){ok=1;break}}hit+=ok}}
   const edge=hit/Math.max(1,tot),cover=inS/Math.max(1,hullPx),nv=nvAt(.004);
   mattingInfo.box={nv,nv6:nvAt(.006),nv10:nvAt(.01),edge,cover,lo};
-  if(nvAt(.01)>8||edge<.88||cover<.2)return null;
+  if(nvAt(.01)>8||edge<.7||cover<.2)return null;
   return m;
 }
 export const mattingInfo={method:""};
