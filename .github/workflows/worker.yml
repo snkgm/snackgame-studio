@@ -28,10 +28,27 @@ jobs:
             worker/.pw-profile
             ~/.cache/ms-playwright
           key: pw-${{ hashFiles('worker/package.json') }}
+      - uses: actions/setup-python@v5
+        if: steps.q.outputs.pending != '0'
+        with: {python-version: "3.11"}
+      - uses: actions/cache@v4
+        if: steps.q.outputs.pending != '0'
+        with:
+          path: ~/.rembg
+          key: rembg-birefnet-general-v1
+      - name: Servicio de recorte (BiRefNet)
+        if: steps.q.outputs.pending != '0'
+        working-directory: worker
+        run: |
+          pip install -q "rembg[cpu]" pillow
+          nohup python cutserver.py > cut.log 2>&1 &
+          for i in $(seq 1 90); do curl -sf http://127.0.0.1:8765/ >/dev/null && break; sleep 5; done
+          cat cut.log || true
       - name: Ejecutar
         if: steps.q.outputs.pending != '0'
         working-directory: worker
         env:
+          CUT_SERVICE: http://127.0.0.1:8765
           STUDIO_EMAIL: ${{ secrets.STUDIO_EMAIL }}
           STUDIO_PASSWORD: ${{ secrets.STUDIO_PASSWORD }}
         run: |

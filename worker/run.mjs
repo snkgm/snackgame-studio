@@ -9,6 +9,11 @@ while(Date.now()-t0<LIMIT&&await pending()>0&&rounds++<50){
   try{
     const page=await ctx.newPage();
     page.on("console",m=>{if(["error","warning"].includes(m.type()))console.log("[page]",m.text().slice(0,200))});
+    if(process.env.CUT_SERVICE)await page.route("https://cut.snackgame.test/**",async r=>{
+      try{const x=await fetch(process.env.CUT_SERVICE+"/cut",{method:"POST",body:r.request().postDataBuffer()});
+        r.fulfill({status:x.status,body:Buffer.from(await x.arrayBuffer()),headers:{"content-type":"image/png","access-control-allow-origin":"*"}})}
+      catch(e){r.fulfill({status:500,body:String(e)})}});
+    if(process.env.CUT_SERVICE)await page.addInitScript(()=>{globalThis.__cutServiceUrl="https://cut.snackgame.test/cut"});
     await page.goto(SITE+"worker.html?t="+Date.now(),{waitUntil:"load"});
     await page.waitForFunction(()=>window.__ready,null,{timeout:60e3});
     if(process.env.STUDIO_EMAIL)await page.evaluate(([e,p])=>window.__login(e,p),[process.env.STUDIO_EMAIL,process.env.STUDIO_PASSWORD]);
