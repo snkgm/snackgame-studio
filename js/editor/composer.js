@@ -1,9 +1,9 @@
-import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125b";
-import {ZONES,MARGINS,loadPresets,savePresets,uid,zonesFor} from "./zones.js?v=20261125b";
-import {saveSnap} from "./snap.js?v=20261125b";
-import {keepAcc,setKeepAcc} from "./accordion.js?v=20261125b";
-import {I} from "../app/icons.js?v=20261125b";
-import {esc,modal,toast} from "../app/ui.js?v=20261125b";
+import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125d";
+import {ZONES,MARGINS,loadPresets,savePresets,uid,zonesFor} from "./zones.js?v=20261125d";
+import {saveSnap} from "./snap.js?v=20261125d";
+import {keepAcc,setKeepAcc} from "./accordion.js?v=20261125d";
+import {I} from "../app/icons.js?v=20261125d";
+import {esc,modal,toast} from "../app/ui.js?v=20261125d";
 const VK="sg.view",DV={rulers:1,guides:1,margins:0,zones:0,meas:"drag",glock:0};
 const lv=()=>{try{return {...DV,...JSON.parse(localStorage.getItem(VK)||"{}")}}catch{return {...DV}}};
 const S=d=>`<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -29,6 +29,7 @@ export function mountComposer(root,ed){
   const $=s=>root.querySelector(s),box=$("#box"),stage=$("#stage"),bar=$("#bar2");
   let V=lv();const saveV=()=>{try{localStorage.setItem(VK,JSON.stringify(V))}catch{}};
   const cfg=()=>ed.cfg;
+  {let m0=V.margins;delete V.margins;Object.defineProperty(V,"margins",{enumerable:true,configurable:true,get:()=>cfg().mshow!==undefined?cfg().mshow:m0,set:v=>{m0=v;cfg().mshow=v?1:0}})}
   const guides=()=>cfg().guides||(cfg().guides=[]);
   const mk=(id,cls)=>{let e=box.querySelector("#"+id);if(!e){e=document.createElement("div");e.id=id;e.className=cls;box.appendChild(e)}return e};
   const zEl=mk("zn","cmp cmp--z"),gEl=mk("gl","cmp cmp--g"),mEl=mk("mg","cmp cmp--m"),meEl=mk("me","cmp cmp--me");

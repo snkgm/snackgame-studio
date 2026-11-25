@@ -1,19 +1,19 @@
-import {Editor} from "./editor.js?v=20261125b";
-import {LayersPanel} from "./layers.js?v=20261125b";
-import {mountInspector} from "./inspector.js?v=20261125b";
-import {loadAllFonts} from "../app/fonts.js?v=20261125b";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261125b";
-import {sessionStart} from "./accordion.js?v=20261125b";
-import {mountComposer} from "./composer.js?v=20261125b";
-import {safeOf} from "../studio/skeleton.js?v=20261125b";
-import {openProductPicker} from "./product.js?v=20261125b";
-import {openImageTool,openShapes,openOverlayTool,closePop} from "./tools.js?v=20261125b";
-import {zipBlobs} from "../app/zip.js?v=20261125b";
-import {I} from "../app/icons.js?v=20261125b";
-import {db} from "../app/db.js?v=20261125b";
-import {store} from "../app/store.js?v=20261125b";
-import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261125b";
-import {toInput,fromInput} from "../app/dates.js?v=20261125b";
+import {Editor} from "./editor.js?v=20261125d";
+import {LayersPanel} from "./layers.js?v=20261125d";
+import {mountInspector} from "./inspector.js?v=20261125d";
+import {loadAllFonts} from "../app/fonts.js?v=20261125d";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261125d";
+import {sessionStart} from "./accordion.js?v=20261125d";
+import {mountComposer} from "./composer.js?v=20261125d";
+import {safeOf} from "../studio/skeleton.js?v=20261125d";
+import {openProductPicker} from "./product.js?v=20261125d";
+import {openImageTool,openShapes,openTextStyles,openOverlayTool,closePop} from "./tools.js?v=20261125d";
+import {zipBlobs} from "../app/zip.js?v=20261125d";
+import {I} from "../app/icons.js?v=20261125d";
+import {db} from "../app/db.js?v=20261125d";
+import {store} from "../app/store.js?v=20261125d";
+import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261125d";
+import {toInput,fromInput} from "../app/dates.js?v=20261125d";
 export async function mountEditor(root,id,{template=false}={}){
   const table=template?"templates":"posts";
   root.innerHTML='<div class="empty">Cargando…</div>';
@@ -45,11 +45,11 @@ export async function mountEditor(root,id,{template=false}={}){
  <button class="tool" id="t-img" title="Subir imagen, elegir de la biblioteca o añadir un producto">${I.image}<span>Imagen</span></button>
  <button class="tool" id="t-shapes" data-pop title="Formas">${I.square}<span>Formas</span></button>
  <button class="tool" id="t-ov" title="Overlays: destellos, grano, texturas, luces…">${I.layers}<span>Overlays</span></button>
+ <div class="tools__sep"></div><div class="tools__h">Capas</div><div class="layers layers--c" id="layers"></div>
 </aside>
-<main class="stage" id="stage"><div class="stage__box" id="box"><canvas id="cv"></canvas><div class="guides" id="guides"></div></div><div class="slides" id="slides" hidden></div></main>
+<main class="stage" id="stage"><div class="ttb" id="ttb" role="toolbar" aria-label="Herramientas de texto" hidden></div><div class="stage__box" id="box"><canvas id="cv"></canvas><div class="guides" id="guides"></div></div><div class="slides" id="slides" hidden></div></main>
 <aside class="panel">
  <div class="panel__scroll" id="insp"></div>
- <section class="sec sec--layers"><div class="sec__head"><span class="label">Capas</span></div><div class="layers" id="layers"></div></section>
 </aside></div>`;
   const $=s=>root.querySelector(s);
   const ed=new Editor($("#cv"),$("#stage"),$("#box"));
@@ -70,7 +70,7 @@ export async function mountEditor(root,id,{template=false}={}){
   $("#t-ov").onclick=()=>openOverlayTool(ed);
   $("#t-shapes").onclick=e=>openShapes(e.currentTarget,ed);
   const addText=()=>ed.addText({text:"Título",name:"Título",top:Math.round(ed.H*.06),props:{fontSize:84}});
-  $("#t-text").onclick=addText;
+  $("#t-text").onclick=e=>openTextStyles(e.currentTarget,ed);
   $("#undo").onclick=()=>ed.undo();$("#redo").onclick=()=>ed.redo();
   const hist=()=>{$("#undo").disabled=!ed.canUndo;$("#redo").disabled=!ed.canRedo};ed.on("history",hist);hist();
   ed.on("zoom",s=>{$("#zoom").textContent=Math.round(s*100)+"%"});$("#zoom").textContent=Math.round(ed.scale*100)+"%";
@@ -154,7 +154,7 @@ export async function mountEditor(root,id,{template=false}={}){
   };
   ed.on("slides",drawSlides);drawSlides();
   ed.on("guides",g=>{$("#guides").innerHTML=g.map(a=>a.x!==undefined?`<i style="left:${(a.x/ed.W*100).toFixed(3)}%;top:0;bottom:0;width:0;border-left:1px solid #ff3d9a"></i>`:`<i style="top:${(a.y/ed.H*100).toFixed(3)}%;left:0;right:0;height:0;border-top:1px solid #ff3d9a"></i>`).join("")});
-  $("#stage").addEventListener("mousedown",e=>{if(e.target.closest(".canvas-container,.slides,.shapes,.rul,.cmp"))return;ed.canvas.discardActiveObject();ed.bgSel=false;ed.canvas.requestRenderAll();ed.emit("change");closePop()});
+  $("#stage").addEventListener("mousedown",e=>{if(e.target.closest(".canvas-container,.slides,.shapes,.rul,.cmp,.ttb"))return;ed.canvas.discardActiveObject();ed.bgSel=false;ed.canvas.requestRenderAll();ed.emit("change");closePop()});
   const cmp=mountComposer($("#box").closest(".app")||document,ed);
   const key=e=>{
     if(/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&document.activeElement.type!=="color"&&document.activeElement.type!=="range")return;

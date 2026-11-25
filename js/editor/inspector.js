@@ -1,17 +1,18 @@
-import {I} from "../app/icons.js?v=20261125b";
-import {esc} from "../app/ui.js?v=20261125b";
-import {FONTS,loadFont} from "../app/fonts.js?v=20261125b";
-import {FORMATS} from "../app/formats.js?v=20261125b";
-import {safeOf} from "../studio/skeleton.js?v=20261125b";
-import {mountBgPanel} from "./bgpanel.js?v=20261125b";
-import {applyProductImage,openProductPicker} from "./product.js?v=20261125b";
-import {toast} from "../app/ui.js?v=20261125b";
-import {mattingDefaults} from "../img/matting.js?v=20261125b";
-import {store} from "../app/store.js?v=20261125b";
-import {FIELDS,BLENDS} from "./editor.js?v=20261125b";
-import {enhance} from "./accordion.js?v=20261125b";
-import {saveSnap} from "./snap.js?v=20261125b";
-import {Shadow} from "../../vendor/fabric.min.mjs?v=20261125b";
+import {I} from "../app/icons.js?v=20261125d";
+import {esc} from "../app/ui.js?v=20261125d";
+import {FONTS,loadFont} from "../app/fonts.js?v=20261125d";
+import {FORMATS} from "../app/formats.js?v=20261125d";
+import {safeOf} from "../studio/skeleton.js?v=20261125d";
+import {mountBgPanel} from "./bgpanel.js?v=20261125d";
+import {applyProductImage,openProductPicker} from "./product.js?v=20261125d";
+import {toast} from "../app/ui.js?v=20261125d";
+import {mattingDefaults} from "../img/matting.js?v=20261125d";
+import {store} from "../app/store.js?v=20261125d";
+import {FIELDS,BLENDS} from "./editor.js?v=20261125d";
+import {enhance} from "./accordion.js?v=20261125d";
+import {saveSnap} from "./snap.js?v=20261125d";
+import {TEXT_STYLES,restyle} from "./textstyles.js?v=20261125d";
+import {Shadow} from "../../vendor/fabric.min.mjs?v=20261125d";
 const num=(k,l,extra="")=>`<div class="field"><label for="i-${k}">${l}</label><input class="input" type="number" id="i-${k}" data-k="${k}" ${extra}></div>`;
 const rng=(k,l,min,max,step=1)=>`<div class="field"><label for="i-${k}">${l}</label><input type="range" id="i-${k}" data-k="${k}" min="${min}" max="${max}" step="${step}"></div>`;
 const rnum=(k,l,pct)=>`<div class="field"><label for="r-${k}">${l}</label><input class="input" type="number" id="r-${k}" data-r="${k}"${pct?" data-pct":""} step="${pct?1:"any"}"></div>`;
@@ -21,20 +22,34 @@ const sec=(t,b,rk)=>`<section class="sec"><div class="sec__head"><span class="la
 const isText=o=>o&&o.type.toLowerCase()==="textbox";
 const ROLE={text:"Texto",web:"Dirección web",logo:"Logotipo",product:"Producto",background:"Fondo",shape:"Forma",decor:"Elemento"};
 const alignBar=`<div class="alignbar">${[["left","align-start-vertical"],["hcenter","align-center-vertical"],["right","align-end-vertical"],["top","align-start-horizontal"],["vcenter","align-center-horizontal"],["bottom","align-end-horizontal"]].map(([k,i])=>`<button class="btn btn--ghost btn--icon btn--sm" data-align="${k}" title="Alinear ${k}">${I[i]}</button>`).join("")}</div>`;
-function textHtml(o){
+const SV=d=>`<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const TBI={typo:SV('<path d="M4 7V4h16v3M9 20h6M12 4v16"/>'),dim:SV('<path d="M21 3H3M21 21H3M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/>'),color:SV('<circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 1 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2H18a4 4 0 0 0 4-4c0-5-4.5-9.4-10-9.4Z"/>'),align:I["align-center"],fx:SV('<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3ZM19 16l.7 1.8L21.5 18.5l-1.8.7L19 21l-.7-1.8-1.8-.7 1.8-.7L19 16Z"/>'),pos:SV('<path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/>')};
+const TBN={typo:"Tipografía",dim:"Dimensiones",color:"Color",align:"Alineación",fx:"Efectos",pos:"Posición y transformación"};
+const JU=SV('<path d="M3 6h18M3 10h18M3 14h18M3 18h18"/>');
+const tg=(k,l,ic)=>`<button type="button" class="tgl" data-tg="${k}" title="${l}" aria-label="${l}" aria-pressed="false">${ic}</button>`;
+function textPanels(o){
   const fam=FONTS.find(f=>f.family===o.fontFamily)||FONTS[0];
-  return sec("Texto",`<div class="field"><label for="i-text">Contenido</label><textarea class="input input--area" id="i-text" data-k="text" rows="2"></textarea></div>
-<div class="row"><div class="field"><label for="i-fontFamily">Fuente</label><select class="select" id="i-fontFamily" data-k="fontFamily">${FONTS.map(f=>`<option value="${f.family}">${f.family}</option>`).join("")}</select></div>
-<div class="field"><label for="i-fontWeight">Peso</label><select class="select" id="i-fontWeight" data-k="fontWeight">${fam.weights.map(w=>`<option value="${w}">${w}</option>`).join("")}</select></div></div>
-<div class="row">${num("fontSize","Tamaño","min=8 max=600")}${col("fill","Color")}</div>
-<div class="row"><div class="field"><label>Alineación</label><div class="seg seg--icons" data-k="textAlign">${[["left","align-left"],["center","align-center"],["right","align-right"]].map(([v,i])=>`<button data-v="${v}" aria-label="${v}">${I[i]}</button>`).join("")}</div></div>${rng("opacity","Opacidad",0,100)}</div>
-<div class="row">${rng("lineHeight","Interlineado",0.6,2.4,0.05)}${rng("charSpacing","Espaciado",-100,800,10)}</div>`)+
-  sec("Contorno y sombra",`<div class="row">${col("stroke","Contorno")}${num("strokeWidth","Grosor","min=0 max=40")}</div>
-<label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label>
-<div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`,"tstroke")+
+  const sw=[...new Set([...(JSON.parse(localStorage.getItem("sg.colors")||"[]")),...(window.studio&&window.studio.palette||[])])].slice(0,16);
+  return {
+   typo:`<div class="field"><label for="i-fontFamily">Fuente</label><select class="select" id="i-fontFamily" data-k="fontFamily">${FONTS.map(f=>`<option value="${f.family}">${f.family}</option>`).join("")}</select></div>
+<div class="field"><label for="i-fontWeight">Peso</label><select class="select" id="i-fontWeight" data-k="fontWeight">${fam.weights.map(w=>`<option value="${w}">${w}</option>`).join("")}</select></div>
+<div class="tgls">${tg("bold","Negrita",SV('<path d="M6 4h8a4 4 0 0 1 0 8H6zM6 12h9a4 4 0 0 1 0 8H6z"/>'))}${tg("italic","Cursiva",SV('<path d="M19 4h-9M14 20H5M15 4 9 20"/>'))}</div>
+<div class="field"><label>Estilos disponibles</label><div class="tsts">${TEXT_STYLES.map(t=>`<button type="button" class="btn btn--sm" data-tst="${t.id}">${t.name}</button>`).join("")}</div></div>`,
+   dim:`<div class="row">${num("fontSize","Tamaño de fuente","min=8 max=600")}${num("charSpacing","Espaciado","step=10")}</div><div class="row"><div class="field"><label for="d-w">Anchura del cuadro</label><input class="input" type="number" id="d-w" data-k="w" min="24"></div><div class="field"><label for="d-h">Altura del cuadro</label><input class="input" type="number" id="d-h" data-k="h" min="0"></div></div>${rng("lineHeight","Interlineado",0.6,2.4,0.05)}<span class="hint">El cuadro cambia sin tocar el tamaño de la fuente. La altura nunca baja del texto: no se corta contenido.</span>`,
+   color:`${col("fill","Color del texto")}${rng("opacity","Opacidad",0,100)}<div class="field"><label>Colores guardados</label><div class="sws">${sw.map(c=>`<button type="button" class="sw" data-sw="${c}" style="background:${c}" title="${c}" aria-label="${c}"></button>`).join("")}<button type="button" class="sw sw--add" data-savecol title="Guardar el color actual" aria-label="Guardar el color actual">+</button></div></div>`,
+   align:`<div class="seg seg--icons" data-k="textAlign">${[["left",I["align-left"]],["center",I["align-center"]],["right",I["align-right"]],["justify",JU]].map(([v,i])=>`<button data-v="${v}" aria-label="${v}" title="${v}">${i}</button>`).join("")}</div>`,
+   fx:`<label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label><div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>
+<div class="row">${col("stroke","Contorno")}${num("strokeWidth","Grosor","min=0 max=40")}</div><div class="row">${col("bgc","Fondo del texto")}<div class="field"><label>&nbsp;</label><button type="button" class="btn btn--sm" data-bgoff>Quitar fondo</button></div></div>${rng("opacity","Opacidad",0,100)}<button type="button" class="btn btn--sm" data-reset="tstroke">Restablecer efectos</button>`,
+   pos:`${alignBar}<div class="row">${num("x","X")}${num("y","Y")}</div><div class="row"><div class="field"><label for="p-w">Anchura</label><input class="input" type="number" id="p-w" data-k="w" min="24"></div><div class="field"><label for="p-h">Altura</label><input class="input" type="number" id="p-h" data-k="h" min="0"></div></div>${num("angle","Rotación","min=-360 max=360")}`
+  };
+}
+function textHtml(o){
+  const P=textPanels(o);
+  return sec("Contenido",`<div class="field"><label for="i-text">Texto</label><textarea class="input input--area" id="i-text" data-k="text" rows="3"></textarea></div><span class="hint">La tipografía, el tamaño, el color y los efectos están en la barra vertical a la izquierda del lienzo.</span>`)+
   sec("Reglas de plantilla",`<label class="chk"><input type="checkbox" data-r="fit"> Ajustar tamaño a la caja</label><div class="row">${rnum("min","Tamaño mín.")}${rnum("max","Tamaño máx.")}</div><div class="row">${rnum("maxH","Alto máx.")}${rnum("chars","Límite de caracteres")}</div><div class="field"><label for="r-empty">Si el producto no tiene el dato</label><select class="select" id="r-empty" data-r="empty"><option value="">Dejar vacío</option><option value="hide">Ocultar el elemento</option><option value="alt">Usar texto alternativo</option></select></div><div class="field"><label for="r-alt">Texto alternativo</label><input class="input" id="r-alt" data-r="alt"></div>${COLRULE}`)+
   sec("Dato dinámico",`<div class="field"><label for="i-field">Vincular a</label><select class="select" id="i-field" data-k="field"><option value="">Texto fijo</option>${Object.entries(FIELDS).map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select></div>
-<div class="field" id="pv"><label for="i-pval">Valor del dato</label><input class="input" id="i-pval" data-pv><span class="hint">Cambia el dato del producto: se actualiza en todas las capas que lo usan y en las listas automáticas.</span></div><div class="field" id="pat"><label for="i-pattern">Formato</label><input class="input" id="i-pattern" data-k="pattern" placeholder="{valor}"><span class="hint">Usa {valor}. Ej.: «Nº {valor}» o «{valor} €».</span></div>`);
+<div class="field" id="pv"><label for="i-pval">Valor del dato</label><input class="input" id="i-pval" data-pv><span class="hint">Cambia el dato del producto: se actualiza en todas las capas que lo usan y en las listas automáticas.</span></div><div class="field" id="pat"><label for="i-pattern">Formato</label><input class="input" id="i-pattern" data-k="pattern" placeholder="{valor}"><span class="hint">Usa {valor}. Ej.: «Nº {valor}» o «{valor} €».</span></div>`)+
+  `<div class="tpan" id="tpan" hidden>${Object.keys(P).map(k=>`<div class="tpan__b" data-tpn="${k}" hidden><div class="tpan__h">${TBN[k]}</div>${P[k]}</div>`).join("")}</div>`;
 }
 const shapeHtml=o=>sec("Reglas de plantilla",COLRULE)+(o.type.toLowerCase()==="line"?sec("Línea",`<div class="row">${col("stroke","Color")}${num("strokeWidth","Grosor","min=1 max=200")}</div>`):sec("Relleno",`<div class="row">${col("fill","Relleno")}${col("stroke","Contorno")}</div><div class="row">${num("strokeWidth","Grosor","min=0 max=80")}${o.type.toLowerCase()==="rect"?num("rx","Radio","min=0 max=600"):"<span></span>"}</div>`))+
   sec("Sombra",`<label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label><div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`,"shadow");
@@ -53,7 +68,7 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
     textAlign:o=>o.textAlign,opacity:o=>Math.round((o.opacity??1)*100),lineHeight:o=>o.lineHeight,charSpacing:o=>o.charSpacing,
     stroke:o=>typeof o.stroke==="string"&&/^#[0-9a-f]{6}$/i.test(o.stroke)?o.stroke:"#000000",strokeWidth:o=>o.strokeWidth||0,rx:o=>o.rx||0,
     shadowOn:o=>!!sh(o),shColor:o=>sh(o)?.color?.startsWith("#")?sh(o).color:"#000000",shBlur:o=>sh(o)?.blur??30,shX:o=>sh(o)?.offsetX??0,shY:o=>sh(o)?.offsetY??10,
-    field:o=>o.field||"",pattern:o=>o.pattern||"{valor}",
+    bgc:o=>typeof o.backgroundColor==="string"&&/^#[0-9a-f]{6}$/i.test(o.backgroundColor)?o.backgroundColor:"#ffc400",field:o=>o.field||"",pattern:o=>o.pattern||"{valor}",
     cropX:o=>Math.round(o.cropX||0),cropY:o=>Math.round(o.cropY||0),cropW:o=>Math.round(o.width),cropH:o=>Math.round(o.height),
     blend:o=>o.globalCompositeOperation||"source-over",fx_bright:o=>ed.getFx(o).bright,fx_contrast:o=>ed.getFx(o).contrast,fx_sat:o=>ed.getFx(o).sat,fx_blur:o=>ed.getFx(o).blur,
     x:o=>Math.round(ed.xy(o).x),y:o=>Math.round(ed.xy(o).y),w:o=>Math.round(o.getScaledWidth()),h:o=>Math.round(o.getScaledHeight()),angle:o=>Math.round(o.angle||0)
@@ -65,9 +80,10 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
       case"text":o.set("text",v);if(o.field){o.set("field",null)}break;
       case"fontFamily":{const f=FONTS.find(x=>x.family===v);const w=f.weights.includes(+o.fontWeight)?+o.fontWeight:f.weights.includes(700)?700:f.weights[0];o.set({fontFamily:v,fontWeight:w});loadFont(v,w).then(()=>{o.initDimensions?.();o.dirty=true;ed.canvas.requestRenderAll()});key="";break}
       case"fontWeight":o.set("fontWeight",+v);loadFont(o.fontFamily,+v).then(()=>{o.initDimensions?.();ed.canvas.requestRenderAll()});break;
-      case"fontSize":o.set({fontSize:+v,scaleX:1,scaleY:1});break;
+      case"fontSize":o.set({fontSize:+v,scaleX:1,scaleY:1});o.initDimensions?.();break;
       case"fx_bright":case"fx_contrast":case"fx_sat":case"fx_blur":ed.setFx(o,{[k.slice(3)]:+v});break;
       case"fill":case"stroke":o.set(k,v);if(k==="stroke"&&!o.strokeWidth)o.set("strokeWidth",t?2:4);break;
+      case"bgc":o.set("backgroundColor",v);break;
       case"textAlign":case"lineHeight":case"charSpacing":o.set(k,k==="textAlign"?v:+v);break;
       case"opacity":o.set("opacity",+v/100);break;
       case"blend":ed.setBlend(o,v);break;
@@ -78,8 +94,8 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
       case"field":o.set("field",v||null);ed.applyFields();break;
       case"pattern":o.set("pattern",v||"{valor}");ed.applyFields();break;
       case"x":ed.setXY(o,+v,ed.xy(o).y);break;case"y":ed.setXY(o,ed.xy(o).x,+v);break;
-      case"w":if(t)o.set({width:+v,scaleX:1});else o.set("scaleX",+v/o.width);break;
-      case"h":o.set("scaleY",+v/o.height);break;
+      case"w":if(t){o.set({width:Math.max(24,+v),scaleX:1});o.initDimensions()}else o.set("scaleX",+v/o.width);break;
+      case"h":if(t){o.set({boxH:Math.max(0,Math.round(+v)),scaleY:1});o.initDimensions()}else o.set("scaleY",+v/o.height);break;
       case"angle":o.set("angle",+v);break;
       case"cropX":case"cropY":o.set(k,Math.max(0,+v));break;case"cropW":o.set("width",Math.max(1,+v));break;case"cropH":o.set("height",Math.max(1,+v));break;
     }
@@ -97,7 +113,7 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
       sec("Plantilla",`<label class="chk"><input type="checkbox" data-cfg="removeBg"${!ed.cfg.product||ed.cfg.product.removeBg!==false?" checked":""}> Quitar el fondo del producto automáticamente</label><span class="hint">Selecciona una capa para editarla, o «Fondo» en la lista de capas.</span>`);
     }
     const t=isText(o),img=o.type.toLowerCase()==="image";
-    return `<div class="insp__role">${esc(ROLE[o.role]||"Elemento")}<b>${esc(o.name||"")}</b></div>${(!t&&o.role==="overlay"?overlayHtml(o):"")}${t?textHtml(o):img?imageHtml(o)+(o.role==="product"&&getPreset()?sec("Preset del producto",`<button class="btn btn--sm" data-pact="preset" title="Guarda textos y fondo de este producto para reutilizarlos">Guardar como preset del producto</button>`):""):shapeHtml(o)}${t?"":blendHtml(o)}${transformHtml(o)}`;
+    return `<div class="insp__role">${esc(ROLE[o.role]||"Elemento")}<b>${esc(o.name||"")}</b></div>${(!t&&o.role==="overlay"?overlayHtml(o):"")}${t?textHtml(o):img?imageHtml(o)+(o.role==="product"&&getPreset()?sec("Preset del producto",`<button class="btn btn--sm" data-pact="preset" title="Guarda textos y fondo de este producto para reutilizarlos">Guardar como preset del producto</button>`):""):shapeHtml(o)}${t?"":blendHtml(o)}${t?"":transformHtml(o)}`;
   }
   function sync(){
     const o=ed.active;
@@ -120,8 +136,31 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
     const o=ed.active;
     const k=(o?(o.__uid??=Math.random().toString(36).slice(2))+o.type+o.fontFamily:"")+"|"+(ed.bgSel?"bg":"")+(o?"":ed.W+"x"+ed.H+getFmt().id)+(ed.bgSel?(ed.cfg.bg&&ed.cfg.bg.mode)+(ed.cfg.bg&&ed.cfg.bg.n):"")+(o?"":JSON.stringify(ed.cfg.guides||[]));
     if(k!==key){key=k;root.innerHTML=html();enhance(root)}
-    sync();
+    sync();tb();
   }
+  let tp=null;const ttb=root.closest(".app")?.querySelector("#ttb");
+  if(ttb&&!ttb.dataset.built){ttb.dataset.built=1;ttb.innerHTML=Object.keys(TBN).map(k=>`<button type="button" class="ttb__b" data-tp="${k}" title="${TBN[k]}" aria-label="${TBN[k]}" aria-pressed="false">${TBI[k]}</button>`).join("");
+    ttb.addEventListener("click",e=>{const b=e.target.closest("[data-tp]");if(!b)return;tp=tp===b.dataset.tp?null:b.dataset.tp;tb()})}
+  function tb(){
+    const o=ed.active,show=!!(o&&isText(o)&&!ed.bgSel);
+    if(ttb)ttb.hidden=!show;if(!show)tp=null;
+    const pan=root.querySelector("#tpan");
+    if(ttb)ttb.querySelectorAll("[data-tp]").forEach(b=>{const on=b.dataset.tp===tp;b.classList.toggle("is-on",on);b.setAttribute("aria-pressed",String(on))});
+    if(!pan)return;pan.hidden=!tp||!show;
+    pan.querySelectorAll("[data-tpn]").forEach(b=>b.hidden=b.dataset.tpn!==tp);
+    if(tp&&show&&ttb){const tr=ttb.getBoundingClientRect(),bt=ttb.querySelector(`[data-tp="${tp}"]`).getBoundingClientRect();pan.style.left=(tr.right+8)+"px";pan.style.top=Math.max(8,Math.min(bt.top,innerHeight-pan.offsetHeight-8))+"px"}
+    if(o&&isText(o)){root.querySelectorAll("[data-tg]").forEach(b=>{const on=b.dataset.tg==="bold"?+o.fontWeight>=700:o.fontStyle==="italic";b.classList.toggle("is-on",on);b.setAttribute("aria-pressed",String(on))})}
+  }
+  root.addEventListener("click",async e=>{
+    const o=ed.active;if(!o||!isText(o))return;
+    const g=e.target.closest("[data-tg]");
+    if(g){if(g.dataset.tg==="italic")o.set("fontStyle",o.fontStyle==="italic"?"normal":"italic");else{const ws=(FONTS.find(f=>f.family===o.fontFamily)||FONTS[0]).weights,w=+o.fontWeight>=700?(ws.find(x=>x<=500)||ws[0]):(ws.includes(700)?700:ws[ws.length-1]);o.set("fontWeight",w);await loadFont(o.fontFamily,w)}
+      o.initDimensions();o.setCoords();ed.canvas.requestRenderAll();ed.commit();key="";render();return}
+    const ts=e.target.closest("[data-tst]");if(ts){await restyle(ed,o,TEXT_STYLES.find(x=>x.id===ts.dataset.tst));key="";render();return}
+    const sw=e.target.closest("[data-sw]");if(sw){o.set("fill",sw.dataset.sw);ed.canvas.requestRenderAll();ed.commit();sync();return}
+    if(e.target.closest("[data-savecol]")){const l=JSON.parse(localStorage.getItem("sg.colors")||"[]"),c=typeof o.fill==="string"?o.fill:"#ffffff";if(!l.includes(c)){l.unshift(c);try{localStorage.setItem("sg.colors",JSON.stringify(l.slice(0,16)))}catch{}}key="";render();return}
+    if(e.target.closest("[data-bgoff]")){o.set("backgroundColor","");ed.canvas.requestRenderAll();ed.commit();return}
+  });
   root.addEventListener("input",e=>{
     const el=e.target;
     if(el.dataset.fl&&ed.active&&ed.active.role==="product"){const k=el.dataset.fl;ed.setFloor({[k]:el.type==="checkbox"?el.checked:el.type==="range"?+el.value:el.value,...(k!=="on"&&!(ed.active.rule&&ed.active.rule.floor)?{on:true}:{})},{commit:false});const b=root.querySelector(`[data-flv="${k}"]`);if(b)b.textContent=el.value;if(el.type==="checkbox")ed.commit();return}

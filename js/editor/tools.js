@@ -1,22 +1,23 @@
-import {modal,toast,esc} from "../app/ui.js?v=20261125b";
-import {I} from "../app/icons.js?v=20261125b";
-import {db} from "../app/db.js?v=20261125b";
-import {store} from "../app/store.js?v=20261125b";
-import {hashKey} from "../img/matting.js?v=20261125b";
-import {logoUrl,uploadLogo} from "../app/brand.js?v=20261125b";
-import {openProductPicker} from "./product.js?v=20261125b";
+import {modal,toast,esc} from "../app/ui.js?v=20261125d";
+import {I} from "../app/icons.js?v=20261125d";
+import {db} from "../app/db.js?v=20261125d";
+import {store} from "../app/store.js?v=20261125d";
+import {hashKey} from "../img/matting.js?v=20261125d";
+import {logoUrl,uploadLogo} from "../app/brand.js?v=20261125d";
+import {openProductPicker} from "./product.js?v=20261125d";
 const sv=(d,x="")=>`<svg viewBox="0 0 48 48" width="40" height="40" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" ${x}>${d}</svg>`;
 const SHAPES=[["rect","Rectángulo",sv('<rect x="6" y="12" width="36" height="24" rx="0"/>')],["rrect","Rect. redondeado",sv('<rect x="6" y="12" width="36" height="24" rx="8"/>')],["square","Cuadrado",sv('<rect x="10" y="10" width="28" height="28"/>')],["circle","Círculo",sv('<circle cx="24" cy="24" r="15"/>')],["ellipse","Elipse",sv('<ellipse cx="24" cy="24" rx="19" ry="12"/>')],["triangle","Triángulo",sv('<path d="M24 8 42 38H6z"/>')],["rhombus","Rombo",sv('<path d="M24 6 42 24 24 42 6 24z"/>')],["star","Estrella",sv('<path d="m24 5 5.6 12.2 13.4 1.5-10 9 2.8 13.1L24 34l-11.8 6.8 2.8-13.1-10-9 13.4-1.5z"/>')],["hexagon","Hexágono",sv('<path d="M24 6 39.6 15v18L24 42 8.4 33V15z"/>')],["line","Línea",sv('<path d="M8 24h32" fill="none" stroke-width="5" stroke-linecap="round"/>')]];
+import {TEXT_STYLES,addStyled} from "./textstyles.js?v=20261125d";
 let pop=null;
 export function closePop(){if(pop){pop.remove();pop=null;document.removeEventListener("mousedown",outside,true)}}
 const outside=e=>{if(pop&&!pop.contains(e.target)&&!e.target.closest("[data-pop]"))closePop()};
 export function openShapes(anchor,ed){
   if(pop){closePop();return}
   pop=document.createElement("div");pop.className="shapes";
-  pop.innerHTML=`<div class="shapes__h">Formas</div><div class="shapes__g">${SHAPES.map(([k,l,s])=>`<button class="shp" data-k="${k}" title="${l}" aria-label="${l}">${s}<span>${l}</span></button>`).join("")}</div>`;
-  const r=anchor.getBoundingClientRect();pop.style.left=r.right+8+"px";pop.style.top=Math.max(8,r.top)+"px";
-  pop.onclick=e=>{const b=e.target.closest(".shp");if(!b)return;ed.addShape(b.dataset.k);closePop()};
-  document.body.appendChild(pop);setTimeout(()=>document.addEventListener("mousedown",outside,true),0);
+  pop.innerHTML=`<div class="shapes__h"><span>Formas</span><button type="button" class="shapes__x" data-x aria-label="Cerrar">${I.x||"×"}</button></div><div class="shapes__g">${SHAPES.map(([k,l,s])=>`<button class="shp" data-k="${k}" title="${l}" aria-label="${l}">${s}<span>${l}</span></button>`).join("")}</div>`;
+  pop.onclick=e=>{if(e.target.closest("[data-x]")){closePop();return}const b=e.target.closest(".shp");if(!b)return;ed.addShape(b.dataset.k);closePop()};
+  document.body.appendChild(pop);const r=anchor.getBoundingClientRect(),pw=pop.offsetWidth,ph=pop.offsetHeight;pop.style.left=Math.max(8,Math.min(r.right+8,innerWidth-pw-8))+"px";pop.style.top=Math.max(8,Math.min(r.top,innerHeight-ph-8))+"px";setTimeout(()=>document.addEventListener("mousedown",outside,true),0);
+  const esc=e=>{if(e.key==="Escape"){closePop();document.removeEventListener("keydown",esc)}};document.addEventListener("keydown",esc);
 }
 const pickFile=(multi)=>new Promise(r=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.multiple=!!multi;i.onchange=()=>r([...i.files]);i.click()});
 export async function normalizeImage(file,max=2400){
@@ -47,7 +48,7 @@ export function openImageTool(ed,{afterProduct}={}){
     }catch(er){toast("No se pudo añadir: "+er.message,{kind:"err"})}
   });
 }
-import {OVERLAYS,renderOverlay} from "../img/overlays.js?v=20261125b";
+import {OVERLAYS,renderOverlay} from "../img/overlays.js?v=20261125d";
 export function openOverlayTool(ed){
   const thumbs=OVERLAYS.map(o=>{const c=renderOverlay(o.id,144,192,3);return `<button type="button" class="ovt" data-ov="${o.id}" title="${esc(o.name)}"><span class="ovt__img"><img src="${c.toDataURL("image/png")}" alt=""></span><span>${esc(o.name)}</span></button>`}).join("");
   const m=modal("Overlays",`<div class="imgt"><div class="imgt__bar"><button type="button" class="btn btn--accent" data-a="up">${I.upload}<span>Subir mi overlay (PNG)</span></button></div><p class="hint">Se añaden como capa independiente con su modo de fusión. Cambia modo, opacidad, posición u orden desde el panel derecho.</p><div class="ovgrid">${thumbs}</div><h3 class="imgt__h">Mis overlays</h3><div class="lib lib--img" id="ovl"></div></div>`,{ok:"Cerrar",wide:true,onOk:()=>true});
@@ -61,4 +62,14 @@ export function openOverlayTool(ed){
       if(e.target.closest('[data-a="up"]')){const fs=await pickFile(true);if(!fs.length)return;const t=toast("Subiendo…",{ms:600000});try{for(const f of fs){const url=await uploadAsset(f,"ov");await store.addAsset("overlay",f.name.replace(/\.[^.]+$/,"").slice(0,40)||"Overlay",url)}}finally{t.close()}paint()}
     }catch(er){toast(er.message,{kind:"err"})}
   });
+}
+
+export function openTextStyles(anchor,ed){
+  if(pop){closePop();return}
+  pop=document.createElement("div");pop.className="shapes tstyles";
+  pop.innerHTML=`<div class="shapes__h"><span>Añadir texto</span><button type="button" class="shapes__x" data-x aria-label="Cerrar">${I.x}</button></div><div class="tstyles__l">${TEXT_STYLES.map(t=>{const p=t.p;return `<button type="button" class="tsty" data-id="${t.id}" aria-label="${t.name}"><span class="tsty__pv"><span style="font-family:'${p.fontFamily}';font-weight:${p.fontWeight};color:${p.fill};letter-spacing:${(p.charSpacing||0)/1000}em;${p.backgroundColor?`background:${p.backgroundColor};padding:2px 8px;`:""}${t.sh?"text-shadow:0 2px 6px rgba(0,0,0,.5);":""}font-size:${t.id==="title"||t.id==="price"?26:t.id==="tag"?16:t.id==="sub"?18:13}px">${({title:"Título",sub:"Subtítulo",tag:"NOVEDAD",body:"Frase breve…",price:"17,95 €"})[t.id]}</span></span><span class="tsty__t"><b>${t.name}</b><em>${t.hint}</em></span></button>`}).join("")}</div>`;
+  pop.onclick=async e=>{if(e.target.closest("[data-x]")){closePop();return}const b=e.target.closest(".tsty");if(!b)return;const st=TEXT_STYLES.find(x=>x.id===b.dataset.id);closePop();await addStyled(ed,st)};
+  document.body.appendChild(pop);const r=anchor.getBoundingClientRect(),pw=pop.offsetWidth,ph=pop.offsetHeight;pop.style.left=Math.max(8,Math.min(r.right+8,innerWidth-pw-8))+"px";pop.style.top=Math.max(8,Math.min(r.top,innerHeight-ph-8))+"px";
+  setTimeout(()=>document.addEventListener("mousedown",outside,true),0);
+  const esc=e=>{if(e.key==="Escape"){closePop();document.removeEventListener("keydown",esc)}};document.addEventListener("keydown",esc);
 }

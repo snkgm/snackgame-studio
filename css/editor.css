@@ -124,3 +124,25 @@
 .pp__m h4{margin:8px 0 4px;font-size:12px}.mr{display:flex;gap:4px;margin-bottom:4px}.mr .in-s{width:56px}.pp__m .input{height:32px}
 .stage.has-rul{padding-left:0}
 .acc__cat{padding:16px 16px 8px;font:700 11px/16px Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#ffc400;border-top:1px solid var(--c-line)}.acc__cat:first-child{border-top:0}
+/* capas compactas (lateral izquierdo) */
+.tools{overflow-y:auto;overflow-x:hidden}.tools__sep{width:40px;height:1px;background:var(--c-line);flex:none;margin:8px 0 0}.tools__h{font:600 10px/16px Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--c-muted);flex:none}
+.layers--c{width:100%;flex:1 1 auto;min-height:48px;overflow:visible;align-items:center;gap:8px;padding:0 0 8px}
+.layers--c .layer{display:block;width:48px;height:48px;padding:0;position:relative;grid-template-columns:none;border:2px solid transparent;border-radius:8px;overflow:hidden;background:var(--c-surface-2);cursor:pointer;flex:none}
+.layers--c .layer.is-sel{border-color:var(--c-accent)}.layers--c .layer.is-hidden{opacity:.4}.layers--c .layer--bg{margin-top:0}
+.layer__thumb{display:grid;place-items:center;width:100%;height:100%;border-radius:6px;overflow:hidden;background-size:cover;background-position:center;color:var(--c-muted)}
+.layer__thumb img{max-width:100%;max-height:100%;object-fit:contain;display:block}.layer__thumb i{width:60%;height:60%;border-radius:4px;display:block}.layer__thumb .ico{width:20px;height:20px}
+.layer__flag{position:absolute;right:2px;bottom:2px;width:16px;height:16px;display:grid;place-items:center;background:rgba(0,0,0,.65);border-radius:4px;color:#fff}.layer__flag .ico{width:10px;height:10px}
+.lfly{position:fixed;z-index:120;display:flex;align-items:center;gap:4px;width:248px;padding:0 4px;background:var(--c-surface-2);border:2px solid var(--c-accent);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.45);animation:lflyin .14s ease-out;transform-origin:left center;cursor:pointer}
+.lfly__t{display:grid;place-items:center;width:40px;height:40px;flex:none;overflow:hidden;border-radius:4px}.lfly__t img{max-width:100%;max-height:100%;object-fit:contain}.lfly__t i{width:60%;height:60%;display:block;border-radius:3px}.lfly__t .ico{width:20px;height:20px}
+.lfly__n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.lfly .layer__btn{width:28px;height:28px;display:grid;place-items:center;background:transparent;border:0;border-radius:4px;color:var(--c-muted);cursor:pointer;flex:none}.lfly .layer__btn:hover{background:rgba(255,255,255,.1);color:#fff}.lfly .ico{width:16px;height:16px}
+@keyframes lflyin{from{opacity:0;clip-path:inset(0 70% 0 0)}to{opacity:1;clip-path:inset(0 0 0 0)}}
+@media (prefers-reduced-motion:reduce){.lfly{animation:none}}
+/* barra tipográfica */
+.ttb{position:absolute;left:32px;top:32px;z-index:10;display:flex;flex-direction:column;gap:4px;padding:4px;background:var(--c-surface);border:var(--bw) solid var(--c-line);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.35)}.ttb[hidden]{display:none}
+.ttb__b{width:40px;height:40px;display:grid;place-items:center;background:transparent;border:1px solid transparent;border-radius:6px;color:var(--c-muted);cursor:pointer}.ttb__b:hover{background:var(--c-surface-2);color:var(--c-text)}.ttb__b.is-on{color:var(--c-accent);border-color:var(--c-accent);background:rgba(255,196,0,.12)}.ttb__b .ico{width:20px;height:20px}
+.tpan{position:fixed;z-index:130;width:264px;max-height:calc(100vh - 16px);overflow:auto;background:var(--c-surface);border:var(--bw) solid var(--c-line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.45);padding:8px}.tpan[hidden],.tpan__b[hidden]{display:none}
+.tpan__b{display:flex;flex-direction:column;gap:12px}.tpan__h{font:700 11px/16px Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--c-accent)}
+.tgls{display:flex;gap:8px}.tgl{width:40px;height:32px;display:grid;place-items:center;background:var(--c-surface-2);border:1px solid var(--c-line);border-radius:6px;color:var(--c-text);cursor:pointer}.tgl.is-on{border-color:var(--c-accent);color:var(--c-accent)}.tgl .ico{width:16px;height:16px}
+.tsts{display:flex;flex-wrap:wrap;gap:8px}.sws{display:flex;flex-wrap:wrap;gap:8px}.sw{width:32px;height:32px;border:1px solid var(--c-line);border-radius:6px;cursor:pointer;padding:0}.sw--add{background:var(--c-surface-2);color:var(--c-text);font-size:16px}
+.tpan .seg{display:flex}

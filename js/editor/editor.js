@@ -1,10 +1,12 @@
-import {Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261125b";
-import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261125b";
-import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261125b";
-import {renderOverlay,overlayById} from "../img/overlays.js?v=20261125b";
-import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261125b";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261125b";
-const PROPS=["name","locked","role","field","pattern","rule","orig","gen","globalCompositeOperation"];
+import {Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261125d";
+import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261125d";
+import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261125d";
+import {renderOverlay,overlayById} from "../img/overlays.js?v=20261125d";
+import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261125d";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261125d";
+const _tid=Textbox.prototype.initDimensions;
+Textbox.prototype.initDimensions=function(){_tid.call(this);if(this.boxH&&this.boxH>this.height)this.height=this.boxH};
+const PROPS=["boxH","name","locked","role","field","pattern","rule","orig","gen","globalCompositeOperation"];
 const PLACE="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEAAAAALAAAAAABAAEAAAIA";
 export const BLENDS=[["source-over","Normal"],["multiply","Multiplicar"],["screen","Trama"],["overlay","Superponer"],["soft-light","Luz suave"],["hard-light","Luz fuerte"],["darken","Oscurecer"],["lighten","Aclarar"],["color-dodge","Sobreexponer color"],["color-burn","Subexponer color"]];
 const _toObj=FabricImage.prototype.toObject;FabricImage.prototype.toObject=function(p){const j=_toObj.call(this,p);if(this.gen)j.src=PLACE;return j};
@@ -30,6 +32,8 @@ export class Editor{
     this.fit();this.snap(true);
     this.canvas.on("object:moving",e=>this.snapMove(e.target,e.e));["object:scaling","object:resizing"].forEach(n=>this.canvas.on(n,e=>snapResize(this,e)));this.canvas.on("object:added",e=>this.styleControls(e.target));
     this.canvas.on("mouse:up",()=>this.setGuides([]));
+    this.canvas.on("object:scaling",e=>{const o=e.target;if(!o||!o.type||o.type.toLowerCase()!=="textbox")return;const sx=o.scaleX,sy=o.scaleY;if(Math.abs(sx-1)<1e-4&&Math.abs(sy-1)<1e-4)return;
+      const w=Math.max(24,o.width*sx),h=o.height*sy;o.set({scaleX:1,scaleY:1,width:w});if(Math.abs(sy-1)>1e-4)o.boxH=Math.round(h);o.initDimensions();o.setCoords()});
   }
   margins(){const f=this.fmt&&this.fmt.safe||{};const c=this.cfg.safe||{};return {t:c.t??f.t??0,b:c.b??f.b??0,l:c.l??f.l??48,r:c.r??f.r??48}}
   setGuides(g){const a=JSON.stringify(g);if(a===this._g)return;this._g=a;this.emit("guides",g)}
@@ -43,7 +47,7 @@ export class Editor{
   async loadData(d,fmt){
     this.busy=true;
     if(d&&d.W){this.W=d.W;this.H=d.H}else if(fmt){this.W=fmt.w;this.H=fmt.h}
-    this.fmt=fmt||this.fmt;this.cfg=d&&d.cfg?JSON.parse(JSON.stringify(d.cfg)):{};this.palette=(d&&d.palette)||[];
+    this.fmt=fmt||this.fmt;this.cfg=d&&d.cfg?JSON.parse(JSON.stringify(d.cfg)):(()=>{const v=Math.round(120*this.W/1080);return {safe:{t:v,b:v,l:v,r:v},msym:{h:true,v:true},mshow:1,mpreset:"m-l"}})();this.palette=(d&&d.palette)||[];
     this.slides=d&&d.slides&&d.slides.length?d.slides.slice():(fmt&&fmt.slides?[null]:null);this.cur=0;
     const c0=this.slides?this.slides[0]:d&&d.c;
     if(c0)await this.canvas.loadFromJSON(c0);
@@ -138,6 +142,7 @@ export class Editor{
       o.set("borderColor",`rgb(${c1.map((v,i)=>Math.round(v+(c2[i]-v)*k)).join(",")})`);this.canvas.requestRenderAll()},90);
   }
   styleControls(o){
+    if(o&&o.type&&o.type.toLowerCase()==="textbox"&&o.controls&&!o.controls.mt){const d=FabricObject.createControls().controls;o.controls={...o.controls,mt:d.mt,mb:d.mb}}
     if(o&&o.set&&!o.__sgs){o.__sgs=1;if(o.controls)for(const k of['ml','mr','mt','mb']){const c=o.controls[k];if(c&&!c.__sg){c.__sg=1;const r=c.render;c.render=function(ctx,l,t,st,ob){const cv=ob.canvas,z=cv?cv.getElement().getBoundingClientRect().width/cv.getWidth():1,v=k==='ml'||k==='mr'?ob.getScaledHeight():ob.getScaledWidth();if(v*z<48)return;return r.call(this,ctx,l,t,st,ob)}}}o.set({transparentCorners:false,cornerStyle:"circle",cornerColor:"#ffffff",cornerStrokeColor:"#ff3d9a",borderColor:"#ffb400",cornerSize:10,touchCornerSize:24,borderScaleFactor:3,padding:2})}
     const m=o&&o.controls&&o.controls.mtr;if(!m||m.__sg)return;m.__sg=1;
     const svg=encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="white" stroke="#1a1300" stroke-width="1.5"/><path d="M17 12a5 5 0 1 1-1.6-3.7M17 6v3h-3" fill="none" stroke="#1a1300" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
@@ -296,9 +301,9 @@ export class Editor{
   fitText(o){
     const r=o.rule;if(!r||!r.fit||o.type.toLowerCase()!=="textbox")return;
     let sz=r.max||o.fontSize;o.set({fontSize:sz,scaleX:1,scaleY:1});o.initDimensions();
-    while(o.height>r.maxH&&sz>(r.min||20)){sz-=4;o.set("fontSize",sz);o.initDimensions()}
+    while(o.calcTextHeight()>r.maxH&&sz>(r.min||20)){sz-=4;o.set("fontSize",sz);o.initDimensions()}
   }
-  fitReport(){return this.canvas.getObjects().filter(o=>o.rule&&o.rule.fit&&o.type.toLowerCase()==="textbox"&&(o.text||"").length&&o.height>o.rule.maxH+1).map(o=>o.name||o.field)}
+  fitReport(){return this.canvas.getObjects().filter(o=>o.rule&&o.rule.fit&&o.type.toLowerCase()==="textbox"&&(o.text||"").length&&o.calcTextHeight()>o.rule.maxH+1).map(o=>o.name||o.field)}
   newSlide(dup=true){
     if(!this.slides)return;const cur=this.canvas.toObject(PROPS);this.slides[this.cur]=cur;
     const src=dup?JSON.parse(JSON.stringify(cur)):{...JSON.parse(JSON.stringify(cur)),objects:cur.objects.filter(o=>o.role==="background").map(o=>JSON.parse(JSON.stringify(o)))};

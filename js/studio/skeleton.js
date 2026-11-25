@@ -1,8 +1,8 @@
-import {withHeadless} from "./headless.js?v=20261125b";
-import {fmtById} from "../app/formats.js?v=20261125b";
-import {BG_DEFAULT} from "../img/background.js?v=20261125b";
-import {FLOOR_DEFAULT} from "../img/fx.js?v=20261125b";
-import {logoUrl} from "../app/brand.js?v=20261125b";
+import {withHeadless} from "./headless.js?v=20261125d";
+import {fmtById} from "../app/formats.js?v=20261125d";
+import {BG_DEFAULT} from "../img/background.js?v=20261125d";
+import {FLOOR_DEFAULT} from "../img/fx.js?v=20261125d";
+import {logoUrl} from "../app/brand.js?v=20261125d";
 const R=(o,rule)=>{o.set("rule",rule);return o};
 export function safeOf(fmt,cfg){return {...fmtById(fmt).safe,...((cfg&&cfg.safe)||{})}}
 async function slideContent(ed,kind,f,s,names){
@@ -30,7 +30,7 @@ export async function buildSkeleton(fmtId,names={}){
     const s=safeOf(fmtId);
     const f={title:fmtId==="post-3x4"?200:fmtId==="post-1x1"?130:fmtId==="story-9x16"||fmtId==="reel-cover"?170:150,titleH:fmtId==="post-3x4"?300:fmtId==="post-1x1"?150:fmtId==="story-9x16"||fmtId==="reel-cover"?330:210};
     await ed.loadData(null,fmt);ed.tplMode=true;
-    ed.cfg={bg:{...BG_DEFAULT},product:{removeBg:true},safe:{...s}};
+    ed.cfg={bg:{...BG_DEFAULT},product:{removeBg:true},safe:{...s},msym:{h:true,v:true},mshow:1};
     ed.palette=["#3b2f8f","#8f2f6a","#ffb400"];
     const plan=fmt.slides?[["cover",PROD[fmtId]],["detail",{...PROD[fmtId],maxW:.9,maxH:.5,cy:.5}],["cta",null]]:[["main",PROD[fmtId]]];
     for(let i=0;i<plan.length;i++){
