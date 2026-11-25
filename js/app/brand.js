@@ -1,4 +1,4 @@
-import {db,publicUrl} from "./db.js?v=20261125v";
+import {db,publicUrl} from "./db.js?v=20261125w";
 const PATH="brand/logo.png";
 let cache;
 export async function logoUrl(force){
