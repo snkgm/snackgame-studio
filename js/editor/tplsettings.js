@@ -1,5 +1,5 @@
-import {modal,esc} from "../app/ui.js?v=20261125s";
-import {FIELDS} from "./editor.js?v=20261125s";
+import {modal,esc} from "../app/ui.js?v=20261125v";
+import {FIELDS} from "./editor.js?v=20261125v";
 const isT=o=>o&&/text/i.test(o.type||"");
 const EMPTY=[["","Dejar vacío"],["alt","Usar el valor predeterminado"],["hide","Ocultar la capa"]];
 export function openTplSettings(ed,post){

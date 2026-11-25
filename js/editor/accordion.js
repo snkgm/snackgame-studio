@@ -1,13 +1,13 @@
-import {I} from "../app/icons.js?v=20261125s";
+import {I} from "../app/icons.js?v=20261125v";
 const K="sg.acc";
 const load=()=>{try{return {order:[],closed:[],...JSON.parse(localStorage.getItem(K)||"{}")}}catch{return {order:[],closed:[]}}};
 let st=load(),drag=null;
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(st))}catch{}};
 const title=s=>(s.querySelector(".sec__head .label")?.textContent||"").trim();
 export const accState=()=>st;
-const CATS=["Lienzo","Transformación","Posición y alineación","Apariencia","Efectos","Tipografía","Opciones de imagen","Otros"];
-const MAP={"Lienzo":0,"Zonas seguras (px)":0,"Contenido":5,"Guías personalizadas":0,"Ajuste magnético":0,"Plantilla":0,"Fondo":0,"Biblioteca de fondos":0,"Buscar fondos (Pexels)":0,"Colores del producto":0,"Variaciones":0,"Posición y tamaño":1,"Recorte":1,"Colocación (regla de plantilla)":2,"Colocación":2,"Relleno":3,"Línea":3,"Fusión":3,"Overlay":3,"Viñeta":4,"Degradados desde bordes":4,"Sombra":4,"Contorno y sombra":4,"Sombra de suelo":4,"Texto":5,"Reglas de plantilla":5,"Dato dinámico":5,"Producto":6,"Preset del producto":6,"Ajustes de imagen":6};
-const cat=t=>MAP[t]??(/sombra|efecto|vi[ñn]eta|degrad/i.test(t)?4:/posici|alinea/i.test(t)?2:7);
+const CATS=["Lienzo","Opciones de imagen","Tipografía","Efectos","Apariencia","Posición y alineación","Otros","Transformación"];
+const MAP={"Lienzo":0,"Zonas seguras (px)":0,"Contenido":2,"Guías personalizadas":0,"Ajuste magnético":0,"Plantilla":0,"Fondo":0,"Biblioteca de fondos":0,"Buscar fondos (Pexels)":0,"Colores del producto":0,"Variaciones":0,"Posición y tamaño":7,"Recorte":7,"Colocación (regla de plantilla)":5,"Colocación":5,"Relleno":4,"Línea":4,"Fusión":4,"Overlay":4,"Viñeta":3,"Degradados desde bordes":3,"Sombra":3,"Contorno y sombra":3,"Sombra de suelo":3,"Texto":2,"Reglas de plantilla":2,"Dato dinámico":2,"Producto":1,"Opciones de imagen":1,"Preset del producto":1,"Ajustes de imagen":1,"Ajustes básicos":1,"Filtros":1,"Recorte y encuadre":1,"Restablecer":1,"Efectos":3,"Apariencia":4};
+const cat=t=>MAP[t]??(/sombra|efecto|vi[ñn]eta|degrad/i.test(t)?3:/posici|alinea/i.test(t)?5:6);
 const KEEP="sg.accKeep";export const keepAcc=()=>localStorage.getItem(KEEP)==="1";
 export const setKeepAcc=v=>{try{localStorage.setItem(KEEP,v?"1":"0")}catch{}};
 export function sessionStart(){if(!keepAcc()){st.open=null;save()}}

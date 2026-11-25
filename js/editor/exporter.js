@@ -1,5 +1,5 @@
-import {modal,toast,esc} from "../app/ui.js?v=20261125s";
-import {zipBlobs} from "../app/zip.js?v=20261125s";
+import {modal,toast,esc} from "../app/ui.js?v=20261125v";
+import {zipBlobs} from "../app/zip.js?v=20261125v";
 const K="sg.export";
 const D={fmt:"png",scale:1,w:0,q:92,transp:false,fill:"#ffffff",mode:"color",which:"cur",name:""};
 const load=()=>{try{return {...D,...JSON.parse(localStorage.getItem(K)||"{}")}}catch{return {...D}}};

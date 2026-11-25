@@ -1,19 +1,19 @@
-import {I} from "../app/icons.js?v=20261125s";
-import {esc} from "../app/ui.js?v=20261125s";
-import {FONTS,loadFont} from "../app/fonts.js?v=20261125s";
-import {FORMATS} from "../app/formats.js?v=20261125s";
-import {safeOf} from "../studio/skeleton.js?v=20261125s";
-import {mountBgPanel} from "./bgpanel.js?v=20261125s";
-import {applyProductImage,openProductPicker} from "./product.js?v=20261125s";
-import {toast} from "../app/ui.js?v=20261125s";
-import {mattingDefaults} from "../img/matting.js?v=20261125s";
-import {store} from "../app/store.js?v=20261125s";
-import {FIELDS,BLENDS} from "./editor.js?v=20261125s";
-import {enhance} from "./accordion.js?v=20261125s";
-import {saveSnap} from "./snap.js?v=20261125s";
-import {TEXT_STYLES,restyle} from "./textstyles.js?v=20261125s";
-import {PF_PRESETS,CATS,getPfx,setPfx,undoPfx,resetCat,resetAll,applyPreset,applyPfx} from "./photofx.js?v=20261125s";
-import {Shadow} from "../../vendor/fabric.min.mjs?v=20261125s";
+import {I} from "../app/icons.js?v=20261125v";
+import {esc} from "../app/ui.js?v=20261125v";
+import {FONTS,loadFont} from "../app/fonts.js?v=20261125v";
+import {FORMATS} from "../app/formats.js?v=20261125v";
+import {safeOf} from "../studio/skeleton.js?v=20261125v";
+import {mountBgPanel} from "./bgpanel.js?v=20261125v";
+import {applyProductImage,openProductPicker} from "./product.js?v=20261125v";
+import {toast} from "../app/ui.js?v=20261125v";
+import {mattingDefaults} from "../img/matting.js?v=20261125v";
+import {store} from "../app/store.js?v=20261125v";
+import {FIELDS,BLENDS} from "./editor.js?v=20261125v";
+import {enhance} from "./accordion.js?v=20261125v";
+import {saveSnap} from "./snap.js?v=20261125v";
+import {TEXT_STYLES,restyle} from "./textstyles.js?v=20261125v";
+import {PF_PRESETS,CATS,getPfx,setPfx,undoPfx,resetCat,resetAll,applyPreset,applyPfx} from "./photofx.js?v=20261125v";
+import {Shadow} from "../../vendor/fabric.min.mjs?v=20261125v";
 const num=(k,l,extra="")=>`<div class="field"><label for="i-${k}">${l}</label><input class="input" type="number" id="i-${k}" data-k="${k}" ${extra}></div>`;
 const rng=(k,l,min,max,step=1)=>`<div class="field"><label for="i-${k}">${l}</label><input type="range" id="i-${k}" data-k="${k}" min="${min}" max="${max}" step="${step}"></div>`;
 const rnum=(k,l,pct)=>`<div class="field"><label for="r-${k}">${l}</label><input class="input" type="number" id="r-${k}" data-r="${k}"${pct?" data-pct":""} step="${pct?1:"any"}"></div>`;
@@ -54,7 +54,7 @@ function textHtml(o){
 }
 const shapeHtml=o=>sec("Reglas de plantilla",COLRULE)+(o.type.toLowerCase()==="line"?sec("Línea",`<div class="row">${col("stroke","Color")}${num("strokeWidth","Grosor","min=1 max=200")}</div>`):sec("Relleno",`<div class="row">${col("fill","Relleno")}${col("stroke","Contorno")}</div><div class="row">${num("strokeWidth","Grosor","min=0 max=80")}${o.type.toLowerCase()==="rect"?num("rx","Radio","min=0 max=600"):"<span></span>"}</div>`))+
   sec("Sombra",`<label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label><div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`,"shadow");
-const productHtml=()=>sec("Producto",`<div class="row"><button class="btn btn--sm" data-pact="remove">Quitar fondo</button><button class="btn btn--sm" data-pact="remove-ai" title="Recorte con IA, más lento (~40 s la primera vez). Útil si el fondo no es liso.">Quitar con IA</button></div><div class="field"><label for="m-tol">Umbral de fondo: <b id="m-tolv">${mattingDefaults.tol}</b></label><input type="range" id="m-tol" min="2" max="60" value="${mattingDefaults.tol}"><span class="hint">Bajo: protege cajas blancas. Alto: quita sombras y restos de fondo.</span></div><label class="chk"><input type="checkbox" id="m-holes"${mattingDefaults.holes?" checked":""}> Quitar huecos interiores (entre piernas, asas)</label><div class="row"><button class="btn btn--sm" data-pact="retol">Aplicar a esta imagen</button><button class="btn btn--sm" data-pact="tolglobal" title="Usa este umbral en todas las imágenes nuevas, también en las listas automáticas">Usar como general</button></div><button class="btn btn--sm" data-pact="orig">Restaurar original</button><button class="btn btn--sm" data-pact="change">Cambiar producto…</button>`)+sec("Colocación (regla de plantilla)",`<div class="row">${rnum("cx","Centro X %",1)}${rnum("cy","Centro Y %",1)}</div><div class="row">${rnum("maxW","Ancho máx. %",1)}${rnum("maxH","Alto máx. %",1)}</div><div class="row">${rnum("angle","Rotación inicial")}<label class="chk"><input type="checkbox" data-r="shadow"> Sombra auto</label></div><div class="row"><button class="btn btn--sm" data-pact="apply">Aplicar regla</button><button class="btn btn--sm" data-pact="capture">Usar posición actual</button></div>`);
+const productHtml=()=>sec("Opciones de imagen",`<div class="row"><button class="btn btn--sm" data-pact="remove">Quitar fondo</button><button class="btn btn--sm" data-pact="remove-ai" title="Recorte con IA, más lento (~40 s la primera vez). Útil si el fondo no es liso.">Quitar con IA</button></div><div class="field"><label for="m-tol">Umbral de fondo: <b id="m-tolv">${mattingDefaults.tol}</b></label><input type="range" id="m-tol" min="2" max="60" value="${mattingDefaults.tol}"><span class="hint">Bajo: protege cajas blancas. Alto: quita sombras y restos de fondo.</span></div><label class="chk"><input type="checkbox" id="m-holes"${mattingDefaults.holes?" checked":""}> Quitar huecos interiores (entre piernas, asas)</label><div class="row"><button class="btn btn--sm" data-pact="retol">Aplicar a esta imagen</button><button class="btn btn--sm" data-pact="tolglobal" title="Usa este umbral en todas las imágenes nuevas, también en las listas automáticas">Usar como general</button></div><button class="btn btn--sm" data-pact="orig">Restaurar original</button><button class="btn btn--sm" data-pact="change">Cambiar producto…</button>`)+sec("Colocación (regla de plantilla)",`<div class="row">${rnum("cx","Centro X %",1)}${rnum("cy","Centro Y %",1)}</div><div class="row">${rnum("maxW","Ancho máx. %",1)}${rnum("maxH","Alto máx. %",1)}</div><div class="row">${rnum("angle","Rotación inicial")}<label class="chk"><input type="checkbox" data-r="shadow"> Sombra auto</label></div><div class="row"><button class="btn btn--sm" data-pact="apply">Aplicar regla</button><button class="btn btn--sm" data-pact="capture">Usar posición actual</button></div>`);
 const FL=[["dx","Desplazamiento X",-600,600],["dy","Desplazamiento Y",-600,600],["z","Elevación (Z) · negativo = detrás de la caja",-600,600],["opacity","Opacidad",0,100],["blur","Difuminación",0,200],["spread","Expansión / contracción",-100,200],["size","Tamaño %",30,250],["angle","Ángulo de proyección",0,180],["intensity","Intensidad",0,100],["soft","Suavidad",0,100],["persp","Perspectiva (aplanado)",0,100],["skew","Inclinación de perspectiva",-100,100],["vscale","Altura de la sombra %",20,300]];
 const floorHtml=()=>sec("Sombra de suelo",`<label class="chk"><input type="checkbox" data-fl="on"> Activar sombra de contacto</label>${FL.map(([k,l,a,b])=>`<div class="field"><label for="fl-${k}">${l}: <b data-flv="${k}"></b></label><input type="range" id="fl-${k}" data-fl="${k}" min="${a}" max="${b}"></div>`).join("")}<div class="field"><label for="fl-color">Color</label><input class="input" type="color" id="fl-color" data-fl="color"></div><button class="btn btn--sm" data-pact="autofloor" title="Recalcula los valores a partir de la silueta del producto">Restablecer automático</button><span class="hint">Se calcula con la silueta del producto, sigue al producto y se guarda en la plantilla.</span>`,"floor");
 const blendHtml=o=>sec("Fusión",`<div class="field"><label for="i-blend">Modo de fusión</label><select class="select" id="i-blend" data-k="blend">${BLENDS.map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select></div>`,"blend");
@@ -69,6 +69,10 @@ const photoHtml=o=>sec("Ajustes básicos",CATS.A.map(prx).join("")+rst("A"),"px-
 +sec("Efectos",["vig","grain","duo"].map(prx).join("")+`<div class="row">${`<div class="field"><label for="i-duoA">Duotono A</label><input class="input" type="color" id="i-duoA" data-k="px_duoA"></div><div class="field"><label for="i-duoB">Duotono B</label><input class="input" type="color" id="i-duoB" data-k="px_duoB"></div>`}</div>`+rst("E","Restablecer efectos"),"px-e")
 +sec("Restablecer",`<div class="row"><button class="btn btn--sm" data-pact="pxundo">Deshacer último ajuste</button><button class="btn btn--sm" data-pact="pxall">Recuperar originales</button></div><span class="hint">La imagen original nunca se modifica.</span>`,"px-f");
 const imageHtml=o=>(o.role==="product"?productHtml()+floorHtml():"")+photoHtml(o)+sec("Sombra",`<label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label><div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`,"shadow");
+const ORD={"Opciones de imagen":0,"Ajustes básicos":.5,"Efectos":1,"Posición y tamaño":99};
+const reorder=h=>{const i=h.indexOf('<section class="sec">');if(i<0)return h;const head=h.slice(0,i),parts=h.slice(i).split('<section class="sec">').slice(1).map(x=>'<section class="sec">'+x);
+  const k=x=>{const m=/class="label">([^<]*)</.exec(x);const t=m?m[1]:"";return t in ORD?ORD[t]:2};
+  return head+parts.map((x,j)=>[x,j]).sort((a,b)=>k(a[0])-k(b[0])||a[1]-b[1]).map(a=>a[0]).join("")};
 const transformHtml=o=>sec("Posición y tamaño",`${alignBar}<div class="row">${num("x","X")}${num("y","Y")}</div><div class="row">${num("w","Ancho","min=1")}${isText(o)?"<span></span>":num("h","Alto","min=1")}</div><div class="row">${num("angle","Rotación","min=-360 max=360")}${isText(o)?"":rng("opacity","Opacidad",0,100)}</div>`);
 export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProduct=()=>{},getPreset=()=>null){
   let key="";const bgp=mountBgPanel(ed);
@@ -125,7 +129,7 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
       sec("Plantilla",`<label class="chk"><input type="checkbox" data-cfg="removeBg"${!ed.cfg.product||ed.cfg.product.removeBg!==false?" checked":""}> Quitar el fondo del producto automáticamente</label><span class="hint">Selecciona una capa para editarla, o «Fondo» en la lista de capas.</span>`);
     }
     const t=isText(o),img=o.type.toLowerCase()==="image";
-    return `<div class="insp__role">${esc(ROLE[o.role]||"Elemento")}<b>${esc(o.name||"")}</b></div>${(!t&&o.role==="overlay"?overlayHtml(o):"")}${t?textHtml(o):img?imageHtml(o)+(o.role==="product"&&getPreset()?sec("Preset del producto",`<button class="btn btn--sm" data-pact="preset" title="Guarda textos y fondo de este producto para reutilizarlos">Guardar como preset del producto</button>`):""):shapeHtml(o)}${t?"":blendHtml(o)}${t?"":transformHtml(o)}`;
+    return reorder(`<div class="insp__role">${esc(ROLE[o.role]||"Elemento")}<b>${esc(o.name||"")}</b></div>${(!t&&o.role==="overlay"?overlayHtml(o):"")}${t?textHtml(o):img?imageHtml(o)+(o.role==="product"&&getPreset()?sec("Preset del producto",`<button class="btn btn--sm" data-pact="preset" title="Guarda textos y fondo de este producto para reutilizarlos">Guardar como preset del producto</button>`):""):shapeHtml(o)}${t?"":blendHtml(o)}${t?"":transformHtml(o)}`);
   }
   function sync(){
     const o=ed.active;
