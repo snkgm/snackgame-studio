@@ -1,7 +1,7 @@
-import {auth} from "../app/auth.js?v=20261125g";
-import {db} from "../app/db.js?v=20261125g";
-import {runItem} from "./pipeline.js?v=20261125g";
-import {Fatal} from "./gallery.js?v=20261125g";
+import {auth} from "../app/auth.js?v=20261125h";
+import {db} from "../app/db.js?v=20261125h";
+import {runItem} from "./pipeline.js?v=20261125h";
+import {Fatal} from "./gallery.js?v=20261125h";
 const rpc=async(fn,b={})=>{const r=await fetch(db.REST+"rpc/"+fn,{method:"POST",headers:db.H,body:JSON.stringify(b)});if(!r.ok)throw new Error(fn+" "+r.status);return r.json()};
 const patch=(id,p)=>db.update("campaign_items",id,p);
 async function closeIfDone(cid){

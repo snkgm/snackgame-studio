@@ -1,4 +1,4 @@
-import {CONFIG} from "./config.js?v=20261125g";
+import {CONFIG} from "./config.js?v=20261125h";
 const KEY="sg.auth",URL_=CONFIG.SUPABASE_URL+"/auth/v1/";
 let S=null;try{S=JSON.parse(localStorage.getItem(KEY))}catch{}
 const put=s=>{S=s;try{s?localStorage.setItem(KEY,JSON.stringify(s)):localStorage.removeItem(KEY)}catch{}};

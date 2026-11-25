@@ -181,3 +181,5 @@
 .cpop{position:fixed;z-index:60;min-width:240px;padding:12px;background:var(--c-surface);border:1px solid var(--c-line);border-radius:8px;box-shadow:var(--sh-2,0 8px 24px rgba(0,0,0,.5));display:grid;gap:8px}.cpop__r{display:flex;align-items:center;gap:8px}.cpop__r>label:first-child{width:80px;color:var(--c-muted);font-size:12px}.cpop input[type=color]{width:32px;height:32px;padding:2px;background:var(--c-bg);border:1px solid var(--c-line);border-radius:6px}.cpop input[type=number]{height:32px;background:var(--c-bg);color:var(--c-text);border:1px solid var(--c-line);border-radius:6px;padding:0 8px}
 .ttb{display:none!important}
 .bar2[hidden]{display:none!important}
+.ctx__w{max-width:128px}.b2sp{display:inline-flex;align-items:center}.b2--mini{width:16px!important;min-width:16px;padding:0!important;margin-left:-4px}.b2--mini .ico{width:12px;height:12px}
+.cpop__s{flex:1;min-width:140px;accent-color:var(--c-accent)}.cpop output{min-width:48px;text-align:right;color:var(--c-text);font:600 12px/16px Inter,sans-serif;font-variant-numeric:tabular-nums}.cpop__r>label:first-child{width:88px}

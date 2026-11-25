@@ -1,5 +1,5 @@
-import {Shadow} from "../../vendor/fabric.min.mjs?v=20261125g";
-import {loadFont} from "../app/fonts.js?v=20261125g";
+import {Shadow} from "../../vendor/fabric.min.mjs?v=20261125h";
+import {loadFont} from "../app/fonts.js?v=20261125h";
 export const TEXT_STYLES=[
  {id:"title",name:"Título principal",hint:"Nombres de producto y titulares",sample:"TÍTULO PRINCIPAL",wf:.86,top:.06,p:{fontFamily:"Anton",fontWeight:400,fontSize:112,fill:"#ffffff",textAlign:"center",lineHeight:1,charSpacing:10},sh:{color:"rgba(0,0,0,.45)",blur:18,x:0,y:6}},
  {id:"sub",name:"Subtítulo",hint:"Información secundaria bajo el título",sample:"Subtítulo del producto",wf:.8,top:.2,p:{fontFamily:"Montserrat",fontWeight:600,fontSize:52,fill:"#ffffff",textAlign:"center",lineHeight:1.15,charSpacing:0}},

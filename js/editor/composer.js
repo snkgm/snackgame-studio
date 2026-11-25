@@ -1,9 +1,9 @@
-import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125g";
-import {ZONES,MARGINS,loadPresets,savePresets,uid,zonesFor} from "./zones.js?v=20261125g";
-import {saveSnap} from "./snap.js?v=20261125g";
-import {keepAcc,setKeepAcc} from "./accordion.js?v=20261125g";
-import {I} from "../app/icons.js?v=20261125g";
-import {esc,modal,toast} from "../app/ui.js?v=20261125g";
+import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125h";
+import {ZONES,MARGINS,loadPresets,savePresets,uid,zonesFor} from "./zones.js?v=20261125h";
+import {saveSnap} from "./snap.js?v=20261125h";
+import {keepAcc,setKeepAcc} from "./accordion.js?v=20261125h";
+import {I} from "../app/icons.js?v=20261125h";
+import {esc,modal,toast} from "../app/ui.js?v=20261125h";
 const VK="sg.view",DV={rulers:1,guides:1,margins:0,zones:0,meas:"drag",glock:0,mlock:1};
 const lv=()=>{try{return {...DV,...JSON.parse(localStorage.getItem(VK)||"{}")}}catch{return {...DV}}};
 const S=d=>`<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
