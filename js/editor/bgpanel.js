@@ -1,12 +1,12 @@
-import {store} from "../app/store.js?v=20261125f";
-import {db} from "../app/db.js?v=20261125f";
-import {esc,toast,modal} from "../app/ui.js?v=20261125f";
-import {I} from "../app/icons.js?v=20261125f";
-import {renderBackground,BG_DEFAULT,GRAD_DEFAULT,GRAD_PRESETS,gradCss} from "../img/background.js?v=20261125f";
-import {extractPalette} from "../img/color.js?v=20261125f";
-import {FX_DEFAULT} from "../img/fx.js?v=20261125f";
-import {hashKey} from "../img/matting.js?v=20261125f";
-import {searchBackgrounds,getKey,setKey} from "../img/bgsearch.js?v=20261125f";
+import {store} from "../app/store.js?v=20261125g";
+import {db} from "../app/db.js?v=20261125g";
+import {esc,toast,modal} from "../app/ui.js?v=20261125g";
+import {I} from "../app/icons.js?v=20261125g";
+import {renderBackground,BG_DEFAULT,GRAD_DEFAULT,GRAD_PRESETS,gradCss} from "../img/background.js?v=20261125g";
+import {extractPalette} from "../img/color.js?v=20261125g";
+import {FX_DEFAULT} from "../img/fx.js?v=20261125g";
+import {hashKey} from "../img/matting.js?v=20261125g";
+import {searchBackgrounds,getKey,setKey} from "../img/bgsearch.js?v=20261125g";
 const rng=(k,l,min,max)=>`<div class="field"><label for="b-${k}">${l}</label><input type="range" id="b-${k}" data-b="${k}" min="${min}" max="${max}"></div>`;
 const fxv=(path,def)=>path.split(".").reduce((a,k)=>a&&a[k],def);
 const fr=(p,l,min,max)=>`<div class="field"><label for="fx-${p}">${l}</label><input type="range" id="fx-${p}" data-fx="${p}" min="${min}" max="${max}"></div>`;
@@ -14,7 +14,8 @@ const fc=(p,l)=>`<label class="chk"><input type="checkbox" data-fx="${p}"> ${l}<
 const fk=(p,l)=>`<div class="field"><label for="fx-${p}">${l}</label><input class="input" type="color" id="fx-${p}" data-fx="${p}"></div>`;
 const FXHTML=`<section class="sec"><div class="sec__head"><span class="label">Viñeta</span><button class="sec__reset" data-fxreset="vig" title="Restablecer a valores de fábrica" aria-label="Restablecer viñeta">${I["rotate-ccw"]}</button></div>${fc("vig.on","Activar viñeta")}${fr("vig.intensity","Intensidad",0,100)}${fr("vig.size","Tamaño del área central",0,100)}${fr("vig.soft","Suavidad",0,100)}${fr("vig.opacity","Opacidad",0,100)}${fk("vig.color","Color")}</section>
 <section class="sec"><div class="sec__head"><span class="label">Degradados desde bordes</span><button class="sec__reset" data-fxreset="edges" title="Restablecer a valores de fábrica" aria-label="Restablecer degradados">${I["rotate-ccw"]}</button></div><div class="row">${fc("edges.t","Superior")}${fc("edges.b","Inferior")}</div><div class="row">${fc("edges.l","Izquierdo")}${fc("edges.r","Derecho")}</div>${fr("edges.extent","Extensión",5,100)}${fr("edges.intensity","Intensidad",0,100)}${fr("edges.opacity","Opacidad",0,100)}${fr("edges.soft","Suavidad de transición",0,100)}${fk("edges.color","Color")}<span class="hint">Se aplican sobre el fondo, debajo del producto: las fotos originales no se tocan.</span></section>`;
-const MODES=[["auto","Automático"],["solid","Sólido"],["grad","Degradado"],["image","Imagen"]];
+const SV=d=>`<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const MODES=[["auto","Fondo automático",SV('<path d="m15 4 5 5L9 20l-5-5z"/><path d="m13 6 5 5"/><path d="M5 3v3M3.5 4.5h3M19 15v3M17.5 16.5h3"/>')],["solid","Color sólido",SV('<circle cx="12" cy="12" r="8" fill="currentColor"/>')],["grad","Degradado",SV('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8v8M11 8v8M15 8v8" opacity=".7"/>')],["image","Imagen de fondo",SV('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/>')]];
 const LS=(k,d=[])=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch{return d}};
 const pushLS=(k,c,max=12)=>{const l=LS(k).filter(x=>x!==c);l.unshift(c);try{localStorage.setItem(k,JSON.stringify(l.slice(0,max)))}catch{}};
 const BRAND=["#ffc400","#111111","#ffffff","#ff3d9a","#19d3ff","#3b2f8f"];
@@ -53,7 +54,7 @@ ${rng("lum","Luminosidad",-60,60)}${rng("sat","Saturación",-100,100)}${rng("tex
 <div class="field"><label>Guardados <button class="btn btn--ghost btn--sm" data-savebg>Guardar este color</button></label><div class="sws">${sw(LS("sg.colors"),"data-sc")||'<span class="hint">Sin colores guardados</span>'}</div></div>
 <div class="field"><label>Paleta de marca y producto</label><div class="sws">${sw([...new Set([...BRAND,...ed.palette])],"data-sc")}</div></div>`;
     const gradB=`<div class="seg" id="g-type"><button data-gt="linear" class="${g.type==="linear"?"is-on":""}">Lineal</button><button data-gt="radial" class="${g.type==="radial"?"is-on":""}">Radial</button></div>
-<div class="field"><label>Colores (clic en la barra para añadir)</label><div class="gbar" id="gbar" style="background:${gradCss({...g,type:"linear",angle:90})}">${g.stops.map((st,i)=>`<button type="button" class="gstop${i===gs?" is-on":""}" data-gi="${i}" style="left:${st.p}%;background:${st.c}" aria-label="Color ${i+1}"></button>`).join("")}</div></div>
+<div class="field"><label>Colores (clic en la barra para añadir)</label><div class="gbar" id="gbar" style="background:${gradCss({...g,type:"linear",angle:90})}"><i class="gtk" style="left:0"></i><i class="gtk" style="left:25%"></i><i class="gtk gtk--c" style="left:50%"></i><i class="gtk" style="left:75%"></i><i class="gtk" style="left:100%"></i><i class="gsnap" hidden></i>${g.stops.map((st,i)=>`<button type="button" class="gstop${i===gs?" is-on":""}" data-gi="${i}" style="left:${st.p}%;background:${st.c}" aria-label="Color ${i+1}"></button>`).join("")}</div></div>
 <div class="row"><div class="field"><label for="g-c">Color del punto</label><input class="input" type="color" id="g-c" data-gc value="${hexOf(cur.c)}"></div><div class="field"><label for="g-p">Posición %</label><input class="input" type="number" id="g-p" data-gp min="0" max="100" value="${cur.p}"></div></div>
 <div class="row"><button class="btn btn--sm" data-gdup>Duplicar punto</button><button class="btn btn--sm" data-gdel${g.stops.length<=2?" disabled":""}>Eliminar punto</button></div>
 ${g.type==="linear"?`<div class="field"><label for="g-a">Dirección: <b id="g-av">${g.angle}</b>°</label><input type="range" id="g-a" data-g="angle" min="0" max="360" value="${g.angle}"></div>`:`<div class="field"><label for="g-x">Centro X</label><input type="range" id="g-x" data-g="cx" min="0" max="100" value="${g.cx}"></div><div class="field"><label for="g-y">Centro Y</label><input type="range" id="g-y" data-g="cy" min="0" max="100" value="${g.cy}"></div>`}
@@ -67,7 +68,7 @@ ${c.img?`<div class="row"><button class="btn btn--sm" data-act="separate" title=
 ${getKey()?`<form class="row" id="b-sf"><input class="input" id="b-q" placeholder="Ej. neón, galaxia, madera" required><button class="btn btn--sm">Buscar</button></form><div class="lib">${found.map((f,i)=>`<div class="lib__it" data-f="${i}"><img src="${esc(f.thumb)}" alt="" loading="lazy"><span>${esc(f.credit)}</span></div>`).join("")}</div><button class="btn btn--ghost btn--sm" data-act="key">Cambiar clave</button>`:`<form class="field" id="b-kf"><input class="input" id="b-k" placeholder="Clave de la API de Pexels"><button class="btn btn--sm">Guardar clave</button></form>`}
 ${msg?`<span class="hint">${esc(msg)}</span>`:""}`;
     return `<section class="sec"><div class="sec__head"><span class="label">Fondo</span></div>
-<div class="seg" id="bg-mode">${MODES.map(([k,l])=>`<button data-mode="${k}" class="${mode===k?"is-on":""}">${l}</button>`).join("")}</div>
+<div class="seg seg--ico" id="bg-mode" role="group" aria-label="Tipo de fondo">${MODES.map(([k,l,ic])=>`<button type="button" data-mode="${k}" class="${mode===k?"is-on":""}" title="${l}" aria-label="${l}" aria-pressed="${mode===k}">${ic}</button>`).join("")}</div><div class="hint bg-cap">${MODES.find(m=>m[0]===mode)[1]}</div>
 ${mode==="auto"?autoB:mode==="solid"?solidB:mode==="grad"?gradB:imgB}</section>
 ${FXHTML}`;
   }
@@ -105,10 +106,10 @@ ${FXHTML}`;
       const st=e.target.closest(".gstop");const bar=e.target.closest("#gbar");
       if(st){e.preventDefault();gsel=+st.dataset.gi;const g=G(),i=gsel,r=st.parentElement.getBoundingClientRect();
         root.querySelectorAll(".gstop").forEach(x=>x.classList.toggle("is-on",+x.dataset.gi===i));
-        const mv=ev=>{g.stops[i].p=Math.max(0,Math.min(100,Math.round((ev.clientX-r.left)/r.width*100)));st.style.left=g.stops[i].p+"%";const pi=root.querySelector("#g-p");if(pi)pi.value=g.stops[i].p;root.querySelector("#gbar").style.background=gradCss({...g,type:"linear",angle:90});setG(g,false)};
-        const up=()=>{window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);setTimeout(()=>{ed.commit();rebuild()},120)};
+        const mv=ev=>{let pp=Math.max(0,Math.min(100,Math.round((ev.clientX-r.left)/r.width*100)));const sn=ev.ctrlKey||ev.metaKey;if(sn)pp=50;const gs2=root.querySelector(".gsnap");if(gs2)gs2.hidden=!sn;g.stops[i].p=pp;st.style.left=g.stops[i].p+"%";const pi=root.querySelector("#g-p");if(pi)pi.value=g.stops[i].p;root.querySelector("#gbar").style.background=gradCss({...g,type:"linear",angle:90});setG(g,false)};
+        const up=()=>{const gs2=root.querySelector(".gsnap");if(gs2)gs2.hidden=true;window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);setTimeout(()=>{ed.commit();rebuild()},120)};
         window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);return}
-      if(bar&&e.target===bar){const r=bar.getBoundingClientRect(),p=Math.max(0,Math.min(100,Math.round((e.clientX-r.left)/r.width*100))),g=G();g.stops.push({p,c:colorAt(g.stops,p)});gsel=g.stops.length-1;setG(g,true);setTimeout(()=>ed.commit(),150)}
+      if(bar&&(e.target===bar||e.target.classList.contains("gtk"))){const r=bar.getBoundingClientRect(),p=Math.max(0,Math.min(100,Math.round((e.clientX-r.left)/r.width*100))),g=G();g.stops.push({p,c:colorAt(g.stops,p)});gsel=g.stops.length-1;setG(g,true);setTimeout(()=>ed.commit(),150)}
     });
     root.addEventListener("input",e=>{const el=e.target;
       if(el.dataset.gc!==undefined){const g=G();g.stops[Math.min(gsel,g.stops.length-1)].c=el.value;const sp=root.querySelector(`.gstop[data-gi="${gsel}"]`);if(sp)sp.style.background=el.value;root.querySelector("#gbar").style.background=gradCss({...g,type:"linear",angle:90});setG(g,false)}

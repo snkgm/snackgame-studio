@@ -1,6 +1,6 @@
-import {I} from "../app/icons.js?v=20261125f";
-import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125f";
-import {modal,toast,openMenu} from "../app/ui.js?v=20261125f";
+import {I} from "../app/icons.js?v=20261125g";
+import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125g";
+import {modal,toast,openMenu} from "../app/ui.js?v=20261125g";
 let LID=0;
 const TH=new WeakMap();
 const thumb=o=>{
@@ -13,17 +13,23 @@ const thumb=o=>{
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 export class LayersPanel{
   constructor(root,ed){
-    this.root=root;this.ed=ed;this.drag=null;this.t=null;this.pin=false;
+    this.root=root;this.ed=ed;this.drag=null;this.t=null;this.pin=localStorage.getItem("sg.lpin")==="1";
     this.box=root.closest(".lyr__box");this.bgRoot=this.box.querySelector("#lbg");this.mergeBtn=this.box.querySelector("#lmerge");this.expBtn=this.box.querySelector("#lexp");
     ed.on("change",()=>{clearTimeout(this.t);this.t=setTimeout(()=>this.render(),90)});
     const wrap=this.box.parentElement;let lt=0;
     this.box.addEventListener("mouseenter",()=>{clearTimeout(lt);this.setOpen(true)});
     this.box.addEventListener("mouseleave",()=>{lt=setTimeout(()=>{if(!this.pin&&!this.drag)this.setOpen(false)},140)});
-    this.expBtn.onclick=()=>{this.pin=!this.pin;this.setOpen(this.pin)};
+    const UL='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>';
+    const LK='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+    const paintPin=()=>{this.expBtn.innerHTML=this.pin?LK:UL;this.expBtn.classList.toggle("is-pin",this.pin);this.expBtn.title=this.pin?"Panel de capas fijado: clic para volver al modo automático":"Fijar el panel de capas expandido";this.expBtn.setAttribute("aria-pressed",String(this.pin))};
+    const togglePin=()=>{this.pin=!this.pin;try{localStorage.setItem("sg.lpin",this.pin?"1":"0")}catch{}paintPin();this.setOpen(this.pin||this.box.matches(":hover"))};
+    paintPin();if(this.pin)this.setOpen(true);
+    this.expBtn.onclick=e=>{e.stopPropagation();togglePin()};
+    this.box.querySelector(".lyr__head").addEventListener("click",e=>{if(e.target.closest("button"))return;togglePin()});
     this.mergeBtn.onclick=()=>this.mergeSel();
     this.render();
   }
-  setOpen(v){this.box.classList.toggle("is-open",v);this.expBtn.setAttribute("aria-pressed",String(this.pin));this.expBtn.setAttribute("aria-label",v?"Contraer capas":"Expandir capas")}
+  setOpen(v){this.box.classList.toggle("is-open",v)}
   selected(){return this.ed.canvas.getActiveObjects().filter(o=>this.ed.mergeable(o))}
   async mergeSel(){const s=this.selected();if(s.length<2){toast("Selecciona al menos dos capas (Ctrl/Mayús + clic)");return}await this.mergeFlow(s)}
   async mergeBelow(o){const l=this.ed.layers(),i=l.indexOf(o),b=l[i+1];if(!b){toast("No hay capa inferior para combinar");return}await this.mergeFlow([o,b])}

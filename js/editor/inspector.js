@@ -1,19 +1,19 @@
-import {I} from "../app/icons.js?v=20261125f";
-import {esc} from "../app/ui.js?v=20261125f";
-import {FONTS,loadFont} from "../app/fonts.js?v=20261125f";
-import {FORMATS} from "../app/formats.js?v=20261125f";
-import {safeOf} from "../studio/skeleton.js?v=20261125f";
-import {mountBgPanel} from "./bgpanel.js?v=20261125f";
-import {applyProductImage,openProductPicker} from "./product.js?v=20261125f";
-import {toast} from "../app/ui.js?v=20261125f";
-import {mattingDefaults} from "../img/matting.js?v=20261125f";
-import {store} from "../app/store.js?v=20261125f";
-import {FIELDS,BLENDS} from "./editor.js?v=20261125f";
-import {enhance} from "./accordion.js?v=20261125f";
-import {saveSnap} from "./snap.js?v=20261125f";
-import {TEXT_STYLES,restyle} from "./textstyles.js?v=20261125f";
-import {PF_PRESETS,CATS,getPfx,setPfx,undoPfx,resetCat,resetAll,applyPreset,applyPfx} from "./photofx.js?v=20261125f";
-import {Shadow} from "../../vendor/fabric.min.mjs?v=20261125f";
+import {I} from "../app/icons.js?v=20261125g";
+import {esc} from "../app/ui.js?v=20261125g";
+import {FONTS,loadFont} from "../app/fonts.js?v=20261125g";
+import {FORMATS} from "../app/formats.js?v=20261125g";
+import {safeOf} from "../studio/skeleton.js?v=20261125g";
+import {mountBgPanel} from "./bgpanel.js?v=20261125g";
+import {applyProductImage,openProductPicker} from "./product.js?v=20261125g";
+import {toast} from "../app/ui.js?v=20261125g";
+import {mattingDefaults} from "../img/matting.js?v=20261125g";
+import {store} from "../app/store.js?v=20261125g";
+import {FIELDS,BLENDS} from "./editor.js?v=20261125g";
+import {enhance} from "./accordion.js?v=20261125g";
+import {saveSnap} from "./snap.js?v=20261125g";
+import {TEXT_STYLES,restyle} from "./textstyles.js?v=20261125g";
+import {PF_PRESETS,CATS,getPfx,setPfx,undoPfx,resetCat,resetAll,applyPreset,applyPfx} from "./photofx.js?v=20261125g";
+import {Shadow} from "../../vendor/fabric.min.mjs?v=20261125g";
 const num=(k,l,extra="")=>`<div class="field"><label for="i-${k}">${l}</label><input class="input" type="number" id="i-${k}" data-k="${k}" ${extra}></div>`;
 const rng=(k,l,min,max,step=1)=>`<div class="field"><label for="i-${k}">${l}</label><input type="range" id="i-${k}" data-k="${k}" min="${min}" max="${max}" step="${step}"></div>`;
 const rnum=(k,l,pct)=>`<div class="field"><label for="r-${k}">${l}</label><input class="input" type="number" id="r-${k}" data-r="${k}"${pct?" data-pct":""} step="${pct?1:"any"}"></div>`;
@@ -46,7 +46,7 @@ function textPanels(o){
 }
 function textHtml(o){
   const P=textPanels(o);
-  return sec("Contenido",`<div class="field"><label for="i-text">Texto</label><textarea class="input input--area" id="i-text" data-k="text" rows="3"></textarea></div><span class="hint">La tipografía, el tamaño, el color y los efectos están en la barra vertical a la izquierda del lienzo.</span>`)+
+  return sec("Contenido",`<div class="field"><label for="i-text">Texto</label><textarea class="input input--area" id="i-text" data-k="text" rows="3"></textarea></div><span class="hint">La tipografía, el tamaño, el color y los efectos están en la barra superior.</span>`)+
   sec("Reglas de plantilla",`<label class="chk"><input type="checkbox" data-r="fit"> Ajustar tamaño a la caja</label><div class="row">${rnum("min","Tamaño mín.")}${rnum("max","Tamaño máx.")}</div><div class="row">${rnum("maxH","Alto máx.")}${rnum("chars","Límite de caracteres")}</div><div class="field"><label for="r-empty">Si el producto no tiene el dato</label><select class="select" id="r-empty" data-r="empty"><option value="">Dejar vacío</option><option value="hide">Ocultar el elemento</option><option value="alt">Usar texto alternativo</option></select></div><div class="field"><label for="r-alt">Texto alternativo</label><input class="input" id="r-alt" data-r="alt"></div>${COLRULE}`)+
   sec("Dato dinámico",`<div class="field"><label for="i-field">Vincular a</label><select class="select" id="i-field" data-k="field"><option value="">Texto fijo</option>${Object.entries(FIELDS).map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select></div>
 <div class="field" id="pv"><label for="i-pval">Valor del dato</label><input class="input" id="i-pval" data-pv><span class="hint">Cambia el dato del producto: se actualiza en todas las capas que lo usan y en las listas automáticas.</span></div><div class="field" id="pat"><label for="i-pattern">Formato</label><input class="input" id="i-pattern" data-k="pattern" placeholder="{valor}"><span class="hint">Usa {valor}. Ej.: «Nº {valor}» o «{valor} €».</span></div>`)+

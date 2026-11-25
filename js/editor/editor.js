@@ -1,15 +1,15 @@
-import {getPfx,setPfx,applyPfx} from "./photofx.js?v=20261125f";
-import {StaticCanvas,Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261125f";
-import {bgDataUrl,bgColors,BG_DEFAULT,gradDataUrl} from "../img/background.js?v=20261125f";
-import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261125f";
-import {renderOverlay,overlayById} from "../img/overlays.js?v=20261125f";
-import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261125f";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261125f";
+import {getPfx,setPfx,applyPfx} from "./photofx.js?v=20261125g";
+import {StaticCanvas,Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261125g";
+import {bgDataUrl,bgColors,BG_DEFAULT,gradDataUrl} from "../img/background.js?v=20261125g";
+import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261125g";
+import {renderOverlay,overlayById} from "../img/overlays.js?v=20261125g";
+import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261125g";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261125g";
 const _tid=Textbox.prototype.initDimensions;
 Textbox.prototype.initDimensions=function(){_tid.call(this);if(this.boxH&&this.boxH>this.height)this.height=this.boxH};
 const PROPS=["pfx","boxH","name","locked","role","field","pattern","rule","orig","gen","globalCompositeOperation"];
 const PLACE="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEAAAAALAAAAAABAAEAAAIA";
-export const BLENDS=[["source-over","Normal"],["multiply","Multiplicar"],["screen","Trama"],["overlay","Superponer"],["soft-light","Luz suave"],["hard-light","Luz fuerte"],["darken","Oscurecer"],["lighten","Aclarar"],["color-dodge","Sobreexponer color"],["color-burn","Subexponer color"]];
+export const BLENDS=[["source-over","Normal"],["multiply","Multiplicar"],["screen","Trama"],["lighter","Sumar (Add)"],["overlay","Superponer"],["soft-light","Luz suave"],["hard-light","Luz fuerte"],["darken","Oscurecer"],["lighten","Aclarar"],["color-dodge","Sobreexponer color"],["color-burn","Subexponer color"]];
 const _toObj=FabricImage.prototype.toObject;FabricImage.prototype.toObject=function(p){const j=_toObj.call(this,p);if(this.gen)j.src=PLACE;return j};
 const BLOBS=new Map();
 async function genUrl(k,s){const key=k+":"+s;if(BLOBS.has(key))return BLOBS.get(key);const c=renderOverlay(k,1080,1440,s);const u=URL.createObjectURL(await new Promise(r=>c.toBlob(r,"image/png")));BLOBS.set(key,u);return u}
@@ -75,12 +75,16 @@ export class Editor{
   fit(){
     const r=this.stage.getBoundingClientRect();
     const pb=parseFloat(getComputedStyle(this.stage).paddingBottom)||0;
-    const s=Math.max(.05,Math.min((r.width-PAD*2)/this.W,(r.height-pb-PAD*2)/this.H));
+    const fs=Math.max(.05,Math.min((r.width-PAD*2)/this.W,(r.height-pb-PAD*2)/this.H));this.fitScale=fs;
+    const s=this.userZoom?Math.max(.05,Math.min(4,this.userZoom)):fs;
     this.scale=s;
     this.canvas.setDimensions({width:Math.round(this.W*s),height:Math.round(this.H*s)});
-    this.canvas.setZoom(s);this.canvas.calcOffset();this.canvas.requestRenderAll();
+    this.canvas.setZoom(s);if(this.pan&&this.userZoom)this.panBy(0,0);else if(this.box)this.box.style.transform="";this.canvas.calcOffset();this.canvas.requestRenderAll();
     this.emit("zoom",s);
   }
+  zoomTo(z){this.userZoom=z?Math.max(.05,Math.min(4,z)):null;if(!this.userZoom)this.pan={x:0,y:0};this.fit()}
+  panBy(dx,dy){const p=this.pan||(this.pan={x:0,y:0}),r=this.stage.getBoundingClientRect(),w=this.W*this.scale,h=this.H*this.scale,mx=Math.max(0,(w-r.width)/2+120),my=Math.max(0,(h-r.height)/2+120);p.x=Math.max(-mx,Math.min(mx,p.x+dx));p.y=Math.max(-my,Math.min(my,p.y+dy));this.applyPan()}
+  applyPan(){const p=this.pan||{x:0,y:0};this.box.style.transform=p.x||p.y?`translate(${p.x}px,${p.y}px)`:"";this.canvas.calcOffset();this.emit("zoom",this.scale)}
   setBg(c){this.canvas.backgroundColor=c;this.canvas.requestRenderAll();this.snap();this.emit("change")}
   get bg(){return this.canvas.backgroundColor||"#ffffff"}
   nextName(base){this.counter[base]=(this.counter[base]||0)+1;return `${base} ${this.counter[base]}`}

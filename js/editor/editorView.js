@@ -1,20 +1,22 @@
-import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125f";
-import {Editor} from "./editor.js?v=20261125f";
-import {LayersPanel} from "./layers.js?v=20261125f";
-import {mountInspector} from "./inspector.js?v=20261125f";
-import {loadAllFonts} from "../app/fonts.js?v=20261125f";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261125f";
-import {sessionStart} from "./accordion.js?v=20261125f";
-import {mountComposer} from "./composer.js?v=20261125f";
-import {safeOf} from "../studio/skeleton.js?v=20261125f";
-import {openProductPicker} from "./product.js?v=20261125f";
-import {openImageTool,openShapes,openTextStyles,openOverlayTool,closePop} from "./tools.js?v=20261125f";
-import {zipBlobs} from "../app/zip.js?v=20261125f";
-import {I} from "../app/icons.js?v=20261125f";
-import {db} from "../app/db.js?v=20261125f";
-import {store} from "../app/store.js?v=20261125f";
-import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261125f";
-import {toInput,fromInput} from "../app/dates.js?v=20261125f";
+import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125g";
+import {Editor} from "./editor.js?v=20261125g";
+import {LayersPanel} from "./layers.js?v=20261125g";
+import {mountInspector} from "./inspector.js?v=20261125g";
+import {loadAllFonts} from "../app/fonts.js?v=20261125g";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261125g";
+import {sessionStart} from "./accordion.js?v=20261125g";
+import {statusHtml,mountStatusBar} from "./statusbar.js?v=20261125g";
+import {mountCtxBar} from "./ctxbar.js?v=20261125g";
+import {mountComposer} from "./composer.js?v=20261125g";
+import {safeOf} from "../studio/skeleton.js?v=20261125g";
+import {openProductPicker} from "./product.js?v=20261125g";
+import {openImageTool,openShapes,openTextStyles,openOverlayTool,closePop} from "./tools.js?v=20261125g";
+import {zipBlobs} from "../app/zip.js?v=20261125g";
+import {I} from "../app/icons.js?v=20261125g";
+import {db} from "../app/db.js?v=20261125g";
+import {store} from "../app/store.js?v=20261125g";
+import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261125g";
+import {toInput,fromInput} from "../app/dates.js?v=20261125g";
 export async function mountEditor(root,id,{template=false}={}){
   const table=template?"templates":"posts";
   root.innerHTML='<div class="empty">Cargando…</div>';
@@ -26,14 +28,13 @@ export async function mountEditor(root,id,{template=false}={}){
   root.innerHTML=`<div class="app">
 <header class="etop">
  <button class="btn btn--ghost btn--icon" id="back" aria-label="Volver al calendario" title="Volver al calendario">${I["arrow-left"]}</button>
- <input class="etop__title" id="title" value="${esc(post.title)}" aria-label="${template?"Nombre de la plantilla":"Título"}">
+ <label class="etop__name" title="Nombre del diseño"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg><input class="etop__title" id="title" value="${esc(post.title)}" placeholder="Nombre del diseño" aria-label="Nombre del diseño"></label>
  ${template?`<span class="chip chip--fmt">${esc(store.typeName(post.type_id)||"Sin tipo")} · ${esc(store.catName(post.category_id)||"Sin categoría")} · ${esc(fmtById(post.format).short)}</span>`:""}
  <span class="top__sep"></span>
  <button class="btn btn--icon" id="undo" title="Deshacer (Ctrl+Z)">${I["undo-2"]}</button>
  <button class="btn btn--icon" id="redo" title="Rehacer (Ctrl+Shift+Z)">${I["redo-2"]}</button>
  <span class="grow"></span>
  <button class="btn savebtn" id="savebtn" title="Guardar (Ctrl+S)" disabled>Guardado 💾</button>
- <span class="top__zoom" id="zoom"></span>
  ${template?`<button class="btn" id="tdef">${I.check||""}Predeterminada</button>`:`<select class="select etop__status" id="status" aria-label="Estado">${STATUS_KEYS.map(s=>`<option value="${s}"${s===post.status?" selected":""}>${STATUS[s].label}</option>`).join("")}</select>
  <input class="input etop__date" type="datetime-local" id="when" value="${toInput(post.scheduled_at)}" aria-label="Fecha y hora">
  <button class="btn" id="sched">${I["calendar-clock"]}<span>Programar</span></button>
@@ -50,7 +51,8 @@ export async function mountEditor(root,id,{template=false}={}){
  <div class="tools__sep"></div>
  <div class="lyr"><div class="lyr__box" id="lbox"><div class="lyr__head"><span>Capas</span><button type="button" class="lyr__b" id="lmerge" hidden title="Fusionar capas seleccionadas" aria-label="Fusionar selección">${I.layers}</button><button type="button" class="lyr__b" id="lexp" title="Expandir o contraer capas" aria-label="Expandir capas" aria-pressed="false">${I["chevron-down"]}</button></div><div class="layers layers--c" id="layers"></div><div class="lyr__bg" id="lbg"></div></div></div>
 </aside>
-<main class="stage" id="stage"><div class="ttb" id="ttb" role="toolbar" aria-label="Herramientas de texto" hidden></div><div class="stage__box" id="box"><canvas id="cv"></canvas><div class="guides" id="guides"></div></div><div class="slides" id="slides" hidden></div></main>
+<main class="stage" id="stage"><div class="ttb" id="ttb" role="toolbar" aria-label="Herramientas de texto" hidden></div><div class="stage__box" id="box"><canvas id="cv"></canvas><div class="guides" id="guides"></div></div></main>
+${statusHtml()}
 <aside class="panel">
  <div class="panel__scroll" id="insp"></div>
 </aside></div>`;
@@ -79,7 +81,6 @@ export async function mountEditor(root,id,{template=false}={}){
   $("#t-text").onclick=e=>openTextStyles(e.currentTarget,ed);
   $("#undo").onclick=()=>ed.undo();$("#redo").onclick=()=>ed.redo();
   const hist=()=>{$("#undo").disabled=!ed.canUndo;$("#redo").disabled=!ed.canRedo};ed.on("history",hist);hist();
-  ed.on("zoom",s=>{$("#zoom").textContent=Math.round(s*100)+"%"});$("#zoom").textContent=Math.round(ed.scale*100)+"%";
   let dirty=false,saving=false,timer;
   const setSave=(t,err)=>{const b=$("#savebtn");if(!b)return;const st=t==="Guardado"?"clean":t==="Guardando…"?"saving":err&&t!=="Cambios sin guardar"?"err":"dirty";b.dataset.st=st;b.disabled=st==="clean"||st==="saving";b.classList.toggle("btn--accent",st==="dirty"||st==="err");b.textContent={clean:"Guardado 💾",saving:"Guardando…",dirty:"Guardar cambios",err:"Error · reintentar"}[st]};
   setSave("Guardado");
@@ -145,12 +146,14 @@ export async function mountEditor(root,id,{template=false}={}){
   const slidesEl=$("#slides");
   function drawSlides(){
     const had=!slidesEl.hidden;
-    if(!ed.slides){slidesEl.hidden=true;return}slidesEl.hidden=false;if(!had){$("#stage").style.paddingBottom="48px";ed.fit()}
-    slidesEl.innerHTML=ed.slides.map((_,i)=>`<button class="sl${i===ed.cur?" is-on":""}" data-i="${i}" aria-label="Diapositiva ${i+1}">${i+1}</button>`).join("")+`<span class="top__sep"></span><button class="sl" data-a="dup" title="Añadir copia de la diapositiva actual">${I.plus}</button><button class="sl" data-a="blank" title="Añadir diapositiva solo con el fondo">${I.square}</button><button class="sl" data-a="left" title="Mover a la izquierda">‹</button><button class="sl" data-a="right" title="Mover a la derecha">›</button><button class="sl" data-a="del" title="Eliminar diapositiva">${I["trash-2"]}</button>`;
+    if(!ed.slides){slidesEl.hidden=true;$("#sbar .sbs--sl").hidden=true;return}slidesEl.hidden=false;$("#sbar .sbs--sl").hidden=false;if(!had)ed.fit()
+    slidesEl.innerHTML=`<button class="sl" data-a="prev" title="Diapositiva anterior" aria-label="Diapositiva anterior"${ed.cur<1?" disabled":""}>‹</button><span class="sl__t">Diapositiva ${ed.cur+1} de ${ed.slides.length}</span><button class="sl" data-a="next" title="Diapositiva siguiente" aria-label="Diapositiva siguiente"${ed.cur>=ed.slides.length-1?" disabled":""}>›</button><span class="top__sep"></span>`+ed.slides.map((_,i)=>`<button class="sl${i===ed.cur?" is-on":""}" data-i="${i}" aria-label="Diapositiva ${i+1}">${i+1}</button>`).join("")+`<span class="top__sep"></span><button class="sl" data-a="dup" title="Añadir copia de la diapositiva actual">${I.plus}</button><button class="sl" data-a="blank" title="Añadir diapositiva solo con el fondo">${I.square}</button><button class="sl" data-a="left" title="Mover a la izquierda">‹</button><button class="sl" data-a="right" title="Mover a la derecha">›</button><button class="sl" data-a="del" title="Eliminar diapositiva">${I["trash-2"]}</button>`;
   }
   slidesEl.onclick=async e=>{
     const b=e.target.closest("button");if(!b)return;
     if(b.dataset.i!==undefined)await ed.gotoSlide(+b.dataset.i);
+    else if(b.dataset.a==="prev"){if(ed.cur>0)await ed.gotoSlide(ed.cur-1)}
+    else if(b.dataset.a==="next"){if(ed.cur<ed.slides.length-1)await ed.gotoSlide(ed.cur+1)}
     else if(b.dataset.a==="dup")await ed.newSlide(true);
     else if(b.dataset.a==="blank")await ed.newSlide(false);
     else if(b.dataset.a==="left"){ed.moveSlide(-1)}
@@ -178,6 +181,8 @@ export async function mountEditor(root,id,{template=false}={}){
     window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);
   });
   const cmp=mountComposer($("#box").closest(".app")||document,ed);
+  mountStatusBar($("#box").closest(".app"),ed);
+  mountCtxBar($("#box").closest(".app"),ed);
   const key=e=>{
     if(/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&document.activeElement.type!=="color"&&document.activeElement.type!=="range")return;
     const m=e.ctrlKey||e.metaKey,o=ed.active,k=e.key.toLowerCase();

@@ -1,9 +1,9 @@
-import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125f";
-import {ZONES,MARGINS,loadPresets,savePresets,uid,zonesFor} from "./zones.js?v=20261125f";
-import {saveSnap} from "./snap.js?v=20261125f";
-import {keepAcc,setKeepAcc} from "./accordion.js?v=20261125f";
-import {I} from "../app/icons.js?v=20261125f";
-import {esc,modal,toast} from "../app/ui.js?v=20261125f";
+import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125g";
+import {ZONES,MARGINS,loadPresets,savePresets,uid,zonesFor} from "./zones.js?v=20261125g";
+import {saveSnap} from "./snap.js?v=20261125g";
+import {keepAcc,setKeepAcc} from "./accordion.js?v=20261125g";
+import {I} from "../app/icons.js?v=20261125g";
+import {esc,modal,toast} from "../app/ui.js?v=20261125g";
 const VK="sg.view",DV={rulers:1,guides:1,margins:0,zones:0,meas:"drag",glock:0,mlock:1};
 const lv=()=>{try{return {...DV,...JSON.parse(localStorage.getItem(VK)||"{}")}}catch{return {...DV}}};
 const S=d=>`<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -110,7 +110,7 @@ export function mountComposer(root,ed){
   // ---------- medidas
   const mkL=(x1,y1,x2,y2,txt,cls="")=>{const k=sc(),f=11/k,tx=(x1+x2)/2,ty=(y1+y2)/2;return `<g class="ml ${cls}"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke-width="${1/k}"/><line x1="${x1}" y1="${y1}" x2="${x1+(y1===y2?0:-4/k)}" y2="${y1+(y1===y2?-4/k:0)}" stroke-width="${1/k}"/><text x="${tx}" y="${ty-3/k}" font-size="${f}" text-anchor="middle" stroke-width="${3/k}">${txt}</text></g>`};
   function info(){
-    const el=bar.querySelector("#b-info");if(!el)return;
+    const el=root.querySelector("#b-info");if(!el)return;
     const objs=c.getActiveObjects().filter(o=>o.visible!==false);if(!objs.length||ed.bgSel){el.textContent="";return}
     const bs=objs.map(bx),sel={L:Math.min(...bs.map(b=>b.L)),R:Math.max(...bs.map(b=>b.R)),T:Math.min(...bs.map(b=>b.T)),B:Math.max(...bs.map(b=>b.B))},m=ed.margins(),W=ed.W,H=ed.H;
     const ml=V.margins?m.l:0,mr=V.margins?m.r:0,mt=V.margins?m.t:0,mb=V.margins?m.b:0;
@@ -188,7 +188,7 @@ export function mountComposer(root,ed){
   bar.innerHTML=`<div class="b2g">${btn("b-rul",IC.ruler,"Mostrar/ocultar reglas")}${dd("b-gui",IC.guides,"Guías","Guías: mostrar, crear y editar")}${dd("b-mar",IC.margins,"Márgenes","Márgenes: mostrar, presets y valores")}${dd("b-zon",IC.zones,"Zonas","Zonas seguras por plataforma")}</div><i class="b2s"></i>
 <div class="b2g">${btn("b-snap",IC.magnet,"Ajuste magnético (mantén Alt para desactivarlo al arrastrar)")}${dd("b-tol","" ,"","Sensibilidad del imán")}${btn("b-smart",S('<circle cx="12" cy="12" r="3"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/>'),"Guías inteligentes: alinear con bordes y centros de otros elementos")}</div><i class="b2s"></i>
 <div class="b2g">${btn("b-meas",IC.meas,"Medidas y distancias: ocultas / al mover / siempre")}${btn("b-glock",IC.lock,"Bloquear/desbloquear guías")}<button class="b2 b2--t" id="b-mlock" title="Bloquear márgenes: impide moverlos arrastrando sobre el lienzo" aria-pressed="false">${IC.lock}<span>Bloquear márgenes</span></button></div><i class="b2s"></i>
-<div class="b2g" id="b-al">${[["al",IC.al,"Alinear a la izquierda"],["ac",IC.ac,"Centrar horizontalmente"],["ar",IC.ar,"Alinear a la derecha"],["at",IC.at,"Alinear arriba"],["am",IC.am,"Centrar verticalmente"],["ab",IC.ab,"Alinear abajo"],["dh",IC.dh,"Distribuir horizontalmente (3 o más)"],["dv",IC.dv,"Distribuir verticalmente (3 o más)"],["eq",IC.eq,"Igualar espacios entre elementos (3 o más)"]].map(([k,i,t])=>btn("al-"+k,i,t,` data-al="${k}"`)).join("")}</div><i class="b2s"></i><span class="b2i" id="b-info" role="status" aria-live="polite"></span><i class="b2s"></i><button class="b2" id="b-keep" title="Recordar paneles abiertos/cerrados entre sesiones" aria-pressed="false"><span>Recordar paneles</span></button>`;
+<div class="b2g" id="b-al">${[["al",IC.al,"Alinear a la izquierda"],["ac",IC.ac,"Centrar horizontalmente"],["ar",IC.ar,"Alinear a la derecha"],["at",IC.at,"Alinear arriba"],["am",IC.am,"Centrar verticalmente"],["ab",IC.ab,"Alinear abajo"],["dh",IC.dh,"Distribuir horizontalmente (3 o más)"],["dv",IC.dv,"Distribuir verticalmente (3 o más)"],["eq",IC.eq,"Igualar espacios entre elementos (3 o más)"]].map(([k,i,t])=>btn("al-"+k,i,t,` data-al="${k}"`)).join("")}</div><i class="b2s"></i><button class="b2" id="b-keep" title="Recordar paneles abiertos/cerrados entre sesiones" aria-pressed="false"><span>Recordar paneles</span></button>`;
   bar.querySelector("#b-tol").innerHTML=`${IC.tol}<span id="tol-l"></span>${IC.chev}`;
   const setOn=(id,on,t)=>{const b=bar.querySelector("#"+id);b.classList.toggle("is-on",!!on);b.setAttribute("aria-pressed",String(!!on));if(t)b.dataset.state=t};
   function sync(){
