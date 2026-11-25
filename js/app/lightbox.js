@@ -1,5 +1,5 @@
-import {esc} from "./ui.js?v=20261125m";
-import {I} from "./icons.js?v=20261125m";
+import {esc} from "./ui.js?v=20261125n";
+import {I} from "./icons.js?v=20261125n";
 export function lightbox(urls,caption=""){
   if(!urls||!urls.length)return;
   const el=document.createElement("div");el.className="lbx";el.setAttribute("role","dialog");el.setAttribute("aria-label","Vista previa");
