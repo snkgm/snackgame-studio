@@ -1,9 +1,9 @@
-import {store} from "../app/store.js?v=20261125k";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261125k";
-import {I} from "../app/icons.js?v=20261125k";
-import {esc,toast,modal,openMenu} from "../app/ui.js?v=20261125k";
-import {db} from "../app/db.js?v=20261125k";
-import {buildSkeleton,buildBlank} from "../studio/skeleton.js?v=20261125k";
+import {store} from "../app/store.js?v=20261125l";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261125l";
+import {I} from "../app/icons.js?v=20261125l";
+import {esc,toast,modal,openMenu} from "../app/ui.js?v=20261125l";
+import {db} from "../app/db.js?v=20261125l";
+import {buildSkeleton,buildBlank} from "../studio/skeleton.js?v=20261125l";
 export function mountTemplates(root){
   const S={ty:"",ca:"",fm:""};
   const opt=(arr,sel,all)=>`<option value="">${all}</option>`+arr.map(x=>`<option value="${x.id}"${x.id===sel?" selected":""}>${esc(x.name)}</option>`).join("");
