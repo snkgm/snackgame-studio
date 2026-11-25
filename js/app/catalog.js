@@ -1,4 +1,4 @@
-import {CONFIG} from "./config.js?v=20261126a";
+import {CONFIG} from "./config.js?v=20261126b";
 let cache=null,loading=null;
 const fmtPrice=p=>p?Number(p).toLocaleString("es-ES",{minimumFractionDigits:2,maximumFractionDigits:2})+" €":"";
 const clean=t=>t.replace(/^\s*(LANZAMIENTO|NOVEDAD|PRÓXIMAMENTE|RESERVA)[^|]*\|\s*/i,"").replace(/^\s*(figura\s+)?(funko\s+)?(pop!?\s+)?/i,"").replace(/\s*#\s?\d{1,4}\s*$/,"").trim()||t.trim();
