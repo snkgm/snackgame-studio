@@ -1,8 +1,8 @@
-import {db,publicUrl} from "../app/db.js?v=20261125w";
+import {db,publicUrl} from "../app/db.js?v=20261125x";
 let worker,seq=0;const waits=new Map();
 function getWorker(){
   if(worker)return worker;
-  worker=new Worker(new URL("./matting.worker.js?v=20261125w",import.meta.url),{type:"module"});
+  worker=new Worker(new URL("./matting.worker.js?v=20261125x",import.meta.url),{type:"module"});
   worker.onmessage=e=>{const w=waits.get(e.data.id);if(!w)return;if(e.data.progress){w.onp?.(e.data.progress);return}waits.delete(e.data.id);e.data.error?w.rej(new Error(e.data.error)):w.res(e.data)};
   worker.onerror=e=>{waits.forEach(w=>w.rej(new Error("El modelo no se pudo iniciar")));waits.clear();worker=null};
   return worker;
@@ -83,54 +83,57 @@ const hullOf=pts=>{pts.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const cr=(o,a,b)=>(a[0]
   for(let k=pts.length-1;k>=0;k--){const p=pts[k];while(up.length>1&&cr(up[up.length-2],up[up.length-1],p)<=0)up.pop();up.push(p)}
   return lo.slice(0,-1).concat(up.slice(0,-1))};
 const edgePts=(m,w,h)=>{const pts=[];for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x;if(m[i]&&(x===0||!m[i-1]||x===w-1||!m[i+1]||y===0||!m[i-w]||y===h-1||!m[i+w]))pts.push([x,y])}return pts};
-const bigComp=(cand,w,h,R,minN=0)=>{const N=w*h,dil=new Uint8Array(N);
-  for(let y=0;y<h;y++)for(let x=0;x<w;x++){if(!cand[y*w+x])continue;for(let dy=-R;dy<=R;dy++){const Y=y+dy;if(Y<0||Y>=h)continue;for(let dx=-R;dx<=R;dx++){const X=x+dx;if(X>=0&&X<w)dil[Y*w+X]=1}}}
-  const lab=new Int32Array(N),st=new Int32Array(N),cnt=[0];let id=0;
-  for(let i0=0;i0<N;i0++){if(!dil[i0]||lab[i0])continue;id++;let sp=0,n=0;st[sp++]=i0;lab[i0]=id;
-    while(sp){const i=st[--sp],x=i%w,y=(i/w)|0;if(cand[i])n++;for(const j of [x>0?i-1:-1,x<w-1?i+1:-1,y>0?i-w:-1,y<h-1?i+w:-1])if(j>=0&&dil[j]&&!lab[j]){lab[j]=id;st[sp++]=j}}
-    cnt.push(n)}
-  const o=new Uint8Array(N);let n=0;for(let i=0;i<N;i++)if(cand[i]&&cnt[lab[i]]>=Math.max(1,minN)){o[i]=1;n++}
-  return n?{m:o,n}:null};
-const polyMask=(poly,w,h,k=1)=>{let cx=0,cy=0;poly.forEach(p=>{cx+=p[0];cy+=p[1]});cx/=poly.length;cy/=poly.length;
-  const o=document.createElement("canvas");o.width=w;o.height=h;const g=o.getContext("2d");g.fillStyle="#fff";g.beginPath();
-  poly.forEach((p,i)=>{const X=cx+(p[0]-cx)*k+.5,Y=cy+(p[1]-cy)*k+.5;i?g.lineTo(X,Y):g.moveTo(X,Y)});g.closePath();g.fill();
-  const d=g.getImageData(0,0,w,h).data,m=new Uint8Array(w*h);for(let i=0;i<m.length;i++)m[i]=d[i*4+3];return m};
-export function boxMask(c){
+export function outline(c){
   const w=c.width,h=c.height,N=w*h,d=c.getContext("2d",{willReadFrequently:true}).getImageData(0,0,w,h).data;
-  const bd=[];for(let x=0;x<w;x++){bd.push((x)*4,((h-1)*w+x)*4)}for(let y=1;y<h-1;y++){bd.push((y*w)*4,(y*w+w-1)*4)}
+  const bd=[];for(let x=0;x<w;x++){bd.push(x*4,((h-1)*w+x)*4)}for(let y=1;y<h-1;y++){bd.push(y*w*4,(y*w+w-1)*4)}
   const med=k=>{const v=bd.map(o=>d[o+k]).sort((a,b)=>a-b);return v[v.length>>1]};
-  const bg=[med(0),med(1),med(2)],dist=new Uint8Array(N);
-  for(let i=0;i<N;i++){const o=i*4;dist[i]=d[o+3]<128?0:Math.max(Math.abs(d[o]-bg[0]),Math.abs(d[o+1]-bg[1]),Math.abs(d[o+2]-bg[2]))}
-  const bs=bd.map(o=>Math.max(Math.abs(d[o]-bg[0]),Math.abs(d[o+1]-bg[1]),Math.abs(d[o+2]-bg[2]))).sort((a,b)=>a-b);
-  if(bs[Math.floor(bs.length*.9)]>12)return null;
-  const lo=Math.max(2,Math.min(12,bs[Math.floor(bs.length*.99)]+2)),R=Math.max(2,Math.round(Math.max(w,h)/400));
-  const strong=new Uint8Array(N),weak=new Uint8Array(N);
-  for(let i=0;i<N;i++){const o=i*4,r=d[o],g=d[o+1],b=d[o+2],chroma=Math.max(r,g,b)-Math.min(r,g,b);
-    if(chroma>=28?dist[i]>30:dist[i]>(bg[0]+bg[1]+bg[2]>600?95:60))strong[i]=1;if(dist[i]>=lo)weak[i]=1}
-  const minN=Math.max(40,Math.round(N*.0004)),S=bigComp(strong,w,h,R,minN);if(!S||S.n<N*.03)return null;
-  const h0=hullOf(edgePts(S.m,w,h));if(h0.length<4)return null;
-  const zone=polyMask(h0,w,h,1.14),wk=new Uint8Array(N);
-  for(let i=0;i<N;i++)wk[i]=weak[i]&&zone[i]>127?1:0;
-  const W=bigComp(wk,w,h,R,minN);if(!W)return null;
-  const hull=hullOf(edgePts(W.m,w,h));if(hull.length<4)return null;
-  const m=polyMask(hull,w,h,1);let hullPx=0,inS=0;for(let i=0;i<N;i++)if(m[i]>127){hullPx++;if(S.m[i])inS++}
+  const bg=[med(0),med(1),med(2)],dst=o=>d[o+3]<128?0:Math.max(Math.abs(d[o]-bg[0]),Math.abs(d[o+1]-bg[1]),Math.abs(d[o+2]-bg[2]));
+  const bs=bd.map(dst).sort((a,b)=>a-b);if(bs[Math.floor(bs.length*.9)]>12)return null;
+  const tb=Math.max(2,Math.min(10,bs[Math.floor(bs.length*.99)]+1)),like=new Uint8Array(N);
+  for(let i=0;i<N;i++)like[i]=dst(i*4)<=tb?1:0;
+  const out=new Uint8Array(N),st=new Int32Array(N);let sp=0;const push=i=>{if(like[i]&&!out[i]){out[i]=1;st[sp++]=i}};
+  for(let x=0;x<w;x++){push(x);push((h-1)*w+x)}for(let y=0;y<h;y++){push(y*w);push(y*w+w-1)}
+  while(sp){const i=st[--sp],x=i%w,y=(i/w)|0;if(x>0)push(i-1);if(x<w-1)push(i+1);if(y>0)push(i-w);if(y<h-1)push(i+w)}
+  // sin motas sueltas: componentes del primer plano pequeños se descartan
+  const F=new Uint8Array(N);let fa=0;for(let i=0;i<N;i++)if(!out[i]){F[i]=1;fa++}
+  if(fa<N*.02||fa>N*.97)return null;
+  const lab=new Int32Array(N),cnt=[0];let id=0;
+  for(let i0=0;i0<N;i0++){if(!F[i0]||lab[i0])continue;id++;let n=0;sp=0;st[sp++]=i0;lab[i0]=id;
+    while(sp){const i=st[--sp],x=i%w,y=(i/w)|0;n++;for(const j of [x>0?i-1:-1,x<w-1?i+1:-1,y>0?i-w:-1,y<h-1?i+w:-1])if(j>=0&&F[j]&&!lab[j]){lab[j]=id;st[sp++]=j}}cnt.push(n)}
+  const minN=Math.max(30,Math.round(N*.0005)),G=new Uint8Array(N);let ga=0;
+  for(let i=0;i<N;i++)if(F[i]&&cnt[lab[i]]>=minN){G[i]=1;ga++}
+  if(!ga)return null;
+  const hull=hullOf(edgePts(G,w,h));if(hull.length<3)return null;
+  let A=0;for(let i=0;i<hull.length;i++){const a=hull[i],b=hull[(i+1)%hull.length];A+=a[0]*b[1]-b[0]*a[1]}A=Math.abs(A)/2;
+  return {hull,solidity:ga/Math.max(1,A),w,h};
+}
+export function simplify(hull,maxN=14){
   const per=hull.reduce((t,p,i)=>{const q=hull[(i+1)%hull.length];return t+Math.hypot(p[0]-q[0],p[1]-q[1])},0);
-  const dp=(pp,e)=>{if(pp.length<3)return 1;const A=pp[0],B=pp[pp.length-1];let mx=0,k=0;for(let i=1;i<pp.length-1;i++){const dd=Math.abs((B[0]-A[0])*(A[1]-pp[i][1])-(A[0]-pp[i][0])*(B[1]-A[1]))/(Math.hypot(B[0]-A[0],B[1]-A[1])||1);if(dd>mx){mx=dd;k=i}}return mx>e?dp(pp.slice(0,k+1),e)+dp(pp.slice(k),e):1};
+  const dp=(pp,e)=>{if(pp.length<3)return [pp[0]];const A=pp[0],B=pp[pp.length-1];let mx=0,k=0;for(let i=1;i<pp.length-1;i++){const dd=Math.abs((B[0]-A[0])*(A[1]-pp[i][1])-(A[0]-pp[i][0])*(B[1]-A[1]))/(Math.hypot(B[0]-A[0],B[1]-A[1])||1);if(dd>mx){mx=dd;k=i}}return mx>e?dp(pp.slice(0,k+1),e).concat(dp(pp.slice(k),e)):[A]};
   let far=0,fi=0;for(let i=1;i<hull.length;i++){const dd=Math.hypot(hull[i][0]-hull[0][0],hull[i][1]-hull[0][1]);if(dd>far){far=dd;fi=i}}
-  const nvAt=f=>dp(hull.slice(0,fi+1),per*f)+dp(hull.slice(fi).concat([hull[0]]),per*f);
-  let tot=0,hit=0;
-  for(let i=0;i<hull.length;i++){const a=hull[i],b=hull[(i+1)%hull.length],L=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.max(1,Math.floor(L/3));
-    for(let k=0;k<n;k++){const x=Math.round(a[0]+(b[0]-a[0])*k/n),y=Math.round(a[1]+(b[1]-a[1])*k/n);tot++;let ok=0;
-      for(let dy=-3;dy<=3&&!ok;dy++)for(let dx=-3;dx<=3;dx++){const X=x+dx,Y=y+dy;if(X>=0&&Y>=0&&X<w&&Y<h&&W.m[Y*w+X]){ok=1;break}}hit+=ok}}
-  const edge=hit/Math.max(1,tot),cover=inS/Math.max(1,hullPx),nv=nvAt(.004);
-  mattingInfo.box={nv,nv6:nvAt(.006),nv10:nvAt(.01),edge,cover,lo};
-  if(nvAt(.01)>8||edge<.7||cover<.2)return null;
-  return m;
+  let f=.005,r;for(let t=0;t<12;t++){r=dp(hull.slice(0,fi+1),per*f).concat(dp(hull.slice(fi).concat([hull[0]]),per*f));if(r.length<=maxN)break;f*=1.4}
+  return r;
+}
+export function polyToMask(poly,w,h,{expand=0,feather=0}={}){
+  const o=document.createElement("canvas");o.width=w;o.height=h;const g=o.getContext("2d");g.fillStyle="#fff";g.strokeStyle="#fff";g.lineJoin="round";
+  const path=()=>{g.beginPath();poly.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath()};
+  path();g.fill();if(expand>0){g.lineWidth=expand*2;path();g.stroke()}
+  if(expand<0){g.globalCompositeOperation="destination-out";g.lineWidth=-expand*2;path();g.stroke();g.globalCompositeOperation="source-over"}
+  if(feather<=0)return o;
+  const f=document.createElement("canvas");f.width=w;f.height=h;const fg=f.getContext("2d");fg.filter=`blur(${feather}px)`;fg.drawImage(o,0,0);return f;
+}
+export function boxMask(c){
+  const r=outline(c);if(!r||r.solidity<.95)return null;
+  const o=polyToMask(r.hull,c.width,c.height),d=o.getContext("2d").getImageData(0,0,c.width,c.height).data,m=new Uint8Array(c.width*c.height);
+  for(let i=0;i<m.length;i++)m[i]=d[i*4+3];mattingInfo.box={solidity:r.solidity};return m;
+}
+export async function uploadCut(blob){
+  const key=await sha1(await blob.arrayBuffer());return db.upload(`cut/pt-${key}.png`,blob);
 }
 export const mattingInfo={method:""};
 export async function removeBackground(blob,onProgress,method="auto",opt={}){
   const c=await toBitmapCanvas(blob);
-  let mask=opt.box===false?null:boxMask(c);mattingInfo.method=mask?"caja":"";
+  let mask=(opt.box??(method==="ai"))?boxMask(c):null;mattingInfo.method=mask?"caja":"";
   if(!mask){mask=method==="ai"?null:flatMask(c,opt.tol??mattingDefaults.tol,opt.holes??mattingDefaults.holes);mattingInfo.method=mask?"plano":"ia"}
   if(!mask){
     if(globalThis.__mockMatting){mask=await globalThis.__mockMatting(c)}
@@ -151,7 +154,7 @@ export const hashKey=sha1;
 const exists=async u=>{try{return (await fetch(u,{method:"HEAD"})).ok}catch{return false}};
 export async function cutoutFor(srcUrl,{blob,onProgress,method="auto",tol,holes,force}={}){
   const t=tol??mattingDefaults.tol,h=holes??mattingDefaults.holes;
-  const key=await sha1(srcUrl);const path=`cut/${key}-d4${method==="ai"?"-ai":`${t!==10?"-t"+t:""}${h?"":"-nh"}`}.png`;const url=publicUrl(path);
+  const key=await sha1(srcUrl);const path=`cut/${key}-d5${method==="ai"?"-ai":`${t!==10?"-t"+t:""}${h?"":"-nh"}`}.png`;const url=publicUrl(path);
   if(!force&&await exists(url))return url;
   const b=blob||await (await fetch(srcUrl,{mode:"cors"})).blob();
   const cut=await removeBackground(b,onProgress,method,{tol:t,holes:h});
