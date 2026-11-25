@@ -1,8 +1,8 @@
-import {db,publicUrl} from "../app/db.js?v=20261126l";
+import {db,publicUrl} from "../app/db.js?v=20261126m";
 let worker,seq=0,noMain=false;const waits=new Map();
 function getWorker(){
   if(worker)return worker;
-  worker=new Worker(new URL("./matting.worker.js?v=20261126l",import.meta.url),{type:"module"});
+  worker=new Worker(new URL("./matting.worker.js?v=20261126m",import.meta.url),{type:"module"});
   worker.onmessage=e=>{const w=waits.get(e.data.id);if(!w)return;if(e.data.progress){w.onp?.(e.data.progress);return}waits.delete(e.data.id);e.data.error?w.rej(new Error(e.data.error)):w.res(e.data)};
   worker.onerror=e=>{waits.forEach(w=>w.rej(new Error("El modelo no se pudo iniciar")));waits.clear();worker=null};
   return worker;
@@ -182,7 +182,12 @@ export function completeWithSilhouette(mask,c){
     const hh=hullOf(edgePts(bin,w,h));if(hh.length<3)return mask;
     const hm=polyToMask(hh,w,h,{expand:Math.max(6,Math.round(Math.max(w,h)/80))}).getContext("2d",{willReadFrequently:true}).getImageData(0,0,w,h).data;
     const out=new Uint8Array(mask);
-    for(let i=0;i<N;i++)if(o.G[i]&&hm[i*4+3]>128&&out[i]<255)out[i]=255;
+    const D=new Uint8Array(N);for(let i=0;i<N;i++)D[i]=(o.G[i]&&hm[i*4+3]>128&&!bin[i])?1:0;
+    const r=Math.max(2,Math.round(Math.max(w,h)/260));
+    const step=(a,er)=>{const n=new Uint8Array(N);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x;let v=a[i];if(er){if(v){if(x>0&&!a[i-1]||x<w-1&&!a[i+1]||y>0&&!a[i-w]||y<h-1&&!a[i+w])v=0}}else if(!v){if(x>0&&a[i-1]||x<w-1&&a[i+1]||y>0&&a[i-w]||y<h-1&&a[i+w])v=1}n[i]=v}return n};
+    let E=D;for(let k=0;k<r;k++)E=step(E,true);
+    for(let k=0;k<r-1;k++){E=step(E,false);for(let i=0;i<N;i++)if(!D[i])E[i]=0}
+    for(let i=0;i<N;i++)if(E[i]&&out[i]<255)out[i]=255;
     return out;
   }catch{return mask}
 }
@@ -191,7 +196,7 @@ export const hashKey=sha1;
 const exists=async u=>{try{return (await fetch(u,{method:"HEAD"})).ok}catch{return false}};
 export async function cutoutFor(srcUrl,{blob,onProgress,method="smart",tol,holes,force}={}){
   const t=tol??mattingDefaults.tol,h=holes??mattingDefaults.holes;
-  const key=await sha1(srcUrl);const path=`cut/${key}-d11${method==="smart"?"-sm":""}${method==="ai"?"-ai":`${t!==10?"-t"+t:""}${h?"":"-nh"}`}.png`;const url=publicUrl(path);
+  const key=await sha1(srcUrl);const path=`cut/${key}-d12${method==="smart"?"-sm":""}${method==="ai"?"-ai":`${t!==10?"-t"+t:""}${h?"":"-nh"}`}.png`;const url=publicUrl(path);
   if(!force&&await exists(url))return url;
   const b=blob||await (await fetch(srcUrl,{mode:"cors"})).blob();
   const cut=await removeBackground(b,onProgress,method,{tol:t,holes:h});
