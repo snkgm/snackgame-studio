@@ -1,6 +1,6 @@
-import {searchCatalog} from "../app/catalog.js?v=20261126b";
-import {esc} from "../app/ui.js?v=20261126b";
-import {I} from "../app/icons.js?v=20261126b";
+import {searchCatalog} from "../app/catalog.js?v=20261126c";
+import {esc} from "../app/ui.js?v=20261126c";
+import {I} from "../app/icons.js?v=20261126c";
 export const productSearchHtml=()=>`<div class="psearch"><div class="row"><input class="input" id="ps-q" placeholder="Buscar en la tienda (nombre, colección…)" autocomplete="off"><button class="btn" type="button" data-up>${I.upload}Subir imagen</button></div><div class="plist" id="ps-l" role="listbox" aria-label="Productos"></div><div class="psel" id="ps-s" hidden></div></div>`;
 export function bindProductSearch(root,onPick){
   const q=root.querySelector("#ps-q"),list=root.querySelector("#ps-l"),sel=root.querySelector("#ps-s");let t,items=[];

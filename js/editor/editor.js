@@ -1,10 +1,10 @@
-import {getPfx,setPfx,applyPfx} from "./photofx.js?v=20261126b";
-import {StaticCanvas,Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,controlsUtils,filters as FX} from "../../vendor/fabric.min.mjs?v=20261126b";
-import {bgDataUrl,bgColors,BG_DEFAULT,gradDataUrl} from "../img/background.js?v=20261126b";
-import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261126b";
-import {renderOverlay,overlayById} from "../img/overlays.js?v=20261126b";
-import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261126b";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261126b";
+import {getPfx,setPfx,applyPfx} from "./photofx.js?v=20261126c";
+import {StaticCanvas,Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,controlsUtils,filters as FX} from "../../vendor/fabric.min.mjs?v=20261126c";
+import {bgDataUrl,bgColors,BG_DEFAULT,gradDataUrl} from "../img/background.js?v=20261126c";
+import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261126c";
+import {renderOverlay,overlayById} from "../img/overlays.js?v=20261126c";
+import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261126c";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261126c";
 const _tid=Textbox.prototype.initDimensions;
 Textbox.prototype.initDimensions=function(){_tid.call(this);if(this.boxH&&this.boxH>this.height)this.height=this.boxH};
 const PROPS=["pfx","boxH","name","locked","role","field","pattern","rule","orig","gen","globalCompositeOperation"];
@@ -50,7 +50,7 @@ export class Editor{
     this.busy=true;
     if(d&&d.W){this.W=d.W;this.H=d.H}else if(fmt){this.W=fmt.w;this.H=fmt.h}
     this.fmt=fmt||this.fmt;this.cfg=d&&d.cfg?JSON.parse(JSON.stringify(d.cfg)):(()=>{const v=Math.round(120*this.W/1080);return {safe:{t:v,b:v,l:v,r:v},msym:{h:true,v:true},mshow:1,mpreset:"m-l"}})();this.palette=(d&&d.palette)||[];
-    this.slides=d&&d.slides&&d.slides.length?d.slides.slice():(fmt&&fmt.slides?[null]:null);this.cur=0;
+    this.th=[];this.slides=d&&d.slides&&d.slides.length?d.slides.slice():(fmt&&fmt.slides?[null]:null);this.cur=0;
     const c0=this.slides?this.slides[0]:d&&d.c;
     if(c0)await this.canvas.loadFromJSON(c0);
     if(this.slides&&!this.slides[0])this.slides[0]=this.canvas.toObject(PROPS);
@@ -307,18 +307,23 @@ export class Editor{
     while(o.calcTextHeight()>r.maxH&&sz>(r.min||20)){sz-=4;o.set("fontSize",sz);o.initDimensions()}
   }
   fitReport(){return this.canvas.getObjects().filter(o=>o.rule&&o.rule.fit&&o.type.toLowerCase()==="textbox"&&(o.text||"").length&&o.calcTextHeight()>o.rule.maxH+1).map(o=>o.name||o.field)}
-  newSlide(dup=true){
-    if(!this.slides)return;const cur=this.canvas.toObject(PROPS);this.slides[this.cur]=cur;
-    const src=dup?JSON.parse(JSON.stringify(cur)):{...JSON.parse(JSON.stringify(cur)),objects:cur.objects.filter(o=>o.role==="background").map(o=>JSON.parse(JSON.stringify(o)))};
-    this.slides.splice(this.cur+1,0,src);return this.gotoSlideRaw(this.cur+1);
+  maxSlides=5;th=[];
+  grabTh(){try{return this.shot("jpeg",.6,120)}catch{return null}}
+  newSlide(dup=true,noProduct=false){
+    if(!this.slides){this.slides=[null];this.th=[]}
+    if(this.slides.length>=this.maxSlides)return;
+    const cur=this.canvas.toObject(PROPS);this.slides[this.cur]=cur;this.th[this.cur]=this.grabTh();
+    const cl=JSON.parse(JSON.stringify(cur));
+    const src=dup?(noProduct?{...cl,objects:cl.objects.filter(o=>o.role!=="product")}:cl):{...cl,objects:cl.objects.filter(o=>o.role==="background")};
+    this.slides.splice(this.cur+1,0,src);this.th.splice(this.cur+1,0,null);return this.gotoSlideRaw(this.cur+1);
   }
   async gotoSlide(i){
     if(!this.slides||i<0||i>=this.slides.length||i===this.cur)return;
-    this.slides[this.cur]=this.canvas.toObject(PROPS);return this.gotoSlideRaw(i);
+    this.slides[this.cur]=this.canvas.toObject(PROPS);this.th[this.cur]=this.grabTh();return this.gotoSlideRaw(i);
   }
   async removeSlide(){
     if(!this.slides||this.slides.length<2)return;
-    this.slides.splice(this.cur,1);return this.gotoSlideRaw(Math.min(this.cur,this.slides.length-1));
+    this.slides.splice(this.cur,1);this.th.splice(this.cur,1);return this.gotoSlideRaw(Math.min(this.cur,this.slides.length-1));
   }
   async gotoSlideRaw(i){
     this.cur=i;this.busy=true;this.canvas.discardActiveObject();await this.canvas.loadFromJSON(this.slides[i]);
@@ -327,7 +332,7 @@ export class Editor{
   }
   moveSlide(d){
     const j=this.cur+d;if(!this.slides||j<0||j>=this.slides.length)return;
-    this.slides[this.cur]=this.canvas.toObject(PROPS);const [s]=this.slides.splice(this.cur,1);this.slides.splice(j,0,s);this.cur=j;this.emit("slides");this.emit("history");
+    this.slides[this.cur]=this.canvas.toObject(PROPS);const [s]=this.slides.splice(this.cur,1),[t]=this.th.splice(this.cur,1);this.slides.splice(j,0,s);this.th.splice(j,0,t);this.cur=j;this.emit("slides");this.emit("history");
   }
   async exportAll(type){
     if(!this.slides)return [{name:"1",blob:await this.exportBlob(type)}];

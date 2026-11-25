@@ -1,25 +1,25 @@
-import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261126b";
-import {Editor} from "./editor.js?v=20261126b";
-import {LayersPanel} from "./layers.js?v=20261126b";
-import {mountInspector} from "./inspector.js?v=20261126b";
-import {loadAllFonts} from "../app/fonts.js?v=20261126b";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261126b";
-import {sessionStart} from "./accordion.js?v=20261126b";
-import {scrollFade} from "./scrollfade.js?v=20261126b";
-import {openTplSettings} from "./tplsettings.js?v=20261126b";
-import {openExport} from "./exporter.js?v=20261126b";
-import {statusHtml,mountStatusBar} from "./statusbar.js?v=20261126b";
-import {mountCtxBar} from "./ctxbar.js?v=20261126b";
-import {mountComposer} from "./composer.js?v=20261126b";
-import {safeOf} from "../studio/skeleton.js?v=20261126b";
-import {openProductPicker} from "./product.js?v=20261126b";
-import {openImageTool,openShapes,openTextStyles,openOverlayTool,closePop} from "./tools.js?v=20261126b";
-import {zipBlobs} from "../app/zip.js?v=20261126b";
-import {I} from "../app/icons.js?v=20261126b";
-import {db} from "../app/db.js?v=20261126b";
-import {store} from "../app/store.js?v=20261126b";
-import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261126b";
-import {toInput,fromInput} from "../app/dates.js?v=20261126b";
+import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261126c";
+import {Editor} from "./editor.js?v=20261126c";
+import {LayersPanel} from "./layers.js?v=20261126c";
+import {mountInspector} from "./inspector.js?v=20261126c";
+import {loadAllFonts} from "../app/fonts.js?v=20261126c";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261126c";
+import {sessionStart} from "./accordion.js?v=20261126c";
+import {scrollFade} from "./scrollfade.js?v=20261126c";
+import {openTplSettings} from "./tplsettings.js?v=20261126c";
+import {openExport} from "./exporter.js?v=20261126c";
+import {statusHtml,mountStatusBar} from "./statusbar.js?v=20261126c";
+import {mountCtxBar} from "./ctxbar.js?v=20261126c";
+import {mountComposer} from "./composer.js?v=20261126c";
+import {safeOf} from "../studio/skeleton.js?v=20261126c";
+import {openProductPicker} from "./product.js?v=20261126c";
+import {openImageTool,openShapes,openTextStyles,openOverlayTool,closePop} from "./tools.js?v=20261126c";
+import {zipBlobs} from "../app/zip.js?v=20261126c";
+import {I} from "../app/icons.js?v=20261126c";
+import {db} from "../app/db.js?v=20261126c";
+import {store} from "../app/store.js?v=20261126c";
+import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261126c";
+import {toInput,fromInput} from "../app/dates.js?v=20261126c";
 export async function mountEditor(root,id,{template=false}={}){
   const table=template?"templates":"posts";
   root.innerHTML='<div class="empty">Cargando…</div>';
@@ -149,24 +149,21 @@ ${statusHtml()}
   if($("#tplset"))$("#tplset").onclick=()=>openTplSettings(ed,post);
   $("#export").onclick=()=>openExport(ed,{slug:slug()});
   $("#back").onclick=()=>{location.hash=template?"#/plantillas":"#/"};
-  const slidesEl=$("#slides");
+  const slidesEl=$("#slides");slidesEl.hidden=true;$("#sbar .sbs--sl").hidden=true;
+  const slp=Object.assign(document.createElement("div"),{className:"slp",id:"slp"});$("#stage").appendChild(slp);
+  let thT;
   function drawSlides(){
-    const had=!slidesEl.hidden;
-    if(!ed.slides){slidesEl.hidden=true;$("#sbar .sbs--sl").hidden=true;return}slidesEl.hidden=false;$("#sbar .sbs--sl").hidden=false;if(!had)ed.fit()
-    slidesEl.innerHTML=`<button class="sl" data-a="prev" title="Diapositiva anterior" aria-label="Diapositiva anterior"${ed.cur<1?" disabled":""}>‹</button><span class="sl__t">Diapositiva ${ed.cur+1} de ${ed.slides.length}</span><button class="sl" data-a="next" title="Diapositiva siguiente" aria-label="Diapositiva siguiente"${ed.cur>=ed.slides.length-1?" disabled":""}>›</button><span class="top__sep"></span>`+ed.slides.map((_,i)=>`<button class="sl${i===ed.cur?" is-on":""}" data-i="${i}" aria-label="Diapositiva ${i+1}">${i+1}</button>`).join("")+`<span class="top__sep"></span><button class="sl" data-a="dup" title="Añadir copia de la diapositiva actual">${I.plus}</button><button class="sl" data-a="blank" title="Añadir diapositiva solo con el fondo">${I.square}</button><button class="sl" data-a="left" title="Mover a la izquierda">‹</button><button class="sl" data-a="right" title="Mover a la derecha">›</button><button class="sl" data-a="del" title="Eliminar diapositiva">${I["trash-2"]}</button>`;
+    const n=ed.slides?ed.slides.length:1,cur=ed.slides?ed.cur:0;
+    if(ed.slides)ed.th[cur]=ed.grabTh();
+    const th=i=>ed.slides&&ed.th[i]||"";
+    slp.innerHTML=Array.from({length:n},(_,i)=>`<div class="slp__i${i===cur?" is-on":""}" data-i="${i}" role="button" tabindex="0" aria-label="Imagen ${i+1}" title="Imagen ${i+1}">${(i===cur&&!ed.slides?ed.grabTh():th(i))?`<img src="${i===cur&&!ed.slides?ed.grabTh():th(i)}" alt="" draggable="false">`:`<span>${i+1}</span>`}${n>1&&i===cur?`<button class="slp__x" data-del="1" aria-label="Eliminar imagen" title="Eliminar imagen">×</button>`:""}</div>`).join("")+(n<ed.maxSlides?`<button class="slp__add" data-add="1" title="Añadir imagen: copia de la actual sin el producto" aria-label="Añadir imagen">+</button>`:"")+`<small class="slp__n">${cur+1}/${n}</small>`;
   }
-  slidesEl.onclick=async e=>{
-    const b=e.target.closest("button");if(!b)return;
-    if(b.dataset.i!==undefined)await ed.gotoSlide(+b.dataset.i);
-    else if(b.dataset.a==="prev"){if(ed.cur>0)await ed.gotoSlide(ed.cur-1)}
-    else if(b.dataset.a==="next"){if(ed.cur<ed.slides.length-1)await ed.gotoSlide(ed.cur+1)}
-    else if(b.dataset.a==="dup")await ed.newSlide(true);
-    else if(b.dataset.a==="blank")await ed.newSlide(false);
-    else if(b.dataset.a==="left"){ed.moveSlide(-1)}
-    else if(b.dataset.a==="right"){ed.moveSlide(1)}
-    else if(b.dataset.a==="del"){if(ed.slides.length<2)toast("Un carrusel necesita al menos una diapositiva",{kind:"err"});else await ed.removeSlide()}
-    drawSlides();
+  slp.onclick=async e=>{
+    if(e.target.closest("[data-del]")){if(ed.slides&&ed.slides.length>1){await ed.removeSlide();drawSlides()}return}
+    if(e.target.closest("[data-add]")){await ed.newSlide(true,true);drawSlides();return}
+    const it=e.target.closest("[data-i]");if(it&&ed.slides){await ed.gotoSlide(+it.dataset.i);drawSlides()}
   };
+  ed.on("change",()=>{clearTimeout(thT);thT=setTimeout(drawSlides,500)});
   ed.on("slides",drawSlides);drawSlides();
   ed.on("guides",g=>{$("#guides").innerHTML=g.map(a=>a.x!==undefined?`<i style="left:${(a.x/ed.W*100).toFixed(3)}%;top:0;bottom:0;width:0;border-left:1px solid #ff3d9a"></i>`:`<i style="top:${(a.y/ed.H*100).toFixed(3)}%;left:0;right:0;height:0;border-top:1px solid #ff3d9a"></i>`).join("")});
   const hitIn=R=>ed.canvas.getObjects().filter(o=>ed.mergeable(o)&&o.visible!==false&&o.selectable!==false&&!o.locked&&(()=>{o.setCoords();const q=o.getCoords(),xs=q.map(p=>p.x),ys=q.map(p=>p.y);return Math.min(...xs)<=R.r&&Math.max(...xs)>=R.l&&Math.min(...ys)<=R.b&&Math.max(...ys)>=R.t})());

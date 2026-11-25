@@ -1,6 +1,6 @@
-import {db,COLS,TCOLS} from "./db.js?v=20261126b";
-import {mattingDefaults} from "../img/matting.js?v=20261126b";
-import {toast} from "./ui.js?v=20261126b";
+import {db,COLS,TCOLS} from "./db.js?v=20261126c";
+import {mattingDefaults} from "../img/matting.js?v=20261126c";
+import {toast} from "./ui.js?v=20261126c";
 const L=new Set();
 const pending=new Map();
 export const store={
