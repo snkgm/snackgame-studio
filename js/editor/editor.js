@@ -1,12 +1,13 @@
-import {StaticCanvas,Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261125e";
-import {bgDataUrl,bgColors,BG_DEFAULT,gradDataUrl} from "../img/background.js?v=20261125e";
-import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261125e";
-import {renderOverlay,overlayById} from "../img/overlays.js?v=20261125e";
-import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261125e";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261125e";
+import {getPfx,setPfx,applyPfx} from "./photofx.js?v=20261125f";
+import {StaticCanvas,Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261125f";
+import {bgDataUrl,bgColors,BG_DEFAULT,gradDataUrl} from "../img/background.js?v=20261125f";
+import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261125f";
+import {renderOverlay,overlayById} from "../img/overlays.js?v=20261125f";
+import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261125f";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261125f";
 const _tid=Textbox.prototype.initDimensions;
 Textbox.prototype.initDimensions=function(){_tid.call(this);if(this.boxH&&this.boxH>this.height)this.height=this.boxH};
-const PROPS=["boxH","name","locked","role","field","pattern","rule","orig","gen","globalCompositeOperation"];
+const PROPS=["pfx","boxH","name","locked","role","field","pattern","rule","orig","gen","globalCompositeOperation"];
 const PLACE="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEAAAAALAAAAAABAAEAAAIA";
 export const BLENDS=[["source-over","Normal"],["multiply","Multiplicar"],["screen","Trama"],["overlay","Superponer"],["soft-light","Luz suave"],["hard-light","Luz fuerte"],["darken","Oscurecer"],["lighten","Aclarar"],["color-dodge","Sobreexponer color"],["color-burn","Subexponer color"]];
 const _toObj=FabricImage.prototype.toObject;FabricImage.prototype.toObject=function(p){const j=_toObj.call(this,p);if(this.gen)j.src=PLACE;return j};
@@ -126,15 +127,9 @@ export class Editor{
     if(k==="top")dy=m.t-y0;if(k==="vcenter")dy=this.H/2-(y0+y1)/2;if(k==="bottom")dy=this.H-m.b-y1;
     o.set({left:o.left+dx,top:o.top+dy});o.setCoords();this.commit();
   }
-  getFx(o){const f=(o.filters||[]),g=n=>f.find(x=>x.type===n);return {bright:g("Brightness")?Math.round(g("Brightness").brightness*100):0,contrast:g("Contrast")?Math.round(g("Contrast").contrast*100):0,sat:g("Saturation")?Math.round(g("Saturation").saturation*100):0,blur:g("Blur")?Math.round(g("Blur").blur*100):0}}
-  setFx(o,patch){
-    const v={...this.getFx(o),...patch},f=[];
-    if(v.bright)f.push(new FX.Brightness({brightness:v.bright/100}));
-    if(v.contrast)f.push(new FX.Contrast({contrast:v.contrast/100}));
-    if(v.sat)f.push(new FX.Saturation({saturation:v.sat/100}));
-    if(v.blur)f.push(new FX.Blur({blur:v.blur/100}));
-    o.set("filters",f);o.applyFilters();this.canvas.requestRenderAll();
-  }
+  getFx(o){const q=getPfx(o);return {bright:q.bright,contrast:q.contrast,sat:q.sat,blur:q.blur}}
+  getFxOld(o){const f=(o.filters||[]),g=n=>f.find(x=>x.type===n);return {bright:g("Brightness")?Math.round(g("Brightness").brightness*100):0,contrast:g("Contrast")?Math.round(g("Contrast").contrast*100):0,sat:g("Saturation")?Math.round(g("Saturation").saturation*100):0,blur:g("Blur")?Math.round(g("Blur").blur*100):0}}
+  setFx(o,patch){setPfx(o,patch);this.canvas.requestRenderAll()}
   initSelectionFx(){
     if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
     let t=0;const c1=[255,180,0],c2=[255,61,154];
@@ -262,7 +257,7 @@ export class Editor{
   }
   async setProductImage(url,{orig,place=true}={}){
     let o=this.productLayer();
-    if(o){await o.setSrc(url,{crossOrigin:"anonymous"});o.set({orig:orig||url});o.setCoords()}
+    if(o){await o.setSrc(url,{crossOrigin:"anonymous"});o.set({orig:orig||url});if(o.pfx)applyPfx(o);o.setCoords()}
     else{
       const img=await FabricImage.fromURL(url,{crossOrigin:"anonymous"});
       img.set({name:"Producto",role:"product",orig:orig||url,originX:"left",originY:"top"});

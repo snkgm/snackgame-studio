@@ -1,18 +1,19 @@
-import {I} from "../app/icons.js?v=20261125e";
-import {esc} from "../app/ui.js?v=20261125e";
-import {FONTS,loadFont} from "../app/fonts.js?v=20261125e";
-import {FORMATS} from "../app/formats.js?v=20261125e";
-import {safeOf} from "../studio/skeleton.js?v=20261125e";
-import {mountBgPanel} from "./bgpanel.js?v=20261125e";
-import {applyProductImage,openProductPicker} from "./product.js?v=20261125e";
-import {toast} from "../app/ui.js?v=20261125e";
-import {mattingDefaults} from "../img/matting.js?v=20261125e";
-import {store} from "../app/store.js?v=20261125e";
-import {FIELDS,BLENDS} from "./editor.js?v=20261125e";
-import {enhance} from "./accordion.js?v=20261125e";
-import {saveSnap} from "./snap.js?v=20261125e";
-import {TEXT_STYLES,restyle} from "./textstyles.js?v=20261125e";
-import {Shadow} from "../../vendor/fabric.min.mjs?v=20261125e";
+import {I} from "../app/icons.js?v=20261125f";
+import {esc} from "../app/ui.js?v=20261125f";
+import {FONTS,loadFont} from "../app/fonts.js?v=20261125f";
+import {FORMATS} from "../app/formats.js?v=20261125f";
+import {safeOf} from "../studio/skeleton.js?v=20261125f";
+import {mountBgPanel} from "./bgpanel.js?v=20261125f";
+import {applyProductImage,openProductPicker} from "./product.js?v=20261125f";
+import {toast} from "../app/ui.js?v=20261125f";
+import {mattingDefaults} from "../img/matting.js?v=20261125f";
+import {store} from "../app/store.js?v=20261125f";
+import {FIELDS,BLENDS} from "./editor.js?v=20261125f";
+import {enhance} from "./accordion.js?v=20261125f";
+import {saveSnap} from "./snap.js?v=20261125f";
+import {TEXT_STYLES,restyle} from "./textstyles.js?v=20261125f";
+import {PF_PRESETS,CATS,getPfx,setPfx,undoPfx,resetCat,resetAll,applyPreset,applyPfx} from "./photofx.js?v=20261125f";
+import {Shadow} from "../../vendor/fabric.min.mjs?v=20261125f";
 const num=(k,l,extra="")=>`<div class="field"><label for="i-${k}">${l}</label><input class="input" type="number" id="i-${k}" data-k="${k}" ${extra}></div>`;
 const rng=(k,l,min,max,step=1)=>`<div class="field"><label for="i-${k}">${l}</label><input type="range" id="i-${k}" data-k="${k}" min="${min}" max="${max}" step="${step}"></div>`;
 const rnum=(k,l,pct)=>`<div class="field"><label for="r-${k}">${l}</label><input class="input" type="number" id="r-${k}" data-r="${k}"${pct?" data-pct":""} step="${pct?1:"any"}"></div>`;
@@ -58,7 +59,16 @@ const FL=[["dx","Desplazamiento X",-600,600],["dy","Desplazamiento Y",-600,600],
 const floorHtml=()=>sec("Sombra de suelo",`<label class="chk"><input type="checkbox" data-fl="on"> Activar sombra de contacto</label>${FL.map(([k,l,a,b])=>`<div class="field"><label for="fl-${k}">${l}: <b data-flv="${k}"></b></label><input type="range" id="fl-${k}" data-fl="${k}" min="${a}" max="${b}"></div>`).join("")}<div class="field"><label for="fl-color">Color</label><input class="input" type="color" id="fl-color" data-fl="color"></div><button class="btn btn--sm" data-pact="autofloor" title="Recalcula los valores a partir de la silueta del producto">Restablecer automático</button><span class="hint">Se calcula con la silueta del producto, sigue al producto y se guarda en la plantilla.</span>`,"floor");
 const blendHtml=o=>sec("Fusión",`<div class="field"><label for="i-blend">Modo de fusión</label><select class="select" id="i-blend" data-k="blend">${BLENDS.map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select></div>`,"blend");
 const overlayHtml=o=>sec("Overlay",`<div class="row"><button class="btn btn--sm" data-pact="ovfit">Ajustar al lienzo</button>${o.gen?'<button class="btn btn--sm" data-pact="ovseed">Nueva variación</button>':"<span></span>"}</div>${rng("opacity","Opacidad",0,100)}`,"overlay");
-const imageHtml=o=>(o.role==="product"?productHtml()+floorHtml():"")+sec("Recorte",`<div class="row">${num("cropX","Izq.","min=0")}${num("cropY","Arriba","min=0")}</div><div class="row">${num("cropW","Ancho","min=1")}${num("cropH","Alto","min=1")}</div>`)+sec("Ajustes de imagen",`${rng("fx_bright","Brillo",-100,100)}${rng("fx_contrast","Contraste",-100,100)}${rng("fx_sat","Saturación",-100,100)}${rng("fx_blur","Desenfoque",0,50)}<div class="row"><button class="btn btn--sm" data-pact="flipx">Voltear ↔</button><button class="btn btn--sm" data-pact="flipy">Voltear ↕</button></div><button class="btn btn--sm" data-pact="fxreset">Restablecer ajustes</button>`,"imgfx")+sec("Sombra",`<label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label><div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`,"shadow");
+const PXL={bright:["Brillo",-100,100],contrast:["Contraste",-100,100],sat:["Saturación",-100,100],temp:["Temperatura",-100,100],hue:["Tono",-180,180],expo:["Exposición",-100,100],hi:["Luces (aprox.)",-100,100],sh:["Sombras (aprox.)",-100,100],sharp:["Nitidez",0,100],blur:["Desenfoque",0,50],round:["Esquinas redondeadas %",0,50],vig:["Viñeta",0,100],grain:["Grano / textura",0,50],duo:["Duotono",0,100]};
+const prx=k=>`<div class="field px"><label for="i-px_${k}">${PXL[k][0]}</label><div class="row px__r"><input type="range" id="i-px_${k}" data-k="px_${k}" min="${PXL[k][1]}" max="${PXL[k][2]}"><input class="input px__n" type="number" data-k="px_${k}" min="${PXL[k][1]}" max="${PXL[k][2]}" aria-label="${PXL[k][0]}"></div></div>`;
+const rst=(c,l="Restablecer categoría")=>`<button class="btn btn--ghost btn--sm" data-pact="pxcat" data-c="${c}">${l}</button>`;
+const photoHtml=o=>sec("Ajustes básicos",CATS.A.map(prx).join("")+rst("A"),"px-a")
++sec("Filtros",`<div class="gpres px__f">${PF_PRESETS.map(([n],i)=>`<button type="button" class="btn btn--sm${(o.pfx&&o.pfx.preset===i)?" is-on":""}" data-pact="pxpre" data-i="${i}">${n}</button>`).join("")}</div><span class="hint">Se pueden afinar con los ajustes después.</span>`,"px-b")
++sec("Recorte y encuadre",`<div class="row">${num("cropX","Izq.","min=0")}${num("cropY","Arriba","min=0")}</div><div class="row">${num("cropW","Ancho","min=1")}${num("cropH","Alto","min=1")}</div><div class="row"><button class="btn btn--sm" data-pact="rot90">Rotar 90°</button><button class="btn btn--sm" data-pact="flipx">Voltear ↔</button></div><div class="row"><button class="btn btn--sm" data-pact="flipy">Voltear ↕</button><button class="btn btn--sm" data-pact="ovfit">Ajustar al lienzo</button></div><button class="btn btn--sm" data-pact="recrop">Recuperar encuadre original</button>`,"px-c")
++sec("Apariencia",`${rng("opacity","Opacidad",0,100)}${prx("round")}<div class="row">${col("stroke","Borde")}${num("strokeWidth","Grosor","min=0")}</div><button class="btn btn--sm" data-pact="glow">Resplandor</button>`,"px-d")
++sec("Efectos",["vig","grain","duo"].map(prx).join("")+`<div class="row">${`<div class="field"><label for="i-duoA">Duotono A</label><input class="input" type="color" id="i-duoA" data-k="px_duoA"></div><div class="field"><label for="i-duoB">Duotono B</label><input class="input" type="color" id="i-duoB" data-k="px_duoB"></div>`}</div>`+rst("E","Restablecer efectos"),"px-e")
++sec("Restablecer",`<div class="row"><button class="btn btn--sm" data-pact="pxundo">Deshacer último ajuste</button><button class="btn btn--sm" data-pact="pxall">Recuperar originales</button></div><span class="hint">La imagen original nunca se modifica.</span>`,"px-f");
+const imageHtml=o=>(o.role==="product"?productHtml()+floorHtml():"")+photoHtml(o)+sec("Sombra",`<label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label><div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`,"shadow");
 const transformHtml=o=>sec("Posición y tamaño",`${alignBar}<div class="row">${num("x","X")}${num("y","Y")}</div><div class="row">${num("w","Ancho","min=1")}${isText(o)?"<span></span>":num("h","Alto","min=1")}</div><div class="row">${num("angle","Rotación","min=-360 max=360")}${isText(o)?"":rng("opacity","Opacidad",0,100)}</div>`);
 export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProduct=()=>{},getPreset=()=>null){
   let key="";const bgp=mountBgPanel(ed);
@@ -70,6 +80,7 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
     shadowOn:o=>!!sh(o),shColor:o=>sh(o)?.color?.startsWith("#")?sh(o).color:"#000000",shBlur:o=>sh(o)?.blur??30,shX:o=>sh(o)?.offsetX??0,shY:o=>sh(o)?.offsetY??10,
     bgc:o=>typeof o.backgroundColor==="string"&&/^#[0-9a-f]{6}$/i.test(o.backgroundColor)?o.backgroundColor:"#ffc400",field:o=>o.field||"",pattern:o=>o.pattern||"{valor}",
     cropX:o=>Math.round(o.cropX||0),cropY:o=>Math.round(o.cropY||0),cropW:o=>Math.round(o.width),cropH:o=>Math.round(o.height),
+    ...Object.fromEntries([...Object.keys(PXL),"duoA","duoB"].map(k=>["px_"+k,o=>getPfx(o)[k]])),
     blend:o=>o.globalCompositeOperation||"source-over",fx_bright:o=>ed.getFx(o).bright,fx_contrast:o=>ed.getFx(o).contrast,fx_sat:o=>ed.getFx(o).sat,fx_blur:o=>ed.getFx(o).blur,
     x:o=>Math.round(ed.xy(o).x),y:o=>Math.round(ed.xy(o).y),w:o=>Math.round(o.getScaledWidth()),h:o=>Math.round(o.getScaledHeight()),angle:o=>Math.round(o.angle||0)
   };
@@ -82,6 +93,7 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
       case"fontWeight":o.set("fontWeight",+v);loadFont(o.fontFamily,+v).then(()=>{o.initDimensions?.();ed.canvas.requestRenderAll()});break;
       case"fontSize":o.set({fontSize:+v,scaleX:1,scaleY:1});o.initDimensions?.();break;
       case"fx_bright":case"fx_contrast":case"fx_sat":case"fx_blur":ed.setFx(o,{[k.slice(3)]:+v});break;
+      case"px_bright":case"px_contrast":case"px_sat":case"px_temp":case"px_hue":case"px_expo":case"px_hi":case"px_sh":case"px_sharp":case"px_blur":case"px_round":case"px_vig":case"px_grain":case"px_duo":case"px_duoA":case"px_duoB":{const n=k.slice(3),now=Date.now(),h=!o._pft||now-o._pft>700;o._pft=now;setPfx(o,{[n]:/^duo[AB]$/.test(n)?v:+v,preset:undefined},{hist:h});break}
       case"fill":case"stroke":o.set(k,v);if(k==="stroke"&&!o.strokeWidth)o.set("strokeWidth",t?2:4);break;
       case"bgc":o.set("backgroundColor",v);break;
       case"textAlign":case"lineHeight":case"charSpacing":o.set(k,k==="textAlign"?v:+v);break;
@@ -209,6 +221,13 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
         else if(pa==="autofloor"){ed.autoFloor();sync()}
         else if(pa==="ovfit"){const k=Math.max(ed.W/o.width,ed.H/o.height);o.set({scaleX:k,scaleY:k,angle:0});ed.setXY(o,(ed.W-o.width*k)/2,(ed.H-o.height*k)/2);ed.commit()}
         else if(pa==="ovseed"){await ed.reseedOverlay(o)}
+        else if(pa==="pxcat"){resetCat(o,CATS[e.target.closest("[data-c]").dataset.c]);ed.commit();key="";render()}
+        else if(pa==="pxpre"){applyPreset(o,+e.target.closest("[data-i]").dataset.i);ed.commit();key="";render()}
+        else if(pa==="pxundo"){undoPfx(o);ed.commit();key="";render()}
+        else if(pa==="pxall"){resetAll(o);if(o.__cropOrig)Object.assign(o,{});ed.commit();key="";render()}
+        else if(pa==="rot90"){o.set("angle",((o.angle||0)+90)%360);o.setCoords();ed.commit()}
+        else if(pa==="recrop"){const el=o.getElement(),nw=el.naturalWidth||el.width,nh=el.naturalHeight||el.height,dw=o.width*o.scaleX;o.set({cropX:0,cropY:0,width:nw,height:nh,scaleX:dw/nw,scaleY:dw/nw});applyPfx(o);o.setCoords();ed.commit();key="";render()}
+        else if(pa==="glow"){o.set("shadow",new Shadow({color:"#ffffff",blur:60,offsetX:0,offsetY:0}));ed.commit();key="";render()}
         else if(pa==="flipx"){o.set("flipX",!o.flipX);ed.commit()}
         else if(pa==="flipy"){o.set("flipY",!o.flipY);ed.commit()}
         else if(pa==="fxreset"){ed.setFx(o,{bright:0,contrast:0,sat:0,blur:0});ed.commit();sync()}
