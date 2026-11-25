@@ -1,19 +1,19 @@
-import {I} from "../app/icons.js?v=20261125y";
-import {esc} from "../app/ui.js?v=20261125y";
-import {FONTS,loadFont} from "../app/fonts.js?v=20261125y";
-import {FORMATS} from "../app/formats.js?v=20261125y";
-import {safeOf} from "../studio/skeleton.js?v=20261125y";
-import {mountBgPanel} from "./bgpanel.js?v=20261125y";
-import {applyProductImage,openProductPicker} from "./product.js?v=20261125y";
-import {toast} from "../app/ui.js?v=20261125y";
-import {mattingDefaults} from "../img/matting.js?v=20261125y";
-import {store} from "../app/store.js?v=20261125y";
-import {FIELDS,BLENDS} from "./editor.js?v=20261125y";
-import {enhance} from "./accordion.js?v=20261125y";
-import {saveSnap} from "./snap.js?v=20261125y";
-import {TEXT_STYLES,restyle} from "./textstyles.js?v=20261125y";
-import {PF_PRESETS,CATS,getPfx,setPfx,undoPfx,resetCat,resetAll,applyPreset,applyPfx} from "./photofx.js?v=20261125y";
-import {Shadow} from "../../vendor/fabric.min.mjs?v=20261125y";
+import {I} from "../app/icons.js?v=20261125z";
+import {esc} from "../app/ui.js?v=20261125z";
+import {FONTS,loadFont} from "../app/fonts.js?v=20261125z";
+import {FORMATS} from "../app/formats.js?v=20261125z";
+import {safeOf} from "../studio/skeleton.js?v=20261125z";
+import {mountBgPanel} from "./bgpanel.js?v=20261125z";
+import {applyProductImage,openProductPicker} from "./product.js?v=20261125z";
+import {toast} from "../app/ui.js?v=20261125z";
+import {mattingDefaults} from "../img/matting.js?v=20261125z";
+import {store} from "../app/store.js?v=20261125z";
+import {FIELDS,BLENDS} from "./editor.js?v=20261125z";
+import {enhance} from "./accordion.js?v=20261125z";
+import {saveSnap} from "./snap.js?v=20261125z";
+import {TEXT_STYLES,restyle} from "./textstyles.js?v=20261125z";
+import {PF_PRESETS,CATS,getPfx,setPfx,undoPfx,resetCat,resetAll,applyPreset,applyPfx} from "./photofx.js?v=20261125z";
+import {Shadow} from "../../vendor/fabric.min.mjs?v=20261125z";
 const num=(k,l,extra="")=>`<div class="field"><label for="i-${k}">${l}</label><input class="input" type="number" id="i-${k}" data-k="${k}" ${extra}></div>`;
 const rng=(k,l,min,max,step=1)=>`<div class="field"><label for="i-${k}">${l}</label><input type="range" id="i-${k}" data-k="${k}" min="${min}" max="${max}" step="${step}"></div>`;
 const rnum=(k,l,pct)=>`<div class="field"><label for="r-${k}">${l}</label><input class="input" type="number" id="r-${k}" data-r="${k}"${pct?" data-pct":""} step="${pct?1:"any"}"></div>`;
@@ -54,7 +54,7 @@ function textHtml(o){
 }
 const shapeHtml=o=>sec("Reglas de plantilla",COLRULE)+(o.type.toLowerCase()==="line"?sec("Línea",`<div class="row">${col("stroke","Color")}${num("strokeWidth","Grosor","min=1 max=200")}</div>`):sec("Relleno",`<div class="row">${col("fill","Relleno")}${col("stroke","Contorno")}</div><div class="row">${num("strokeWidth","Grosor","min=0 max=80")}${o.type.toLowerCase()==="rect"?num("rx","Radio","min=0 max=600"):"<span></span>"}</div>`))+
   sec("Sombra",`<label class="chk"><input type="checkbox" data-k="shadowOn"> Sombra</label><div class="row sh">${col("shColor","Color")}${num("shBlur","Difuminado","min=0 max=200")}</div><div class="row sh">${num("shX","Desp. X","")}${num("shY","Desp. Y","")}</div>`,"shadow");
-const productHtml=()=>sec("Opciones de imagen",`<div class="row pcut"><div class="pcut__c"><button class="btn btn--sm" data-pact="remove">Quitar fondo</button><div class="field"><label for="m-tol">Umbral: <b id="m-tolv">${mattingDefaults.tol}</b></label><input type="range" id="m-tol" min="2" max="60" value="${mattingDefaults.tol}"></div></div><div class="pcut__c"><button class="btn btn--sm" data-pact="remove-ai" title="Recorte con IA, más lento (~40 s la primera vez). Útil si el fondo no es liso.">Quitar con IA</button><button class="btn btn--sm" data-pact="points" title="Coloca los vértices tú mismo (con detección automática de partida)">Quitar fondo con puntos</button></div></div><span class="hint">Umbral (solo Quitar fondo): bajo protege cajas blancas, alto quita sombras y restos.</span><label class="chk"><input type="checkbox" id="m-holes"${mattingDefaults.holes?" checked":""}> Quitar huecos interiores (entre piernas, asas)</label><div class="row"><button class="btn btn--sm" data-pact="retol">Aplicar a esta imagen</button><button class="btn btn--sm" data-pact="tolglobal" title="Usa este umbral en todas las imágenes nuevas, también en las listas automáticas">Usar como general</button></div><button class="btn btn--sm" data-pact="orig">Restaurar original</button><button class="btn btn--sm" data-pact="change">Cambiar producto…</button>`)+sec("Colocación (regla de plantilla)",`<div class="row">${rnum("cx","Centro X %",1)}${rnum("cy","Centro Y %",1)}</div><div class="row">${rnum("maxW","Ancho máx. %",1)}${rnum("maxH","Alto máx. %",1)}</div><div class="row">${rnum("angle","Rotación inicial")}<label class="chk"><input type="checkbox" data-r="shadow"> Sombra auto</label></div><div class="row"><button class="btn btn--sm" data-pact="apply">Aplicar regla</button><button class="btn btn--sm" data-pact="capture">Usar posición actual</button></div>`);
+const productHtml=()=>sec("Opciones de imagen",`<div class="row pcut"><button class="btn btn--sm" data-pact="remove">Quitar fondo</button><div class="field"><label for="m-tol">Umbral: <b id="m-tolv">${mattingDefaults.tol}</b></label><input type="range" id="m-tol" min="2" max="60" value="${mattingDefaults.tol}"></div><button class="btn btn--sm" data-pact="remove-ai" title="Recorte con IA, más lento (~40 s la primera vez). Útil si el fondo no es liso.">Quitar con IA</button><button class="btn btn--sm" data-pact="points" title="Coloca los vértices tú mismo (con detección automática de partida)">Quitar con puntos</button></div><span class="hint">Umbral (solo Quitar fondo): bajo protege cajas blancas, alto quita sombras y restos.</span><label class="chk"><input type="checkbox" id="m-holes"${mattingDefaults.holes?" checked":""}> Quitar huecos interiores (entre piernas, asas)</label><div class="row"><button class="btn btn--sm" data-pact="retol">Aplicar a esta imagen</button><button class="btn btn--sm" data-pact="tolglobal" title="Usa este umbral en todas las imágenes nuevas, también en las listas automáticas">Usar como general</button></div><button class="btn btn--sm" data-pact="orig">Restaurar original</button><button class="btn btn--sm" data-pact="change">Cambiar producto…</button>`)+sec("Colocación (regla de plantilla)",`<div class="row">${rnum("cx","Centro X %",1)}${rnum("cy","Centro Y %",1)}</div><div class="row">${rnum("maxW","Ancho máx. %",1)}${rnum("maxH","Alto máx. %",1)}</div><div class="row">${rnum("angle","Rotación inicial")}<label class="chk"><input type="checkbox" data-r="shadow"> Sombra auto</label></div><div class="row"><button class="btn btn--sm" data-pact="apply">Aplicar regla</button><button class="btn btn--sm" data-pact="capture">Usar posición actual</button></div>`);
 const FL=[["dx","Desplazamiento X",-600,600],["dy","Desplazamiento Y",-600,600],["z","Elevación (Z) · negativo = detrás de la caja",-600,600],["opacity","Opacidad",0,100],["blur","Difuminación",0,200],["spread","Expansión / contracción",-100,200],["size","Tamaño %",30,250],["angle","Ángulo de proyección",0,180],["intensity","Intensidad",0,100],["soft","Suavidad",0,100],["persp","Perspectiva (aplanado)",0,100],["skew","Inclinación de perspectiva",-100,100],["vscale","Altura de la sombra %",20,300]];
 const floorHtml=()=>sec("Sombra de suelo",`<label class="chk"><input type="checkbox" data-fl="on"> Activar sombra de contacto</label>${FL.map(([k,l,a,b])=>`<div class="field"><label for="fl-${k}">${l}: <b data-flv="${k}"></b></label><input type="range" id="fl-${k}" data-fl="${k}" min="${a}" max="${b}"></div>`).join("")}<div class="field"><label for="fl-color">Color</label><input class="input" type="color" id="fl-color" data-fl="color"></div><button class="btn btn--sm" data-pact="autofloor" title="Recalcula los valores a partir de la silueta del producto">Restablecer automático</button><span class="hint">Se calcula con la silueta del producto, sigue al producto y se guarda en la plantilla.</span>`,"floor");
 const blendHtml=o=>sec("Fusión",`<div class="field"><label for="i-blend">Modo de fusión</label><select class="select" id="i-blend" data-k="blend">${BLENDS.map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select></div>`,"blend");
