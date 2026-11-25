@@ -1,10 +1,10 @@
-import {getPfx,setPfx,applyPfx} from "./photofx.js?v=20261126h";
-import {StaticCanvas,Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,controlsUtils,filters as FX} from "../../vendor/fabric.min.mjs?v=20261126h";
-import {bgDataUrl,bgColors,BG_DEFAULT,gradDataUrl} from "../img/background.js?v=20261126h";
-import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261126h";
-import {renderOverlay,overlayById} from "../img/overlays.js?v=20261126h";
-import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261126h";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261126h";
+import {getPfx,setPfx,applyPfx} from "./photofx.js?v=20261126i";
+import {StaticCanvas,Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,controlsUtils,filters as FX} from "../../vendor/fabric.min.mjs?v=20261126i";
+import {bgDataUrl,bgColors,BG_DEFAULT,gradDataUrl} from "../img/background.js?v=20261126i";
+import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261126i";
+import {renderOverlay,overlayById} from "../img/overlays.js?v=20261126i";
+import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261126i";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261126i";
 const _tid=Textbox.prototype.initDimensions;
 Textbox.prototype.initDimensions=function(){_tid.call(this);if(this.boxH&&this.boxH>this.height)this.height=this.boxH};
 const PROPS=["pfx","boxH","name","locked","role","field","pattern","rule","orig","gen","globalCompositeOperation"];
