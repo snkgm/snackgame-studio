@@ -1,4 +1,4 @@
-import {I} from "./icons.js?v=20261126e";
+import {I} from "./icons.js?v=20261126f";
 export const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 export const STATUS={
   draft:{label:"Borrador"},review:{label:"Pendiente de revisión"},scheduled:{label:"Programada"},
@@ -8,7 +8,7 @@ export const STATUS_KEYS=Object.keys(STATUS);
 let host;
 export function toast(msg,{kind,action,onAction,ms=4000}={}){
   host??=document.body.appendChild(Object.assign(document.createElement("div"),{className:"toast-host"}));
-  const t=document.createElement("div");t.className="toast"+(kind==="err"?" toast--err":"");
+  const t=document.createElement("div");t.className="toast"+(kind==="err"?" toast--err":"")+(/(…|\.\.\.)\s*$/.test(msg)?" toast--load":"");
   t.innerHTML=`<span>${esc(msg)}</span>${action?`<button>${esc(action)}</button>`:""}`;
   const close=()=>t.remove();
   if(action)t.querySelector("button").onclick=()=>{onAction?.();close()};
