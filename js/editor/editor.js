@@ -1,10 +1,10 @@
-import {getPfx,setPfx,applyPfx} from "./photofx.js?v=20261126d";
-import {StaticCanvas,Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,controlsUtils,filters as FX} from "../../vendor/fabric.min.mjs?v=20261126d";
-import {bgDataUrl,bgColors,BG_DEFAULT,gradDataUrl} from "../img/background.js?v=20261126d";
-import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261126d";
-import {renderOverlay,overlayById} from "../img/overlays.js?v=20261126d";
-import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261126d";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261126d";
+import {getPfx,setPfx,applyPfx} from "./photofx.js?v=20261126e";
+import {StaticCanvas,Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,controlsUtils,filters as FX} from "../../vendor/fabric.min.mjs?v=20261126e";
+import {bgDataUrl,bgColors,BG_DEFAULT,gradDataUrl} from "../img/background.js?v=20261126e";
+import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261126e";
+import {renderOverlay,overlayById} from "../img/overlays.js?v=20261126e";
+import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261126e";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261126e";
 const _tid=Textbox.prototype.initDimensions;
 Textbox.prototype.initDimensions=function(){_tid.call(this);if(this.boxH&&this.boxH>this.height)this.height=this.boxH};
 const PROPS=["pfx","boxH","name","locked","role","field","pattern","rule","orig","gen","globalCompositeOperation"];
@@ -247,7 +247,7 @@ export class Editor{
     if(snap)this.commit();else this.emit("change");
   }
   productLayer(){return this.canvas.getObjects().find(o=>o.role==="product")||null}
-  ruleOf(o){return {cx:.5,cy:.5,maxW:.8,maxH:.6,angle:0,shadow:true,...(this.cfg.product||{}),...((o&&o.rule)||{})}}
+  ruleOf(o){return {cx:.5,cy:.5,maxW:.8,maxH:.6,angle:0,shadow:false,...(this.cfg.product||{}),...((o&&o.rule)||{})}}
   placeProduct(o=this.productLayer()){
     if(!o)return;const r=this.ruleOf(o);
     const k=Math.min(r.maxW*this.W/o.width,r.maxH*this.H/o.height);
