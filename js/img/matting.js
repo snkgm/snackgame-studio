@@ -1,8 +1,8 @@
-import {db,publicUrl} from "../app/db.js?v=20261126c";
+import {db,publicUrl} from "../app/db.js?v=20261126d";
 let worker,seq=0;const waits=new Map();
 function getWorker(){
   if(worker)return worker;
-  worker=new Worker(new URL("./matting.worker.js?v=20261126c",import.meta.url),{type:"module"});
+  worker=new Worker(new URL("./matting.worker.js?v=20261126d",import.meta.url),{type:"module"});
   worker.onmessage=e=>{const w=waits.get(e.data.id);if(!w)return;if(e.data.progress){w.onp?.(e.data.progress);return}waits.delete(e.data.id);e.data.error?w.rej(new Error(e.data.error)):w.res(e.data)};
   worker.onerror=e=>{waits.forEach(w=>w.rej(new Error("El modelo no se pudo iniciar")));waits.clear();worker=null};
   return worker;
@@ -142,6 +142,8 @@ export async function removeBackground(blob,onProgress,method="auto",opt={}){
       const res=await new Promise((res,rej)=>{waits.set(id,{res,rej,onp:onProgress});getWorker().postMessage({id,blob:small})});
       mask=res.mask;
     }
+    {mask=solidify(mask,c.width,c.height);
+    }
   }
   const x=c.getContext("2d",{willReadFrequently:true}),im=x.getImageData(0,0,c.width,c.height);
   for(let i=0;i<mask.length;i++)im.data[i*4+3]=mask[i];
@@ -149,12 +151,27 @@ export async function removeBackground(blob,onProgress,method="auto",opt={}){
   const t=trimCanvas(c);
   return new Promise(r=>t.toBlob(r,"image/png"));
 }
+export function solidify(m,w,h,r=3){
+  const N=w*h,o=new Uint8Array(N);
+  for(let i=0;i<N;i++){const a=m[i];o[i]=a<40?0:a>=200?255:Math.round((a-40)/160*255)}
+  const bin=new Uint8Array(N);for(let i=0;i<N;i++)bin[i]=o[i]>96?1:0;
+  const out=new Uint8Array(N),st=[];
+  const push=i=>{if(!bin[i]&&!out[i]){out[i]=1;st.push(i)}};
+  for(let x=0;x<w;x++){push(x);push((h-1)*w+x)}for(let y=0;y<h;y++){push(y*w);push(y*w+w-1)}
+  while(st.length){const i=st.pop(),x=i%w;if(x>0)push(i-1);if(x<w-1)push(i+1);if(i>=w)push(i-w);if(i<N-w)push(i+w)}
+  for(let i=0;i<N;i++)if(!bin[i]&&!out[i])o[i]=255;
+  const e=new Uint8Array(N),f=new Uint8Array(N);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){let k=1;for(let d=-r;d<=r&&k;d++){const xx=x+d;if(xx<0||xx>=w||!(bin[y*w+xx]||(!out[y*w+xx])))k=0}e[y*w+x]=k}
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){let k=1;for(let d=-r;d<=r&&k;d++){const yy=y+d;if(yy<0||yy>=h||!e[yy*w+x])k=0}f[y*w+x]=k}
+  for(let i=0;i<N;i++)if(f[i])o[i]=255;
+  return o;
+}
 async function sha1(s){const b=await crypto.subtle.digest("SHA-1",typeof s==="string"?new TextEncoder().encode(s):s);return [...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,"0")).join("")}
 export const hashKey=sha1;
 const exists=async u=>{try{return (await fetch(u,{method:"HEAD"})).ok}catch{return false}};
 export async function cutoutFor(srcUrl,{blob,onProgress,method="smart",tol,holes,force}={}){
   const t=tol??mattingDefaults.tol,h=holes??mattingDefaults.holes;
-  const key=await sha1(srcUrl);const path=`cut/${key}-d5${method==="smart"?"-sm":""}${method==="ai"?"-ai":`${t!==10?"-t"+t:""}${h?"":"-nh"}`}.png`;const url=publicUrl(path);
+  const key=await sha1(srcUrl);const path=`cut/${key}-d6${method==="smart"?"-sm":""}${method==="ai"?"-ai":`${t!==10?"-t"+t:""}${h?"":"-nh"}`}.png`;const url=publicUrl(path);
   if(!force&&await exists(url))return url;
   const b=blob||await (await fetch(srcUrl,{mode:"cors"})).blob();
   const cut=await removeBackground(b,onProgress,method,{tol:t,holes:h});
