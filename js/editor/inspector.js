@@ -1,19 +1,19 @@
-import {I} from "../app/icons.js?v=20261125j";
-import {esc} from "../app/ui.js?v=20261125j";
-import {FONTS,loadFont} from "../app/fonts.js?v=20261125j";
-import {FORMATS} from "../app/formats.js?v=20261125j";
-import {safeOf} from "../studio/skeleton.js?v=20261125j";
-import {mountBgPanel} from "./bgpanel.js?v=20261125j";
-import {applyProductImage,openProductPicker} from "./product.js?v=20261125j";
-import {toast} from "../app/ui.js?v=20261125j";
-import {mattingDefaults} from "../img/matting.js?v=20261125j";
-import {store} from "../app/store.js?v=20261125j";
-import {FIELDS,BLENDS} from "./editor.js?v=20261125j";
-import {enhance} from "./accordion.js?v=20261125j";
-import {saveSnap} from "./snap.js?v=20261125j";
-import {TEXT_STYLES,restyle} from "./textstyles.js?v=20261125j";
-import {PF_PRESETS,CATS,getPfx,setPfx,undoPfx,resetCat,resetAll,applyPreset,applyPfx} from "./photofx.js?v=20261125j";
-import {Shadow} from "../../vendor/fabric.min.mjs?v=20261125j";
+import {I} from "../app/icons.js?v=20261125k";
+import {esc} from "../app/ui.js?v=20261125k";
+import {FONTS,loadFont} from "../app/fonts.js?v=20261125k";
+import {FORMATS} from "../app/formats.js?v=20261125k";
+import {safeOf} from "../studio/skeleton.js?v=20261125k";
+import {mountBgPanel} from "./bgpanel.js?v=20261125k";
+import {applyProductImage,openProductPicker} from "./product.js?v=20261125k";
+import {toast} from "../app/ui.js?v=20261125k";
+import {mattingDefaults} from "../img/matting.js?v=20261125k";
+import {store} from "../app/store.js?v=20261125k";
+import {FIELDS,BLENDS} from "./editor.js?v=20261125k";
+import {enhance} from "./accordion.js?v=20261125k";
+import {saveSnap} from "./snap.js?v=20261125k";
+import {TEXT_STYLES,restyle} from "./textstyles.js?v=20261125k";
+import {PF_PRESETS,CATS,getPfx,setPfx,undoPfx,resetCat,resetAll,applyPreset,applyPfx} from "./photofx.js?v=20261125k";
+import {Shadow} from "../../vendor/fabric.min.mjs?v=20261125k";
 const num=(k,l,extra="")=>`<div class="field"><label for="i-${k}">${l}</label><input class="input" type="number" id="i-${k}" data-k="${k}" ${extra}></div>`;
 const rng=(k,l,min,max,step=1)=>`<div class="field"><label for="i-${k}">${l}</label><input type="range" id="i-${k}" data-k="${k}" min="${min}" max="${max}" step="${step}"></div>`;
 const rnum=(k,l,pct)=>`<div class="field"><label for="r-${k}">${l}</label><input class="input" type="number" id="r-${k}" data-r="${k}"${pct?" data-pct":""} step="${pct?1:"any"}"></div>`;
@@ -144,10 +144,11 @@ export function mountInspector(root,ed,onFormat,getFmt=()=>FORMATS[0],afterProdu
     if(o.role==="product"){const F=ed.floorOf(o),on=!!(o.rule&&o.rule.floor&&o.rule.floor.on!==false);root.querySelectorAll("[data-fl]").forEach(el=>{if(el===document.activeElement)return;const k=el.dataset.fl;if(k==="on")el.checked=on;else el.value=F[k]});root.querySelectorAll("[data-flv]").forEach(b=>b.textContent=F[b.dataset.flv])}
     const pat=root.querySelector("#pat");if(pat)pat.hidden=!o.field;const pv=root.querySelector("#pv");if(pv){pv.hidden=!o.field;const pi=pv.querySelector("input");if(pi&&pi!==document.activeElement)pi.value=ed.product[o.field]??""}
   }
+  let lastSid=null;
   function render(){
     const o=ed.active;
     const k=(o?(o.__uid??=Math.random().toString(36).slice(2))+o.type+o.fontFamily:"")+"|"+(ed.bgSel?"bg":"")+(o?"":ed.W+"x"+ed.H+getFmt().id)+(ed.bgSel?(ed.cfg.bg&&ed.cfg.bg.mode)+(ed.cfg.bg&&ed.cfg.bg.n):"")+(o?"":JSON.stringify(ed.cfg.guides||[]));
-    if(k!==key){key=k;root.innerHTML=html();enhance(root)}
+    if(k!==key){const sid=(o?o.__uid:"")+"|"+(ed.bgSel?"bg":"");const first=sid!==lastSid;lastSid=sid;key=k;root.innerHTML=html();enhance(root,first)}
     sync();tb();
   }
   let tp=null;const ttb=root.closest(".app")?.querySelector("#ttb");

@@ -1,9 +1,9 @@
-import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125j";
-import {ZONES,MARGINS,loadPresets,savePresets,uid,zonesFor} from "./zones.js?v=20261125j";
-import {saveSnap} from "./snap.js?v=20261125j";
-import {keepAcc,setKeepAcc} from "./accordion.js?v=20261125j";
-import {I} from "../app/icons.js?v=20261125j";
-import {esc,modal,toast} from "../app/ui.js?v=20261125j";
+import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125k";
+import {ZONES,MARGINS,loadPresets,savePresets,uid,zonesFor} from "./zones.js?v=20261125k";
+import {saveSnap} from "./snap.js?v=20261125k";
+import {keepAcc,setKeepAcc} from "./accordion.js?v=20261125k";
+import {I} from "../app/icons.js?v=20261125k";
+import {esc,modal,toast} from "../app/ui.js?v=20261125k";
 const VK="sg.view",DV={rulers:1,guides:1,margins:0,zones:0,meas:"drag",glock:0,mlock:1};
 const lv=()=>{try{return {...DV,...JSON.parse(localStorage.getItem(VK)||"{}")}}catch{return {...DV}}};
 const S=d=>`<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -188,12 +188,12 @@ export function mountComposer(root,ed){
   bar.innerHTML=`<div class="b2g">${btn("b-rul",IC.ruler,"Mostrar/ocultar reglas")}${dd("b-gui",IC.guides,"Guías","Guías: mostrar, crear y editar")}${dd("b-mar",IC.margins,"Márgenes","Márgenes: mostrar, presets y valores")}${dd("b-zon",IC.zones,"Zonas","Zonas seguras por plataforma")}</div><i class="b2s"></i>
 <div class="b2g">${btn("b-snap",IC.magnet,"Ajuste magnético (mantén Alt para desactivarlo al arrastrar)")}${dd("b-tol","" ,"","Sensibilidad del imán")}${btn("b-smart",S('<circle cx="12" cy="12" r="3"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/>'),"Guías inteligentes: alinear con bordes y centros de otros elementos")}</div><i class="b2s"></i>
 <div class="b2g">${btn("b-meas",IC.meas,"Medidas y distancias: ocultas / al mover / siempre")}${btn("b-glock",IC.lock,"Bloquear/desbloquear guías")}<button class="b2 b2--t" id="b-mlock" title="Bloquear márgenes: impide moverlos arrastrando sobre el lienzo" aria-pressed="false">${IC.lock}<span>Bloquear márgenes</span></button></div><i class="b2s"></i>
-<div class="b2g" id="b-al">${[["al",IC.al,"Alinear a la izquierda"],["ac",IC.ac,"Centrar horizontalmente"],["ar",IC.ar,"Alinear a la derecha"],["at",IC.at,"Alinear arriba"],["am",IC.am,"Centrar verticalmente"],["ab",IC.ab,"Alinear abajo"],["dh",IC.dh,"Distribuir horizontalmente (3 o más)"],["dv",IC.dv,"Distribuir verticalmente (3 o más)"],["eq",IC.eq,"Igualar espacios entre elementos (3 o más)"]].map(([k,i,t])=>btn("al-"+k,i,t,` data-al="${k}"`)).join("")}</div><i class="b2s"></i><button class="b2" id="b-keep" title="Recordar paneles abiertos/cerrados entre sesiones" aria-pressed="false"><span>Recordar paneles</span></button>`;
+<div class="b2g" id="b-al">${[["al",IC.al,"Alinear a la izquierda"],["ac",IC.ac,"Centrar horizontalmente"],["ar",IC.ar,"Alinear a la derecha"],["at",IC.at,"Alinear arriba"],["am",IC.am,"Centrar verticalmente"],["ab",IC.ab,"Alinear abajo"],["dh",IC.dh,"Distribuir horizontalmente (3 o más)"],["dv",IC.dv,"Distribuir verticalmente (3 o más)"],["eq",IC.eq,"Igualar espacios entre elementos (3 o más)"]].map(([k,i,t])=>btn("al-"+k,i,t,` data-al="${k}"`)).join("")}</div>`;
   bar.querySelector("#b-tol").innerHTML=`${IC.tol}<span id="tol-l"></span>${IC.chev}`;
   const setOn=(id,on,t)=>{const b=bar.querySelector("#"+id);b.classList.toggle("is-on",!!on);b.setAttribute("aria-pressed",String(!!on));if(t)b.dataset.state=t};
   function sync(){
     setOn("b-rul",V.rulers);setOn("b-gui",V.guides);setOn("b-mar",V.margins);setOn("b-zon",V.zones&&cfg().zone);
-    setOn("b-snap",ed.snapCfg.on);setOn("b-smart",ed.snapCfg.smart!==false&&ed.snapCfg.on);setOn("b-meas",V.meas!=="off");setOn("b-keep",keepAcc());setOn("b-glock",V.glock);setOn("b-mlock",V.mlock);bar.querySelector("#b-mlock").innerHTML=(V.mlock?IC.lock:IC.unlock)+"<span>Bloquear márgenes</span>";info();
+    setOn("b-snap",ed.snapCfg.on);setOn("b-smart",ed.snapCfg.smart!==false&&ed.snapCfg.on);setOn("b-meas",V.meas!=="off");setOn("b-glock",V.glock);setOn("b-mlock",V.mlock);bar.querySelector("#b-mlock").innerHTML=(V.mlock?IC.lock:IC.unlock)+"<span>Bloquear márgenes</span>";info();
     const tl=bar.querySelector("#tol-l"),n=TOLS.find(t=>t[1]===ed.snapCfg.tol);tl.textContent=n?n[0]:ed.snapCfg.tol+" px";
     bar.querySelector("#b-meas").title="Medidas: "+({off:"ocultas",drag:"solo al mover",on:"siempre"}[V.meas])+" (clic para cambiar)";bar.querySelector("#b-meas").classList.toggle("is-dim",V.meas==="drag");
     bar.querySelector("#b-glock").innerHTML=V.glock?IC.lock:IC.unlock;
@@ -283,7 +283,6 @@ export function mountComposer(root,ed){
     p.querySelectorAll("[data-tol]").forEach(b=>b.onclick=()=>set(+b.dataset.tol));p.querySelector("#tol-px").onchange=e=>set(+e.target.value||8);
   };
   const tgl=(id,fn)=>bar.querySelector("#"+id).addEventListener("click",()=>{closePop2();fn();saveV();redraw()});
-  bar.querySelector("#b-keep").onclick=()=>{setKeepAcc(!keepAcc());sync()};
   tgl("b-rul",()=>V.rulers=V.rulers?0:1);
   tgl("b-mlock",()=>V.mlock=V.mlock?0:1);ed.on("safe",()=>{});
   tgl("b-glock",()=>V.glock=V.glock?0:1);

@@ -1,6 +1,6 @@
-import {I} from "../app/icons.js?v=20261125j";
-import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125j";
-import {modal,toast,openMenu} from "../app/ui.js?v=20261125j";
+import {I} from "../app/icons.js?v=20261125k";
+import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125k";
+import {modal,toast,openMenu} from "../app/ui.js?v=20261125k";
 let LID=0;
 const TH=new WeakMap();
 const thumb=o=>{
@@ -67,7 +67,7 @@ export class LayersPanel{
       const el=document.createElement("div");
       el.className="layer"+(isSel(o)?" is-sel":"")+(o.visible===false?" is-hidden":"")+(o.locked?" is-locked":"");
       el.draggable=true;el.title=o.name||"Capa";el.tabIndex=0;el.setAttribute("role","button");el.setAttribute("aria-label",o.name||"Capa");
-      el.innerHTML=`<span class="layer__thumb">${this.thumbHtml(o)}${o.locked||o.visible===false?`<span class="layer__ind" aria-hidden="true">${o.locked?I.lock:I["eye-off"]}</span>`:""}</span><input class="layer__name" value="" readonly aria-label="Nombre"><span class="layer__acts"><button class="layer__btn${o.visible===false?" is-on":""}" data-a="vis" title="${o.visible===false?"Mostrar":"Ocultar"}" aria-label="Mostrar u ocultar">${o.visible===false?I["eye-off"]:I.eye}</button><button class="layer__btn${o.locked?" is-on":""}" data-a="lock" title="${o.locked?"Desbloquear":"Bloquear"}" aria-label="Bloquear o desbloquear">${o.locked?I.lock:I["lock-open"]}</button><button class="layer__btn" data-a="merge" title="${isSel(o)&&nsel>1?"Fusionar selección":"Combinar con la capa inferior"}" aria-label="Fusionar"${(i===list.length-1&&nsel<2)?" disabled":""}>${I.layers}</button><button class="layer__btn" data-a="del" title="Eliminar" aria-label="Eliminar">${I["trash-2"]}</button></span>`;
+      el.innerHTML=`<span class="layer__thumb">${this.thumbHtml(o)}${o.locked||o.visible===false?`<span class="layer__ind${o.locked?"":" layer__ind--hid"}" aria-hidden="true">${o.locked?I.lock:I["eye-off"]}</span>`:""}</span><input class="layer__name" value="" readonly aria-label="Nombre"><span class="layer__acts"><button class="layer__btn${o.visible===false?" is-on":""}" data-a="vis" title="${o.visible===false?"Mostrar":"Ocultar"}" aria-label="Mostrar u ocultar">${o.visible===false?I["eye-off"]:I.eye}</button><button class="layer__btn${o.locked?" is-on":""}" data-a="lock" title="${o.locked?"Desbloquear":"Bloquear"}" aria-label="Bloquear o desbloquear">${o.locked?I.lock:I["lock-open"]}</button><button class="layer__btn" data-a="merge" title="${isSel(o)&&nsel>1?"Fusionar selección":"Combinar con la capa inferior"}" aria-label="Fusionar"${(i===list.length-1&&nsel<2)?" disabled":""}>${I.layers}</button><button class="layer__btn" data-a="del" title="Eliminar" aria-label="Eliminar">${I["trash-2"]}</button></span>`;
       const inp=el.querySelector(".layer__name");inp.value=o.name||"Capa";
       inp.addEventListener("dblclick",()=>{inp.readOnly=false;el.draggable=false;inp.focus();inp.select()});
       const done=()=>{if(inp.readOnly)return;inp.readOnly=true;el.draggable=true;const v=inp.value.trim();if(v&&v!==o.name)this.ed.patch(o,{name:v})};

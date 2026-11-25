@@ -1,6 +1,6 @@
-import {FONTS,loadFont,WEIGHT_NAMES} from "../app/fonts.js?v=20261125j";
-import {BLENDS} from "./editor.js?v=20261125j";
-import {Shadow} from "../../vendor/fabric.min.mjs?v=20261125j";
+import {FONTS,loadFont,WEIGHT_NAMES} from "../app/fonts.js?v=20261125k";
+import {BLENDS} from "./editor.js?v=20261125k";
+import {Shadow} from "../../vendor/fabric.min.mjs?v=20261125k";
 const S=d=>`<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const IC={
  b:S('<path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z"/>'),i:S('<path d="M19 4h-9M14 20H5M15 4 9 20"/>'),
@@ -29,7 +29,7 @@ export function mountCtxBar(root,ed){
   const sl=(a,t,min,max,step=1,u="")=>`<input type="range" class="cpop__s" data-c="${a}" min="${min}" max="${max}" step="${step}" data-u="${u}" title="${t}" aria-label="${t}"><output></output>`;
   const pb=(k,ic,t)=>`<button type="button" class="b2" data-pop="${k}" title="${t}" aria-label="${t}" aria-haspopup="true">${ic}</button>`;
   const tg=(a,ic,t,pk)=>`<span class="b2sp"><button type="button" class="b2" data-c="${a}" title="${t}" aria-label="${t}" aria-pressed="false">${ic}</button><button type="button" class="b2 b2--mini" data-pop="${pk}" title="Ajustes de ${t.toLowerCase()}" aria-label="Ajustes de ${t.toLowerCase()}" aria-haspopup="true">${IC.chev}</button></span>`;
-  const TEXT=`<div class="b2g"><select class="ctx__s" data-c="font" title="Fuente" aria-label="Fuente">${FONTS.map(f=>`<option value="${f.family}" style="font-family:'${f.family}',sans-serif;font-size:16px">${f.family}</option>`).join("")}</select><select class="ctx__s ctx__w" data-c="weight" title="Peso tipográfico (grosor de la fuente)" aria-label="Peso tipográfico"></select>${btn("bold",IC.b,"Negrita")}${btn("italic",IC.i,"Cursiva")}</div><i class="b2s"></i>
+  const TEXT=`<div class="b2g"><button type="button" class="ctx__s ctx__fb" data-fontbtn title="Fuente" aria-label="Fuente" aria-haspopup="listbox"><span></span>${IC.chev}</button><select class="ctx__s ctx__w" data-c="weight" title="Peso tipográfico (grosor de la fuente)" aria-label="Peso tipográfico"></select>${btn("bold",IC.b,"Negrita")}${btn("italic",IC.i,"Cursiva")}</div><i class="b2s"></i>
 <div class="b2g">${btn("sz-",IC.minus,"Reducir tamaño")}${num("size","Tamaño de fuente",8,600,64)}${btn("sz+",IC.plus,"Aumentar tamaño")}</div><i class="b2s"></i>
 <div class="b2g"><input class="ctx__c" type="color" data-c="fill" title="Color del texto" aria-label="Color del texto">${pb("op",IC.op,"Opacidad")}${tg("stT",IC.st,"Contorno","st")}${tg("shT",IC.shd,"Sombra","sh")}</div><i class="b2s"></i>
 <div class="b2g">${btn("al",IC.al,"Alinear a la izquierda",' data-v="left"')}${btn("ac",IC.ac,"Centrar",' data-v="center"')}${btn("ar",IC.ar,"Alinear a la derecha",' data-v="right"')}</div><i class="b2s"></i>
@@ -44,9 +44,25 @@ export function mountCtxBar(root,ed){
     lh:()=>`<div class="cpop__r"><label>Interlineado</label>${sl("lh","Interlineado",0.6,2.5,0.05,"")}</div>`,
     cs:()=>`<div class="cpop__r"><label>Letras</label>${sl("cs","Espaciado entre letras",-100,600,10,"")}</div>`
   };
+  const lj=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k)||"null");return Array.isArray(v)?v:d}catch{return d}};
+  let fav=lj("sg.fontfav",["Montserrat","Anton","Bebas Neue"]),rec=lj("sg.fontrec",[]);
+  const sv=()=>{try{localStorage.setItem("sg.fontfav",JSON.stringify(fav));localStorage.setItem("sg.fontrec",JSON.stringify(rec))}catch{}};
+  const ALL=FONTS.map(f=>f.family).sort((a,b)=>a.localeCompare(b,"es"));
+  const fitem=(f,cur)=>`<div class="fi${f===cur?" is-on":""}" role="option" data-ff="${f}"><span class="fi__n" style="font-family:'${f}',sans-serif">${f}</span><button type="button" class="fi__s${fav.includes(f)?" is-on":""}" data-fs="${f}" title="${fav.includes(f)?"Quitar de favoritas":"Añadir a favoritas (máx. 3)"}" aria-label="Favorita">★</button></div>`;
+  const flist=cur=>`<div class="fl__h">★ Favoritas</div>${fav.length?fav.map(f=>fitem(f,cur)).join(""):'<div class="fl__e">Marca hasta 3 con ★</div>'}<div class="fl__h">Últimas usadas</div>${rec.length?rec.map(f=>fitem(f,cur)).join(""):'<div class="fl__e">Aún no has cambiado de fuente</div>'}<div class="fl__h">Todas (A–Z)</div>${ALL.map(f=>fitem(f,cur)).join("")}`;
+  function openFont(b){
+    if(pop&&pop.dataset.k==="font"){closePop();return}closePop();
+    const cur=(texts()[0]||{}).fontFamily;pop=document.createElement("div");pop.className="cpop cpop--fonts";pop.dataset.k="font";pop.setAttribute("role","listbox");pop.innerHTML=flist(cur);document.body.appendChild(pop);
+    const r=b.getBoundingClientRect();pop.style.left=Math.min(r.left,innerWidth-pop.offsetWidth-8)+"px";pop.style.top=r.bottom+4+"px";
+    pop.onclick=e=>{
+      const st=e.target.closest("[data-fs]");
+      if(st){e.stopPropagation();const f=st.dataset.fs,i=fav.indexOf(f);if(i>=0)fav.splice(i,1);else{fav.push(f);if(fav.length>3)fav.shift()}sv();const sc=pop.scrollTop;pop.innerHTML=flist((texts()[0]||{}).fontFamily);pop.scrollTop=sc;return}
+      const it=e.target.closest("[data-ff]");if(!it)return;const f=it.dataset.ff;rec=[f,...rec.filter(x=>x!==f)].slice(0,5);sv();act("font",f,true);closePop();sync();
+    };
+  }
   function closePop(){if(pop){pop.remove();pop=null}}
   function openPop(b){const k=b.dataset.pop;if(pop&&pop.dataset.k===k){closePop();return}closePop();pop=document.createElement("div");pop.className="cpop";pop.dataset.k=k;pop.innerHTML=popHtml[k]();document.body.appendChild(pop);const r=b.getBoundingClientRect();pop.style.left=Math.min(r.left,innerWidth-pop.offsetWidth-8)+"px";pop.style.top=r.bottom+4+"px";bindAll(pop);sync()}
-  document.addEventListener("pointerdown",e=>{if(pop&&!pop.contains(e.target)&&!e.target.closest("[data-pop]"))closePop()});
+  document.addEventListener("pointerdown",e=>{if(pop&&!pop.contains(e.target)&&!e.target.closest("[data-pop],[data-fontbtn]"))closePop()});
   const q=(k,scope=null)=>(scope||[cb,pop]).flatMap?.(r=>r?[...r.querySelectorAll(`[data-c="${k}"]`)]:[])||[];
   function setSh(o,p){const s=o.shadow||{};o.set("shadow",new Shadow({color:p.color??s.color??"#000000",blur:p.blur??s.blur??12,offsetX:p.x??s.offsetX??0,offsetY:p.y??s.offsetY??4}))}
   function act(k,v,commit){
@@ -93,7 +109,7 @@ export function mountCtxBar(root,ed){
       el.onchange=()=>{if(el.value!=="")act(k,el.value,true);sync()};
     });
   }
-  function build(k){kind=k;closePop();cb.innerHTML=k==="text"?TEXT:IMG;bindAll(cb);cb.querySelectorAll("[data-pop]").forEach(b=>b.onclick=()=>openPop(b))}
+  function build(k){kind=k;closePop();cb.innerHTML=k==="text"?TEXT:IMG;bindAll(cb);cb.querySelectorAll("[data-pop]").forEach(b=>b.onclick=()=>openPop(b));cb.querySelectorAll("[data-fontbtn]").forEach(b=>b.onclick=()=>openFont(b))}
   function sync(){
     const o=ed.active,k=ed.bgSel||!o?null:isT(o)?"text":isI(o)?"img":null;
     if(k!==kind||(k&&!cb.firstChild)){if(k)build(k);else{kind=null;closePop()}}
@@ -103,7 +119,7 @@ export function mountCtxBar(root,ed){
     if(k==="text"){
       const o2=o.type&&texts()[0]||o,w=ws(o2),wsel=cb.querySelector('[data-c="weight"]');
       if(wsel&&wsel!==document.activeElement){wsel.innerHTML=w.map(x=>`<option value="${x}" style="font-family:'${o2.fontFamily}';font-weight:${x};font-size:16px">${WN[x]||"Peso"}</option>`).join("")}
-      set("font",o2.fontFamily);{const fe=cb.querySelector('[data-c="font"]'),we=cb.querySelector('[data-c="weight"]');if(fe)fe.style.fontFamily=`'${o2.fontFamily}',sans-serif`;if(we){we.style.fontFamily=`'${o2.fontFamily}',sans-serif`;we.style.fontWeight=o2.fontWeight}}set("weight",String(o2.fontWeight));set("size",Math.round(o2.fontSize*(o2.scaleY||1)));set("fill",hex(o2.fill));set("opacity",Math.round((o2.opacity??1)*100));
+      set("font",o2.fontFamily);{const fb=cb.querySelector("[data-fontbtn]");if(fb){fb.firstElementChild.textContent=o2.fontFamily;fb.style.fontFamily=`'${o2.fontFamily}',sans-serif`}const fe=null,we=cb.querySelector('[data-c="weight"]');if(fe)fe.style.fontFamily=`'${o2.fontFamily}',sans-serif`;if(we){we.style.fontFamily=`'${o2.fontFamily}',sans-serif`;we.style.fontWeight=o2.fontWeight}}set("weight",String(o2.fontWeight));set("size",Math.round(o2.fontSize*(o2.scaleY||1)));set("fill",hex(o2.fill));set("opacity",Math.round((o2.opacity??1)*100));
       set("stroke",hex(o2.stroke));set("sw",o2.strokeWidth||0);const sh=o2.shadow;set("shOn",!!sh);set("shC",hex(sh&&sh.color));set("shB",sh?sh.blur:12);set("shX",sh?sh.offsetX:0);set("shY",sh?sh.offsetY:4);set("lh",o2.lineHeight);set("cs",o2.charSpacing||0);
       const tg=(a,on)=>cb.querySelectorAll(`[data-c="${a}"]`).forEach(b=>{b.classList.toggle("is-on",on);b.setAttribute("aria-pressed",String(on))});
       tg("bold",+o2.fontWeight>=700);tg("stT",(o2.strokeWidth||0)>0);tg("shT",!!o2.shadow);tg("italic",o2.fontStyle==="italic");tg("al",o2.textAlign==="left"||!o2.textAlign);tg("ac",o2.textAlign==="center");tg("ar",o2.textAlign==="right");

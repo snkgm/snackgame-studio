@@ -1,24 +1,25 @@
-import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125j";
-import {Editor} from "./editor.js?v=20261125j";
-import {LayersPanel} from "./layers.js?v=20261125j";
-import {mountInspector} from "./inspector.js?v=20261125j";
-import {loadAllFonts} from "../app/fonts.js?v=20261125j";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261125j";
-import {sessionStart} from "./accordion.js?v=20261125j";
-import {scrollFade} from "./scrollfade.js?v=20261125j";
-import {openExport} from "./exporter.js?v=20261125j";
-import {statusHtml,mountStatusBar} from "./statusbar.js?v=20261125j";
-import {mountCtxBar} from "./ctxbar.js?v=20261125j";
-import {mountComposer} from "./composer.js?v=20261125j";
-import {safeOf} from "../studio/skeleton.js?v=20261125j";
-import {openProductPicker} from "./product.js?v=20261125j";
-import {openImageTool,openShapes,openTextStyles,openOverlayTool,closePop} from "./tools.js?v=20261125j";
-import {zipBlobs} from "../app/zip.js?v=20261125j";
-import {I} from "../app/icons.js?v=20261125j";
-import {db} from "../app/db.js?v=20261125j";
-import {store} from "../app/store.js?v=20261125j";
-import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261125j";
-import {toInput,fromInput} from "../app/dates.js?v=20261125j";
+import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125k";
+import {Editor} from "./editor.js?v=20261125k";
+import {LayersPanel} from "./layers.js?v=20261125k";
+import {mountInspector} from "./inspector.js?v=20261125k";
+import {loadAllFonts} from "../app/fonts.js?v=20261125k";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261125k";
+import {sessionStart} from "./accordion.js?v=20261125k";
+import {scrollFade} from "./scrollfade.js?v=20261125k";
+import {openTplSettings} from "./tplsettings.js?v=20261125k";
+import {openExport} from "./exporter.js?v=20261125k";
+import {statusHtml,mountStatusBar} from "./statusbar.js?v=20261125k";
+import {mountCtxBar} from "./ctxbar.js?v=20261125k";
+import {mountComposer} from "./composer.js?v=20261125k";
+import {safeOf} from "../studio/skeleton.js?v=20261125k";
+import {openProductPicker} from "./product.js?v=20261125k";
+import {openImageTool,openShapes,openTextStyles,openOverlayTool,closePop} from "./tools.js?v=20261125k";
+import {zipBlobs} from "../app/zip.js?v=20261125k";
+import {I} from "../app/icons.js?v=20261125k";
+import {db} from "../app/db.js?v=20261125k";
+import {store} from "../app/store.js?v=20261125k";
+import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261125k";
+import {toInput,fromInput} from "../app/dates.js?v=20261125k";
 export async function mountEditor(root,id,{template=false}={}){
   const table=template?"templates":"posts";
   root.innerHTML='<div class="empty">Cargando…</div>';
@@ -36,6 +37,7 @@ export async function mountEditor(root,id,{template=false}={}){
  <button class="btn btn--icon" id="undo" title="Deshacer (Ctrl+Z)">${I["undo-2"]}</button>
  <button class="btn btn--icon" id="redo" title="Rehacer (Ctrl+Shift+Z)">${I["redo-2"]}</button>
  <span class="grow"></span>
+ ${template?`<button class="btn" id="tplset" title="Valores predeterminados y ajustes de esta plantilla">${I.settings||I.sliders||""}<span>Ajustes de plantilla</span></button>`:""}
  <button class="btn savebtn" id="savebtn" title="Guardar (Ctrl+S)" disabled>Guardado 💾</button>
  ${template?`<button class="btn" id="tdef">${I.check||""}Predeterminada</button>`:`<select class="select etop__status" id="status" aria-label="Estado">${STATUS_KEYS.map(s=>`<option value="${s}"${s===post.status?" selected":""}>${STATUS[s].label}</option>`).join("")}</select>
  <input class="input etop__date" type="datetime-local" id="when" value="${toInput(post.scheduled_at)}" aria-label="Fecha y hora">
@@ -43,9 +45,9 @@ export async function mountEditor(root,id,{template=false}={}){
  <button class="btn" id="totpl" title="Guardar como plantilla">${I.copy}<span>Plantilla</span></button>`}
  <button class="btn btn--accent" id="export">${I.download}<span>Exportar</span></button>
 </header>
-<div class="lsplit" id="lsplit" role="separator" aria-orientation="vertical" aria-label="Ajustar anchura del panel izquierdo" title="Arrastra para ajustar la anchura"></div>
+<div class="lsplit" id="lsplit" role="separator" aria-orientation="vertical" aria-label="Ajustar anchura del panel de herramientas de edición" title="Arrastra para ajustar la anchura"></div>
 <div class="bar2" id="bar2" role="toolbar" aria-label="Reglas, guías y alineación"></div>
-<aside class="tools">
+<aside class="tools"><div class="pnl-t">Agregar</div>
  <button class="tool" id="t-text" title="Añadir texto">${I.type}<span>Texto</span></button>
  <button class="tool" id="t-img" title="Subir imagen, elegir de la biblioteca o añadir un producto">${I.image}<span>Imagen</span></button>
  <button class="tool" id="t-shapes" data-pop title="Formas">${I.square}<span>Formas</span></button>
@@ -56,6 +58,7 @@ export async function mountEditor(root,id,{template=false}={}){
 <main class="stage" id="stage"><div class="ttb" id="ttb" role="toolbar" aria-label="Herramientas de texto" hidden></div><div class="stage__box" id="box"><canvas id="cv"></canvas><div class="guides" id="guides"></div></div></main>
 ${statusHtml()}
 <aside class="panel">
+ <div class="pnl-t pnl-t--r">Herramientas de edición</div>
  <div class="panel__scroll" id="insp"></div>
 </aside></div>`;
   const $=s=>root.querySelector(s);
@@ -71,9 +74,9 @@ ${statusHtml()}
   const setFmt=async id=>{const f=fmtById(id);post.format=f.id;await ed.setFormat(f.w,f.h);insp.reset()};
   const syncP=()=>insp&&insp.reset();
   sessionStart();
-  {const lw=+localStorage.getItem("sg.leftw")||0;if(lw)root.querySelector(".app")?.style.setProperty("--left-w",lw+"px");
+  {const lw=+localStorage.getItem("sg.rightw")||0;if(lw)root.querySelector(".app")?.style.setProperty("--right-w",Math.max(288,Math.min(440,lw))+"px");
    const sp=$("#lsplit"),app=root.querySelector(".app")||root;
-   sp.onpointerdown=e=>{e.preventDefault();sp.setPointerCapture(e.pointerId);const mv=ev=>{const w=Math.max(96,Math.min(360,Math.round(ev.clientX-app.getBoundingClientRect().left)));app.style.setProperty("--left-w",w+"px");sp.dataset.w=w;ed.fit&&ed.fit()};const up=()=>{sp.removeEventListener("pointermove",mv);sp.removeEventListener("pointerup",up);if(sp.dataset.w)try{localStorage.setItem("sg.leftw",sp.dataset.w)}catch{}};sp.addEventListener("pointermove",mv);sp.addEventListener("pointerup",up)}}
+   sp.onpointerdown=e=>{e.preventDefault();sp.setPointerCapture(e.pointerId);const mv=ev=>{const w=Math.max(288,Math.min(440,Math.round(app.getBoundingClientRect().right-ev.clientX)));app.style.setProperty("--right-w",w+"px");sp.dataset.w=w;ed.fit&&ed.fit()};const up=()=>{sp.removeEventListener("pointermove",mv);sp.removeEventListener("pointerup",up);if(sp.dataset.w)try{localStorage.setItem("sg.rightw",sp.dataset.w)}catch{}};sp.addEventListener("pointermove",mv);sp.addEventListener("pointerup",up)}}
   let savePreset=null;const insp=mountInspector($("#insp"),ed,setFmt,fmtOf,syncP,()=>savePreset);
   if(!template)ed.product=post.product||{};ed.applyFields();
   $("#t-img").onclick=()=>openImageTool(ed,syncP);
@@ -143,6 +146,7 @@ ${statusHtml()}
       }else save(await ed.exportBlob(type),`${slug()}-${ed.W}x${ed.H}.${type}`);
     }catch(e){toast("No se pudo exportar: "+e.message,{kind:"err"})}
   };
+  if($("#tplset"))$("#tplset").onclick=()=>openTplSettings(ed,post);
   $("#export").onclick=()=>openExport(ed,{slug:slug()});
   $("#back").onclick=()=>{location.hash=template?"#/plantillas":"#/"};
   const slidesEl=$("#slides");

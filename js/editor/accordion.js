@@ -1,4 +1,4 @@
-import {I} from "../app/icons.js?v=20261125j";
+import {I} from "../app/icons.js?v=20261125k";
 const K="sg.acc";
 const load=()=>{try{return {order:[],closed:[],...JSON.parse(localStorage.getItem(K)||"{}")}}catch{return {order:[],closed:[]}}};
 let st=load(),drag=null;
@@ -11,13 +11,14 @@ const cat=t=>MAP[t]??(/sombra|efecto|vi[ñn]eta|degrad/i.test(t)?4:/posici|aline
 const KEEP="sg.accKeep";export const keepAcc=()=>localStorage.getItem(KEEP)==="1";
 export const setKeepAcc=v=>{try{localStorage.setItem(KEEP,v?"1":"0")}catch{}};
 export function sessionStart(){if(!keepAcc()){st.open=null;save()}}
-export function enhance(root){
+export function enhance(root,autoFirst=false){
   const secs=[...root.querySelectorAll(":scope > section.sec")].filter(s=>title(s));
   let prev=null;
   secs.forEach(s=>{const t=title(s);if(!st.order.includes(t)){st.order.splice(prev?st.order.indexOf(prev)+1:0,0,t);save()}prev=t});
   root.querySelectorAll(":scope > .acc__cat").forEach(n=>n.remove());
   secs.sort((a,b)=>(cat(title(a))-cat(title(b)))||(st.order.indexOf(title(a))-st.order.indexOf(title(b)))).forEach(s=>root.appendChild(s));
   let pc=-1;secs.forEach(s=>{const c=cat(title(s));if(c!==pc){pc=c;s.insertAdjacentHTML("beforebegin",`<div class="acc__cat" role="heading" aria-level="3">${CATS[c]}</div>`)}});
+  if(autoFirst&&secs.length){st.open=title(secs[0]);save()}
   secs.forEach(s=>{
     const t=title(s),h=s.querySelector(".sec__head");
     if(!h.querySelector(".sec__grip")){
