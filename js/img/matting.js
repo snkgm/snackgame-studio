@@ -1,8 +1,8 @@
-import {db,publicUrl} from "../app/db.js?v=20261125z";
+import {db,publicUrl} from "../app/db.js?v=20261126a";
 let worker,seq=0;const waits=new Map();
 function getWorker(){
   if(worker)return worker;
-  worker=new Worker(new URL("./matting.worker.js?v=20261125z",import.meta.url),{type:"module"});
+  worker=new Worker(new URL("./matting.worker.js?v=20261126a",import.meta.url),{type:"module"});
   worker.onmessage=e=>{const w=waits.get(e.data.id);if(!w)return;if(e.data.progress){w.onp?.(e.data.progress);return}waits.delete(e.data.id);e.data.error?w.rej(new Error(e.data.error)):w.res(e.data)};
   worker.onerror=e=>{waits.forEach(w=>w.rej(new Error("El modelo no se pudo iniciar")));waits.clear();worker=null};
   return worker;
@@ -133,7 +133,7 @@ export async function uploadCut(blob){
 export const mattingInfo={method:""};
 export async function removeBackground(blob,onProgress,method="auto",opt={}){
   const c=await toBitmapCanvas(blob);
-  let mask=(opt.box??(method==="ai"))?boxMask(c):null;mattingInfo.method=mask?"caja":"";
+  let mask=(opt.box??(method==="ai"||method==="smart"))?boxMask(c):null;mattingInfo.method=mask?"caja":"";
   if(!mask){mask=method==="ai"?null:flatMask(c,opt.tol??mattingDefaults.tol,opt.holes??mattingDefaults.holes);mattingInfo.method=mask?"plano":"ia"}
   if(!mask){
     if(globalThis.__mockMatting){mask=await globalThis.__mockMatting(c)}
@@ -152,9 +152,9 @@ export async function removeBackground(blob,onProgress,method="auto",opt={}){
 async function sha1(s){const b=await crypto.subtle.digest("SHA-1",typeof s==="string"?new TextEncoder().encode(s):s);return [...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,"0")).join("")}
 export const hashKey=sha1;
 const exists=async u=>{try{return (await fetch(u,{method:"HEAD"})).ok}catch{return false}};
-export async function cutoutFor(srcUrl,{blob,onProgress,method="auto",tol,holes,force}={}){
+export async function cutoutFor(srcUrl,{blob,onProgress,method="smart",tol,holes,force}={}){
   const t=tol??mattingDefaults.tol,h=holes??mattingDefaults.holes;
-  const key=await sha1(srcUrl);const path=`cut/${key}-d5${method==="ai"?"-ai":`${t!==10?"-t"+t:""}${h?"":"-nh"}`}.png`;const url=publicUrl(path);
+  const key=await sha1(srcUrl);const path=`cut/${key}-d5${method==="smart"?"-sm":""}${method==="ai"?"-ai":`${t!==10?"-t"+t:""}${h?"":"-nh"}`}.png`;const url=publicUrl(path);
   if(!force&&await exists(url))return url;
   const b=blob||await (await fetch(srcUrl,{mode:"cors"})).blob();
   const cut=await removeBackground(b,onProgress,method,{tol:t,holes:h});
