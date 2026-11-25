@@ -1,5 +1,5 @@
-import {Editor} from "../editor/editor.js?v=20261126g";
-import {loadAllFonts} from "../app/fonts.js?v=20261126g";
+import {Editor} from "../editor/editor.js?v=20261126h";
+import {loadAllFonts} from "../app/fonts.js?v=20261126h";
 export async function withHeadless(fn){
   await loadAllFonts();
   const host=document.createElement("div");host.style.cssText="position:fixed;left:-99999px;top:0;width:600px;height:600px;pointer-events:none";
