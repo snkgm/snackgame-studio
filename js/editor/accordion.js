@@ -1,4 +1,4 @@
-import {I} from "../app/icons.js?v=20261125l";
+import {I} from "../app/icons.js?v=20261125m";
 const K="sg.acc";
 const load=()=>{try{return {order:[],closed:[],...JSON.parse(localStorage.getItem(K)||"{}")}}catch{return {order:[],closed:[]}}};
 let st=load(),drag=null;

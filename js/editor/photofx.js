@@ -1,4 +1,4 @@
-import {FabricImage,Rect,filters as FX} from "../../vendor/fabric.min.mjs?v=20261125l";
+import {FabricImage,Rect,filters as FX} from "../../vendor/fabric.min.mjs?v=20261125m";
 export const PF0={bright:0,contrast:0,sat:0,temp:0,hue:0,expo:0,hi:0,sh:0,sharp:0,blur:0,gray:0,sepia:0,duo:0,duoA:"#1b1464",duoB:"#ffc400",grain:0,vig:0,round:0};
 export const CATS={
   A:["bright","contrast","sat","temp","hue","expo","hi","sh","sharp","blur"],

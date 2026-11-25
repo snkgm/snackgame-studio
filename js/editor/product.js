@@ -1,9 +1,9 @@
-import {modal,toast,esc} from "../app/ui.js?v=20261125l";
-import {cutoutFor,uploadOriginal} from "../img/matting.js?v=20261125l";
-import {extractPalette} from "../img/color.js?v=20261125l";
-import {store} from "../app/store.js?v=20261125l";
-import {fetchProduct} from "../studio/gallery.js?v=20261125l";
-import {productSearchHtml,bindProductSearch} from "../studio/productSearch.js?v=20261125l";
+import {modal,toast,esc} from "../app/ui.js?v=20261125m";
+import {cutoutFor,uploadOriginal} from "../img/matting.js?v=20261125m";
+import {extractPalette} from "../img/color.js?v=20261125m";
+import {store} from "../app/store.js?v=20261125m";
+import {fetchProduct} from "../studio/gallery.js?v=20261125m";
+import {productSearchHtml,bindProductSearch} from "../studio/productSearch.js?v=20261125m";
 const img=u=>new Promise((res,rej)=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>rej(new Error("No se pudo cargar la imagen"));i.src=u});
 export async function applyProductImage(ed,{orig,blob,remove,method,tol,holes,force},onProgress){
   const rm=remove??(!ed.cfg.product||ed.cfg.product.removeBg!==false);

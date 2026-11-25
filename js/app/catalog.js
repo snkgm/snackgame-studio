@@ -1,7 +1,7 @@
-import {CONFIG} from "./config.js?v=20261125l";
+import {CONFIG} from "./config.js?v=20261125m";
 let cache=null,loading=null;
 const fmtPrice=p=>p?Number(p).toLocaleString("es-ES",{minimumFractionDigits:2,maximumFractionDigits:2})+" €":"";
-const clean=t=>t.replace(/^\s*(LANZAMIENTO|NOVEDAD|PRÓXIMAMENTE|RESERVA)[^|]*\|\s*/i,"").trim();
+const clean=t=>t.replace(/^\s*(LANZAMIENTO|NOVEDAD|PRÓXIMAMENTE|RESERVA)[^|]*\|\s*/i,"").replace(/^\s*(figura\s+)?(funko\s+)?(pop!?\s+)?/i,"").replace(/\s*#\s?\d{1,4}\s*$/,"").trim()||t.trim();
 export function toProduct(p){
   const t=clean(p.title),n=/#\s?(\d{1,4})\b|\bn[ºo°]\s?(\d{1,4})\b/i.exec(p.title);
   return {name:t,number:n?(n[1]||n[2]):"",collection:(p.tags||[]).find(x=>/^[A-ZÁÉÍÓÚ0-9 ]{4,}$/.test(x)&&!/FUNKO|MARCAS/.test(x))||p.vendor||"",price:fmtPrice(p.variants&&p.variants[0]&&p.variants[0].price),category:p.product_type||"",web:"snackgame.es",image:(p.images&&p.images[0]&&p.images[0].src)||"",handle:p.handle};

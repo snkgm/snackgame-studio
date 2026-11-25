@@ -1,8 +1,8 @@
-import {db,publicUrl} from "../app/db.js?v=20261125l";
+import {db,publicUrl} from "../app/db.js?v=20261125m";
 let worker,seq=0;const waits=new Map();
 function getWorker(){
   if(worker)return worker;
-  worker=new Worker(new URL("./matting.worker.js?v=20261125l",import.meta.url),{type:"module"});
+  worker=new Worker(new URL("./matting.worker.js?v=20261125m",import.meta.url),{type:"module"});
   worker.onmessage=e=>{const w=waits.get(e.data.id);if(!w)return;if(e.data.progress){w.onp?.(e.data.progress);return}waits.delete(e.data.id);e.data.error?w.rej(new Error(e.data.error)):w.res(e.data)};
   worker.onerror=e=>{waits.forEach(w=>w.rej(new Error("El modelo no se pudo iniciar")));waits.clear();worker=null};
   return worker;
@@ -60,6 +60,24 @@ export function flatMask(c,tol=mattingDefaults.tol,holes=mattingDefaults.holes){
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){let a=0,n=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const X=x+dx,Y=y+dy;if(X>=0&&X<w&&Y>=0&&Y<h){a+=er[Y*w+X];n++}}m[y*w+x]=Math.round(a/n*255)}
   return m;
 }
+export function defringe(im,w,h){
+  const d=im.data,N=w*h,ring=Math.max(2,Math.round(Math.max(w,h)/700));
+  const er=(a,r)=>{let c=a;for(let k=0;k<r;k++){const n=new Uint8Array(N);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x;let v=c[i];if(x>0&&c[i-1]<v)v=c[i-1];if(x<w-1&&c[i+1]<v)v=c[i+1];if(y>0&&c[i-w]<v)v=c[i-w];if(y<h-1&&c[i+w]<v)v=c[i+w];n[i]=v}c=n}return c};
+  let a=new Uint8Array(N);for(let i=0;i<N;i++)a[i]=d[i*4+3];
+  a=er(a,1);
+  const src=new Uint8Array(N);for(let i=0;i<N;i++)src[i]=a[i]>=250?255:0;
+  const col=er(src,ring),got=new Uint8Array(N);for(let i=0;i<N;i++)got[i]=col[i]?1:0;
+  for(let p=0;p<ring+3;p++){const upd=[];
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x;if(got[i]||!a[i])continue;let r=0,g=0,b=0,n=0;
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const X=x+dx,Y=y+dy;if(X<0||Y<0||X>=w||Y>=h)continue;const j=Y*w+X;if(got[j]){r+=d[j*4];g+=d[j*4+1];b+=d[j*4+2];n++}}
+      if(n)upd.push(i,r/n,g/n,b/n)}
+    for(let k=0;k<upd.length;k+=4){const i=upd[k];d[i*4]=upd[k+1];d[i*4+1]=upd[k+2];d[i*4+2]=upd[k+3];got[i]=1}
+    if(!upd.length)break}
+  const o=new Uint8Array(N);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x;if(a[i]===255||a[i]===0){o[i]=a[i];continue}let s2=0,n=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const X=x+dx,Y=y+dy;if(X>=0&&Y>=0&&X<w&&Y<h){s2+=a[Y*w+X];n++}}o[i]=s2/n}
+  for(let i=0;i<N;i++)d[i*4+3]=o[i];
+  return im;
+}
 export const mattingInfo={method:""};
 export async function removeBackground(blob,onProgress,method="auto",opt={}){
   const c=await toBitmapCanvas(blob);
@@ -74,7 +92,7 @@ export async function removeBackground(blob,onProgress,method="auto",opt={}){
   }
   const x=c.getContext("2d",{willReadFrequently:true}),im=x.getImageData(0,0,c.width,c.height);
   for(let i=0;i<mask.length;i++)im.data[i*4+3]=mask[i];
-  x.putImageData(im,0,0);
+  defringe(im,c.width,c.height);x.putImageData(im,0,0);
   const t=trimCanvas(c);
   return new Promise(r=>t.toBlob(r,"image/png"));
 }
@@ -83,7 +101,7 @@ export const hashKey=sha1;
 const exists=async u=>{try{return (await fetch(u,{method:"HEAD"})).ok}catch{return false}};
 export async function cutoutFor(srcUrl,{blob,onProgress,method="auto",tol,holes,force}={}){
   const t=tol??mattingDefaults.tol,h=holes??mattingDefaults.holes;
-  const key=await sha1(srcUrl);const path=`cut/${key}${method==="ai"?"-ai":`${t!==10?"-t"+t:""}${h?"":"-nh"}`}.png`;const url=publicUrl(path);
+  const key=await sha1(srcUrl);const path=`cut/${key}-d2${method==="ai"?"-ai":`${t!==10?"-t"+t:""}${h?"":"-nh"}`}.png`;const url=publicUrl(path);
   if(!force&&await exists(url))return url;
   const b=blob||await (await fetch(srcUrl,{mode:"cors"})).blob();
   const cut=await removeBackground(b,onProgress,method,{tol:t,holes:h});
