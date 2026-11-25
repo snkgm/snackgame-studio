@@ -1,8 +1,8 @@
-import {db,publicUrl} from "../app/db.js?v=20261125q";
+import {db,publicUrl} from "../app/db.js?v=20261125r";
 let worker,seq=0;const waits=new Map();
 function getWorker(){
   if(worker)return worker;
-  worker=new Worker(new URL("./matting.worker.js?v=20261125q",import.meta.url),{type:"module"});
+  worker=new Worker(new URL("./matting.worker.js?v=20261125r",import.meta.url),{type:"module"});
   worker.onmessage=e=>{const w=waits.get(e.data.id);if(!w)return;if(e.data.progress){w.onp?.(e.data.progress);return}waits.delete(e.data.id);e.data.error?w.rej(new Error(e.data.error)):w.res(e.data)};
   worker.onerror=e=>{waits.forEach(w=>w.rej(new Error("El modelo no se pudo iniciar")));waits.clear();worker=null};
   return worker;
@@ -83,13 +83,14 @@ const hullOf=pts=>{pts.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const cr=(o,a,b)=>(a[0]
   for(let k=pts.length-1;k>=0;k--){const p=pts[k];while(up.length>1&&cr(up[up.length-2],up[up.length-1],p)<=0)up.pop();up.push(p)}
   return lo.slice(0,-1).concat(up.slice(0,-1))};
 const edgePts=(m,w,h)=>{const pts=[];for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x;if(m[i]&&(x===0||!m[i-1]||x===w-1||!m[i+1]||y===0||!m[i-w]||y===h-1||!m[i+w]))pts.push([x,y])}return pts};
-const bigComp=(cand,w,h,R)=>{const N=w*h,dil=new Uint8Array(N);
+const bigComp=(cand,w,h,R,minN=0)=>{const N=w*h,dil=new Uint8Array(N);
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){if(!cand[y*w+x])continue;for(let dy=-R;dy<=R;dy++){const Y=y+dy;if(Y<0||Y>=h)continue;for(let dx=-R;dx<=R;dx++){const X=x+dx;if(X>=0&&X<w)dil[Y*w+X]=1}}}
-  const lab=new Int32Array(N),st=new Int32Array(N);let best=0,bestN=0,id=0;
+  const lab=new Int32Array(N),st=new Int32Array(N),cnt=[0];let id=0;
   for(let i0=0;i0<N;i0++){if(!dil[i0]||lab[i0])continue;id++;let sp=0,n=0;st[sp++]=i0;lab[i0]=id;
     while(sp){const i=st[--sp],x=i%w,y=(i/w)|0;if(cand[i])n++;for(const j of [x>0?i-1:-1,x<w-1?i+1:-1,y>0?i-w:-1,y<h-1?i+w:-1])if(j>=0&&dil[j]&&!lab[j]){lab[j]=id;st[sp++]=j}}
-    if(n>bestN){bestN=n;best=id}}
-  if(!best)return null;const o=new Uint8Array(N);let n=0;for(let i=0;i<N;i++)if(cand[i]&&lab[i]===best){o[i]=1;n++}return {m:o,n}};
+    cnt.push(n)}
+  const o=new Uint8Array(N);let n=0;for(let i=0;i<N;i++)if(cand[i]&&cnt[lab[i]]>=Math.max(1,minN)){o[i]=1;n++}
+  return n?{m:o,n}:null};
 const polyMask=(poly,w,h,k=1)=>{let cx=0,cy=0;poly.forEach(p=>{cx+=p[0];cy+=p[1]});cx/=poly.length;cy/=poly.length;
   const o=document.createElement("canvas");o.width=w;o.height=h;const g=o.getContext("2d");g.fillStyle="#fff";g.beginPath();
   poly.forEach((p,i)=>{const X=cx+(p[0]-cx)*k+.5,Y=cy+(p[1]-cy)*k+.5;i?g.lineTo(X,Y):g.moveTo(X,Y)});g.closePath();g.fill();
@@ -106,11 +107,11 @@ export function boxMask(c){
   const strong=new Uint8Array(N),weak=new Uint8Array(N);
   for(let i=0;i<N;i++){const o=i*4,r=d[o],g=d[o+1],b=d[o+2],chroma=Math.max(r,g,b)-Math.min(r,g,b);
     if(chroma>=28?dist[i]>30:dist[i]>(bg[0]+bg[1]+bg[2]>600?95:60))strong[i]=1;if(dist[i]>=lo)weak[i]=1}
-  const S=bigComp(strong,w,h,R);if(!S||S.n<N*.03)return null;
+  const minN=Math.max(40,Math.round(N*.0004)),S=bigComp(strong,w,h,R,minN);if(!S||S.n<N*.03)return null;
   const h0=hullOf(edgePts(S.m,w,h));if(h0.length<4)return null;
   const zone=polyMask(h0,w,h,1.14),wk=new Uint8Array(N);
   for(let i=0;i<N;i++)wk[i]=weak[i]&&zone[i]>127?1:0;
-  const W=bigComp(wk,w,h,R);if(!W)return null;
+  const W=bigComp(wk,w,h,R,minN);if(!W)return null;
   const hull=hullOf(edgePts(W.m,w,h));if(hull.length<4)return null;
   const m=polyMask(hull,w,h,1);let hullPx=0,inS=0;for(let i=0;i<N;i++)if(m[i]>127){hullPx++;if(S.m[i])inS++}
   const per=hull.reduce((t,p,i)=>{const q=hull[(i+1)%hull.length];return t+Math.hypot(p[0]-q[0],p[1]-q[1])},0);
