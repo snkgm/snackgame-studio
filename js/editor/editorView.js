@@ -1,22 +1,23 @@
-import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125h";
-import {Editor} from "./editor.js?v=20261125h";
-import {LayersPanel} from "./layers.js?v=20261125h";
-import {mountInspector} from "./inspector.js?v=20261125h";
-import {loadAllFonts} from "../app/fonts.js?v=20261125h";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261125h";
-import {sessionStart} from "./accordion.js?v=20261125h";
-import {statusHtml,mountStatusBar} from "./statusbar.js?v=20261125h";
-import {mountCtxBar} from "./ctxbar.js?v=20261125h";
-import {mountComposer} from "./composer.js?v=20261125h";
-import {safeOf} from "../studio/skeleton.js?v=20261125h";
-import {openProductPicker} from "./product.js?v=20261125h";
-import {openImageTool,openShapes,openTextStyles,openOverlayTool,closePop} from "./tools.js?v=20261125h";
-import {zipBlobs} from "../app/zip.js?v=20261125h";
-import {I} from "../app/icons.js?v=20261125h";
-import {db} from "../app/db.js?v=20261125h";
-import {store} from "../app/store.js?v=20261125h";
-import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261125h";
-import {toInput,fromInput} from "../app/dates.js?v=20261125h";
+import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125i";
+import {Editor} from "./editor.js?v=20261125i";
+import {LayersPanel} from "./layers.js?v=20261125i";
+import {mountInspector} from "./inspector.js?v=20261125i";
+import {loadAllFonts} from "../app/fonts.js?v=20261125i";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261125i";
+import {sessionStart} from "./accordion.js?v=20261125i";
+import {openExport} from "./exporter.js?v=20261125i";
+import {statusHtml,mountStatusBar} from "./statusbar.js?v=20261125i";
+import {mountCtxBar} from "./ctxbar.js?v=20261125i";
+import {mountComposer} from "./composer.js?v=20261125i";
+import {safeOf} from "../studio/skeleton.js?v=20261125i";
+import {openProductPicker} from "./product.js?v=20261125i";
+import {openImageTool,openShapes,openTextStyles,openOverlayTool,closePop} from "./tools.js?v=20261125i";
+import {zipBlobs} from "../app/zip.js?v=20261125i";
+import {I} from "../app/icons.js?v=20261125i";
+import {db} from "../app/db.js?v=20261125i";
+import {store} from "../app/store.js?v=20261125i";
+import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261125i";
+import {toInput,fromInput} from "../app/dates.js?v=20261125i";
 export async function mountEditor(root,id,{template=false}={}){
   const table=template?"templates":"posts";
   root.innerHTML='<div class="empty">Cargando…</div>';
@@ -141,7 +142,7 @@ ${statusHtml()}
       }else save(await ed.exportBlob(type),`${slug()}-${ed.W}x${ed.H}.${type}`);
     }catch(e){toast("No se pudo exportar: "+e.message,{kind:"err"})}
   };
-  $("#export").onclick=e=>openMenu(e.currentTarget,[{label:ed.slides?"Descargar PNG (ZIP)":"Descargar PNG",icon:"image",run:()=>download("png")},{label:ed.slides?"Descargar JPG (ZIP)":"Descargar JPG",icon:"image",run:()=>download("jpg")}]);
+  $("#export").onclick=()=>openExport(ed,{slug:slug()});
   $("#back").onclick=()=>{location.hash=template?"#/plantillas":"#/"};
   const slidesEl=$("#slides");
   function drawSlides(){
@@ -163,15 +164,20 @@ ${statusHtml()}
   };
   ed.on("slides",drawSlides);drawSlides();
   ed.on("guides",g=>{$("#guides").innerHTML=g.map(a=>a.x!==undefined?`<i style="left:${(a.x/ed.W*100).toFixed(3)}%;top:0;bottom:0;width:0;border-left:1px solid #ff3d9a"></i>`:`<i style="top:${(a.y/ed.H*100).toFixed(3)}%;left:0;right:0;height:0;border-top:1px solid #ff3d9a"></i>`).join("")});
+  const hitIn=R=>ed.canvas.getObjects().filter(o=>ed.mergeable(o)&&o.visible!==false&&o.selectable!==false&&!o.locked&&(()=>{o.setCoords();const q=o.getCoords(),xs=q.map(p=>p.x),ys=q.map(p=>p.y);return Math.min(...xs)<=R.r&&Math.max(...xs)>=R.l&&Math.min(...ys)<=R.b&&Math.max(...ys)>=R.t})());
+  const hlShow=objs=>{let h=$("#box").querySelector("#hlb");if(!h){h=document.createElement("div");h.id="hlb";h.style.cssText="position:absolute;inset:0;pointer-events:none;z-index:6";$("#box").appendChild(h)}
+    h.innerHTML=(objs||[]).map(o=>{o.setCoords();const q=o.getCoords(),xs=q.map(p=>p.x),ys=q.map(p=>p.y),l=Math.min(...xs),t=Math.min(...ys);return `<div class="hl" style="left:${l/ed.W*100}%;top:${t/ed.H*100}%;width:${(Math.max(...xs)-l)/ed.W*100}%;height:${(Math.max(...ys)-t)/ed.H*100}%"></div>`}).join("")};
+  ed.canvas.on("mouse:move",()=>{const g=ed.canvas._groupSelector;if(!g){if(!ed._marq&&$("#hlb")&&$("#hlb").innerHTML)hlShow([]);return}const x2=g.x+g.deltaX,y2=g.y+g.deltaY;hlShow(hitIn({l:Math.min(g.x,x2),r:Math.max(g.x,x2),t:Math.min(g.y,y2),b:Math.max(g.y,y2)}))});
+  ed.canvas.on("mouse:up",()=>hlShow([]));
   $("#stage").addEventListener("pointerdown",e=>{
     if(e.button!==0||e.target.closest(".canvas-container,.slides,.shapes,.rul,.cmp,.ttb,.pop2"))return;
     closePop();const sx=e.clientX,sy=e.clientY,add=e.shiftKey||e.ctrlKey||e.metaKey;let mq=null,moved=false;const base=add?ed.canvas.getActiveObjects().filter(o=>ed.mergeable(o)):[];
     const rect=()=>({l:Math.min(sx,cx),t:Math.min(sy,cy),r:Math.max(sx,cx),b:Math.max(sy,cy)});let cx=sx,cy=sy;
-    const mv=ev=>{cx=ev.clientX;cy=ev.clientY;if(!moved&&Math.hypot(cx-sx,cy-sy)<5)return;moved=true;
+    const mv=ev=>{cx=ev.clientX;cy=ev.clientY;if(!moved&&Math.hypot(cx-sx,cy-sy)<5)return;moved=true;ed._marq=true;
       if(!mq){mq=document.createElement("div");mq.className="marq";document.body.appendChild(mq)}
-      const r=rect();Object.assign(mq.style,{left:r.l+"px",top:r.t+"px",width:r.r-r.l+"px",height:r.b-r.t+"px"})};
+      const r=rect();Object.assign(mq.style,{left:r.l+"px",top:r.t+"px",width:r.r-r.l+"px",height:r.b-r.t+"px"});{const br=$("#box").getBoundingClientRect(),k=br.width/ed.W;hlShow(hitIn({l:(r.l-br.left)/k,r:(r.r-br.left)/k,t:(r.t-br.top)/k,b:(r.b-br.top)/k}))}};
     const up=()=>{window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);
-      if(mq)mq.remove();
+      ed._marq=false;if(mq)mq.remove();hlShow([]);
       if(!moved){if(!add){ed.canvas.discardActiveObject();ed.bgSel=false;ed.canvas.requestRenderAll();ed.emit("change")}return}
       const br=$("#box").getBoundingClientRect(),k=br.width/ed.W,r=rect(),R={l:(r.l-br.left)/k,r:(r.r-br.left)/k,t:(r.t-br.top)/k,b:(r.b-br.top)/k};
       const hit=ed.canvas.getObjects().filter(o=>ed.mergeable(o)&&o.visible!==false&&o.selectable!==false&&!o.locked&&(()=>{o.setCoords();const q=o.getCoords(),xs=q.map(p=>p.x),ys=q.map(p=>p.y);return Math.min(...xs)<=R.r&&Math.max(...xs)>=R.l&&Math.min(...ys)<=R.b&&Math.max(...ys)>=R.t})());

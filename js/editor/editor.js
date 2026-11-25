@@ -1,10 +1,10 @@
-import {getPfx,setPfx,applyPfx} from "./photofx.js?v=20261125h";
-import {StaticCanvas,Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261125h";
-import {bgDataUrl,bgColors,BG_DEFAULT,gradDataUrl} from "../img/background.js?v=20261125h";
-import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261125h";
-import {renderOverlay,overlayById} from "../img/overlays.js?v=20261125h";
-import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261125h";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261125h";
+import {getPfx,setPfx,applyPfx} from "./photofx.js?v=20261125i";
+import {StaticCanvas,Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,controlsUtils,filters as FX} from "../../vendor/fabric.min.mjs?v=20261125i";
+import {bgDataUrl,bgColors,BG_DEFAULT,gradDataUrl} from "../img/background.js?v=20261125i";
+import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261125i";
+import {renderOverlay,overlayById} from "../img/overlays.js?v=20261125i";
+import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261125i";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261125i";
 const _tid=Textbox.prototype.initDimensions;
 Textbox.prototype.initDimensions=function(){_tid.call(this);if(this.boxH&&this.boxH>this.height)this.height=this.boxH};
 const PROPS=["pfx","boxH","name","locked","role","field","pattern","rule","orig","gen","globalCompositeOperation"];
@@ -22,6 +22,7 @@ export class Editor{
     this.stage=stageEl;this.box=boxEl;this.W=1080;this.H=1350;this.scale=1;
     this.listeners={};this.hist=[];this.hi=-1;this.busy=false;this.counter={};
     this.canvas=new Canvas(canvasEl,{width:this.W,height:this.H,backgroundColor:"#ffffff",preserveObjectStacking:true,selection:true,renderOnAddRemove:true});
+    this.canvas.altActionKey="__none";this.canvas.getRetinaScaling=()=>this.canvas.enableRetinaScaling?Math.max(window.devicePixelRatio||1,2):1;
     FabricObject.prototype.set({transparentCorners:false,cornerStyle:"circle",cornerColor:"#ffffff",cornerStrokeColor:"#ff3d9a",borderColor:"#ffb400",cornerSize:10,touchCornerSize:24,borderScaleFactor:3,padding:2});
     this.snapCfg=loadSnap();this.initSelectionFx();
     this.bgSel=false;this.product={};this.cfg={};this.palette=[];this.slides=null;this.cur=0;
@@ -142,7 +143,7 @@ export class Editor{
   }
   styleControls(o){
     if(o&&o.type&&o.type.toLowerCase()==="textbox"&&o.controls&&!o.controls.mt){const d=FabricObject.createControls().controls;o.controls={...o.controls,mt:d.mt,mb:d.mb}}
-    if(o&&o.set&&!o.__sgs){o.__sgs=1;if(o.controls)for(const k of['ml','mr','mt','mb']){const c=o.controls[k];if(c&&!c.__sg){c.__sg=1;const r=c.render;c.render=function(ctx,l,t,st,ob){const cv=ob.canvas,z=cv?cv.getElement().getBoundingClientRect().width/cv.getWidth():1,v=k==='ml'||k==='mr'?ob.getScaledHeight():ob.getScaledWidth();if(v*z<48)return;return r.call(this,ctx,l,t,st,ob)}}}o.set({transparentCorners:false,cornerStyle:"circle",cornerColor:"#ffffff",cornerStrokeColor:"#ff3d9a",borderColor:"#ffb400",cornerSize:10,touchCornerSize:24,borderScaleFactor:3,padding:2})}
+    if(o&&o.set&&!o.__sgs){o.__sgs=1;if(o.controls)for(const k of['ml','mr','mt','mb']){const c=o.controls[k];if(c&&!c.__sg){c.__sg=1;{const ah=c.actionHandler;c.actionHandler=function(e,t,x,y){if(!(e&&e.shiftKey))return ah.call(this,e,t,x,y);const o=t.target,an=o.translateToOriginPoint(o.getRelativeCenterPoint(),t.originX,t.originY),r=ah.call(this,e,t,x,y),orig=t.original||{},vert=k==="mt"||k==="mb";if(vert){const q=(o.scaleY||1)/(orig.scaleY||1);o.set("scaleX",(orig.scaleX||1)*q)}else{const q=(o.scaleX||1)/(orig.scaleX||1);o.set("scaleY",(orig.scaleY||1)*q)}o.setPositionByOrigin(an,t.originX,t.originY);return true}}const r=c.render;c.render=function(ctx,l,t,st,ob){const cv=ob.canvas,z=cv?cv.getElement().getBoundingClientRect().width/cv.getWidth():1,v=k==='ml'||k==='mr'?ob.getScaledHeight():ob.getScaledWidth();if(v*z<48)return;return r.call(this,ctx,l,t,st,ob)}}}o.set({transparentCorners:false,cornerStyle:"circle",cornerColor:"#ffffff",cornerStrokeColor:"#ff3d9a",borderColor:"#ffb400",cornerSize:10,touchCornerSize:24,borderScaleFactor:3,padding:2})}
     const m=o&&o.controls&&o.controls.mtr;if(!m||m.__sg)return;m.__sg=1;
     const svg=encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="white" stroke="#1a1300" stroke-width="1.5"/><path d="M17 12a5 5 0 1 1-1.6-3.7M17 6v3h-3" fill="none" stroke="#1a1300" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     m.cursorStyleHandler=()=>`url("data:image/svg+xml,${svg}") 14 14, grab`;
@@ -332,6 +333,12 @@ export class Editor{
     if(!this.slides)return [{name:"1",blob:await this.exportBlob(type)}];
     const keep=this.cur;this.slides[keep]=this.canvas.toObject(PROPS);const out=[];
     for(let i=0;i<this.slides.length;i++){await this.gotoSlideRaw(i);out.push({name:String(i+1),blob:await this.exportBlob(type)})}
+    this.slides[this.cur]=this.canvas.toObject(PROPS);await this.gotoSlideRaw(keep);return out;
+  }
+  async eachSlide(fn,only=null){
+    if(!this.slides){return [await fn(0)]}
+    const keep=this.cur,out=[];this.slides[keep]=this.canvas.toObject(PROPS);
+    for(let i=0;i<this.slides.length;i++){if(only!=null&&only!==i)continue;await this.gotoSlideRaw(i);out.push(await fn(i))}
     this.slides[this.cur]=this.canvas.toObject(PROPS);await this.gotoSlideRaw(keep);return out;
   }
   layers(){return this.canvas.getObjects().filter(o=>o.role!=="background"&&!DERIVED.includes(o.role)).reverse()}

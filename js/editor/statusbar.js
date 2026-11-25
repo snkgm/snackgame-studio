@@ -32,8 +32,12 @@ export function mountStatusBar(root,ed,getFmt){
     if(e.ctrlKey||e.metaKey){e.preventDefault();set(ed.scale*(e.deltaY<0?1.1:1/1.1));return}
     if(ed.userZoom){e.preventDefault();ed.panBy(-e.deltaX,-e.deltaY)}
   },{passive:false});
-  let pn=null;
-  stage.addEventListener("pointerdown",e=>{if(e.button===1||(e.button===0&&e.altKey&&ed.userZoom)){e.preventDefault();e.stopPropagation();pn={x:e.clientX,y:e.clientY};stage.setPointerCapture?.(e.pointerId)}},true);
+  let pn=null,sp=false;
+  const typing=()=>/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&document.activeElement.type!=="range"&&document.activeElement.type!=="color"||(ed.active&&ed.active.isEditing);
+  addEventListener("keydown",e=>{if(e.code==="Space"&&!typing()){e.preventDefault();if(!sp){sp=true;stage.classList.add("is-pan")}}});
+  addEventListener("keyup",e=>{if(e.code==="Space"){sp=false;stage.classList.remove("is-pan");stage.classList.remove("is-panning")}});
+  addEventListener("blur",()=>{sp=false;stage.classList.remove("is-pan")});
+  stage.addEventListener("pointerdown",e=>{if(e.button===1||(e.button===0&&sp)){e.preventDefault();e.stopPropagation();stage.classList.add("is-panning");pn={x:e.clientX,y:e.clientY};stage.setPointerCapture?.(e.pointerId)}},true);
   stage.addEventListener("pointermove",e=>{if(!pn)return;ed.panBy(e.clientX-pn.x,e.clientY-pn.y);pn={x:e.clientX,y:e.clientY}});
-  stage.addEventListener("pointerup",()=>{pn=null});
+  stage.addEventListener("pointerup",()=>{pn=null;stage.classList.remove("is-panning")});
 }
