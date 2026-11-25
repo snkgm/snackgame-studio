@@ -1,15 +1,23 @@
-import {I} from "../app/icons.js?v=20261124y";
+import {I} from "../app/icons.js?v=20261125b";
 const K="sg.acc";
 const load=()=>{try{return {order:[],closed:[],...JSON.parse(localStorage.getItem(K)||"{}")}}catch{return {order:[],closed:[]}}};
 let st=load(),drag=null;
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(st))}catch{}};
 const title=s=>(s.querySelector(".sec__head .label")?.textContent||"").trim();
 export const accState=()=>st;
+const CATS=["Lienzo","Transformación","Posición y alineación","Apariencia","Efectos","Tipografía","Opciones de imagen","Otros"];
+const MAP={"Lienzo":0,"Zonas seguras (px)":0,"Guías personalizadas":0,"Ajuste magnético":0,"Plantilla":0,"Fondo":0,"Biblioteca de fondos":0,"Buscar fondos (Pexels)":0,"Colores del producto":0,"Variaciones":0,"Posición y tamaño":1,"Recorte":1,"Colocación (regla de plantilla)":2,"Colocación":2,"Relleno":3,"Línea":3,"Fusión":3,"Overlay":3,"Viñeta":4,"Degradados desde bordes":4,"Sombra":4,"Contorno y sombra":4,"Sombra de suelo":4,"Texto":5,"Reglas de plantilla":5,"Dato dinámico":5,"Producto":6,"Preset del producto":6,"Ajustes de imagen":6};
+const cat=t=>MAP[t]??(/sombra|efecto|vi[ñn]eta|degrad/i.test(t)?4:/posici|alinea/i.test(t)?2:7);
+const KEEP="sg.accKeep";export const keepAcc=()=>localStorage.getItem(KEEP)==="1";
+export const setKeepAcc=v=>{try{localStorage.setItem(KEEP,v?"1":"0")}catch{}};
+export function sessionStart(){if(!keepAcc()){st.closed=[];save()}}
 export function enhance(root){
   const secs=[...root.querySelectorAll(":scope > section.sec")].filter(s=>title(s));
   let prev=null;
   secs.forEach(s=>{const t=title(s);if(!st.order.includes(t)){st.order.splice(prev?st.order.indexOf(prev)+1:0,0,t);save()}prev=t});
-  secs.sort((a,b)=>st.order.indexOf(title(a))-st.order.indexOf(title(b))).forEach(s=>root.appendChild(s));
+  root.querySelectorAll(":scope > .acc__cat").forEach(n=>n.remove());
+  secs.sort((a,b)=>(cat(title(a))-cat(title(b)))||(st.order.indexOf(title(a))-st.order.indexOf(title(b)))).forEach(s=>root.appendChild(s));
+  let pc=-1;secs.forEach(s=>{const c=cat(title(s));if(c!==pc){pc=c;s.insertAdjacentHTML("beforebegin",`<div class="acc__cat" role="heading" aria-level="3">${CATS[c]}</div>`)}});
   secs.forEach(s=>{
     const t=title(s),h=s.querySelector(".sec__head");
     if(!h.querySelector(".sec__grip")){

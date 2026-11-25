@@ -1,17 +1,19 @@
-import {Editor} from "./editor.js?v=20261124y";
-import {LayersPanel} from "./layers.js?v=20261124y";
-import {mountInspector} from "./inspector.js?v=20261124y";
-import {loadAllFonts} from "../app/fonts.js?v=20261124y";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261124y";
-import {safeOf} from "../studio/skeleton.js?v=20261124y";
-import {openProductPicker} from "./product.js?v=20261124y";
-import {openImageTool,openShapes,openOverlayTool,closePop} from "./tools.js?v=20261124y";
-import {zipBlobs} from "../app/zip.js?v=20261124y";
-import {I} from "../app/icons.js?v=20261124y";
-import {db} from "../app/db.js?v=20261124y";
-import {store} from "../app/store.js?v=20261124y";
-import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261124y";
-import {toInput,fromInput} from "../app/dates.js?v=20261124y";
+import {Editor} from "./editor.js?v=20261125b";
+import {LayersPanel} from "./layers.js?v=20261125b";
+import {mountInspector} from "./inspector.js?v=20261125b";
+import {loadAllFonts} from "../app/fonts.js?v=20261125b";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261125b";
+import {sessionStart} from "./accordion.js?v=20261125b";
+import {mountComposer} from "./composer.js?v=20261125b";
+import {safeOf} from "../studio/skeleton.js?v=20261125b";
+import {openProductPicker} from "./product.js?v=20261125b";
+import {openImageTool,openShapes,openOverlayTool,closePop} from "./tools.js?v=20261125b";
+import {zipBlobs} from "../app/zip.js?v=20261125b";
+import {I} from "../app/icons.js?v=20261125b";
+import {db} from "../app/db.js?v=20261125b";
+import {store} from "../app/store.js?v=20261125b";
+import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261125b";
+import {toInput,fromInput} from "../app/dates.js?v=20261125b";
 export async function mountEditor(root,id,{template=false}={}){
   const table=template?"templates":"posts";
   root.innerHTML='<div class="empty">Cargando…</div>';
@@ -37,14 +39,14 @@ export async function mountEditor(root,id,{template=false}={}){
  <button class="btn" id="totpl" title="Guardar como plantilla">${I.copy}<span>Plantilla</span></button>`}
  <button class="btn btn--accent" id="export">${I.download}<span>Exportar</span></button>
 </header>
+<div class="bar2" id="bar2" role="toolbar" aria-label="Reglas, guías y alineación"></div>
 <aside class="tools">
  <button class="tool" id="t-text" title="Añadir texto">${I.type}<span>Texto</span></button>
  <button class="tool" id="t-img" title="Subir imagen, elegir de la biblioteca o añadir un producto">${I.image}<span>Imagen</span></button>
  <button class="tool" id="t-shapes" data-pop title="Formas">${I.square}<span>Formas</span></button>
  <button class="tool" id="t-ov" title="Overlays: destellos, grano, texturas, luces…">${I.layers}<span>Overlays</span></button>
- <button class="tool" id="t-safe" title="Mostrar zonas seguras">${I.square}<span>Zonas</span></button>
 </aside>
-<main class="stage" id="stage"><div class="stage__box" id="box"><canvas id="cv"></canvas><div class="safe" id="safe" hidden></div><div class="guides" id="guides"></div><div class="guides" id="cg"></div></div><div class="slides" id="slides" hidden></div></main>
+<main class="stage" id="stage"><div class="stage__box" id="box"><canvas id="cv"></canvas><div class="guides" id="guides"></div></div><div class="slides" id="slides" hidden></div></main>
 <aside class="panel">
  <div class="panel__scroll" id="insp"></div>
  <section class="sec sec--layers"><div class="sec__head"><span class="label">Capas</span></div><div class="layers" id="layers"></div></section>
@@ -61,6 +63,7 @@ export async function mountEditor(root,id,{template=false}={}){
   const layers=new LayersPanel($("#layers"),ed);
   const setFmt=async id=>{const f=fmtById(id);post.format=f.id;await ed.setFormat(f.w,f.h);insp.reset()};
   const syncP=()=>insp&&insp.reset();
+  sessionStart();
   let savePreset=null;const insp=mountInspector($("#insp"),ed,setFmt,fmtOf,syncP,()=>savePreset);
   if(!template)ed.product=post.product||{};ed.applyFields();
   $("#t-img").onclick=()=>openImageTool(ed,syncP);
@@ -151,16 +154,8 @@ export async function mountEditor(root,id,{template=false}={}){
   };
   ed.on("slides",drawSlides);drawSlides();
   ed.on("guides",g=>{$("#guides").innerHTML=g.map(a=>a.x!==undefined?`<i style="left:${(a.x/ed.W*100).toFixed(3)}%;top:0;bottom:0;width:0;border-left:1px solid #ff3d9a"></i>`:`<i style="top:${(a.y/ed.H*100).toFixed(3)}%;left:0;right:0;height:0;border-top:1px solid #ff3d9a"></i>`).join("")});
-  const drawCg=()=>{$("#cg").innerHTML=(ed.cfg.guides||[]).map(g=>g.x!=null?`<i style="left:${(g.x/ed.W*100).toFixed(3)}%;top:0;bottom:0;border-left:1px dashed #19d3ff"></i>`:`<i style="top:${(g.y/ed.H*100).toFixed(3)}%;left:0;right:0;border-top:1px dashed #19d3ff"></i>`).join("")};
-  ed.on("cguides",drawCg);ed.on("format",drawCg);drawCg();
-  $("#stage").addEventListener("mousedown",e=>{if(e.target.closest(".canvas-container,.slides,.shapes"))return;ed.canvas.discardActiveObject();ed.bgSel=false;ed.canvas.requestRenderAll();ed.emit("change");closePop()});
-  const safeEl=$("#safe");let safeOn=false;
-  function drawSafe(){
-    safeEl.hidden=!safeOn;$("#t-safe").classList.toggle("is-on",safeOn);if(!safeOn)return;
-    const s=safeOf(post.format,ed.cfg),W=ed.W,H=ed.H,p=(v,t)=>(v/t*100).toFixed(3)+"%";
-    safeEl.innerHTML=`<i style="left:0;right:0;top:0;height:${p(s.t,H)}"></i><i style="left:0;right:0;bottom:0;height:${p(s.b,H)}"></i><i style="top:${p(s.t,H)};bottom:${p(s.b,H)};left:0;width:${p(s.l,W)}"></i><i style="top:${p(s.t,H)};bottom:${p(s.b,H)};right:0;width:${p(s.r,W)}"></i>`;
-  }
-  $("#t-safe").onclick=()=>{safeOn=!safeOn;drawSafe()};ed.on("safe",drawSafe);ed.on("format",drawSafe);
+  $("#stage").addEventListener("mousedown",e=>{if(e.target.closest(".canvas-container,.slides,.shapes,.rul,.cmp"))return;ed.canvas.discardActiveObject();ed.bgSel=false;ed.canvas.requestRenderAll();ed.emit("change");closePop()});
+  const cmp=mountComposer($("#box").closest(".app")||document,ed);
   const key=e=>{
     if(/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&document.activeElement.type!=="color"&&document.activeElement.type!=="range")return;
     const m=e.ctrlKey||e.metaKey,o=ed.active,k=e.key.toLowerCase();

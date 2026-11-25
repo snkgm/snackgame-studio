@@ -1,9 +1,9 @@
-import {Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261124y";
-import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261124y";
-import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261124y";
-import {renderOverlay,overlayById} from "../img/overlays.js?v=20261124y";
-import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261124y";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261124y";
+import {Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,filters as FX} from "../../vendor/fabric.min.mjs?v=20261125b";
+import {bgDataUrl,bgColors,BG_DEFAULT} from "../img/background.js?v=20261125b";
+import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261125b";
+import {renderOverlay,overlayById} from "../img/overlays.js?v=20261125b";
+import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261125b";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261125b";
 const PROPS=["name","locked","role","field","pattern","rule","orig","gen","globalCompositeOperation"];
 const PLACE="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEAAAAALAAAAAABAAEAAAIA";
 export const BLENDS=[["source-over","Normal"],["multiply","Multiplicar"],["screen","Trama"],["overlay","Superponer"],["soft-light","Luz suave"],["hard-light","Luz fuerte"],["darken","Oscurecer"],["lighten","Aclarar"],["color-dodge","Sobreexponer color"],["color-burn","Subexponer color"]];
