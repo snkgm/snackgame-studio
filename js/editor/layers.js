@@ -1,6 +1,6 @@
-import {I} from "../app/icons.js?v=20261125p";
-import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125p";
-import {modal,toast,openMenu} from "../app/ui.js?v=20261125p";
+import {I} from "../app/icons.js?v=20261125q";
+import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261125q";
+import {modal,toast,openMenu} from "../app/ui.js?v=20261125q";
 let LID=0;
 const TH=new WeakMap();
 const thumb=o=>{

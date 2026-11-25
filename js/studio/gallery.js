@@ -1,5 +1,5 @@
-import {CONFIG} from "../app/config.js?v=20261125p";
-import {toProduct} from "../app/catalog.js?v=20261125p";
+import {CONFIG} from "../app/config.js?v=20261125q";
+import {toProduct} from "../app/catalog.js?v=20261125q";
 export class Fatal extends Error{}
 export const handleOf=u=>{try{const x=new URL(String(u).trim());if(!/(^|\.)snackgame\.es$/.test(x.hostname))return null;const m=/\/products\/([^/?#]+)/.exec(x.pathname);return m?decodeURIComponent(m[1]):null}catch{return null}};
 export async function fetchProduct(url){

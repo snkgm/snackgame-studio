@@ -1,8 +1,8 @@
-import {db,publicUrl} from "../app/db.js?v=20261125p";
+import {db,publicUrl} from "../app/db.js?v=20261125q";
 let worker,seq=0;const waits=new Map();
 function getWorker(){
   if(worker)return worker;
-  worker=new Worker(new URL("./matting.worker.js?v=20261125p",import.meta.url),{type:"module"});
+  worker=new Worker(new URL("./matting.worker.js?v=20261125q",import.meta.url),{type:"module"});
   worker.onmessage=e=>{const w=waits.get(e.data.id);if(!w)return;if(e.data.progress){w.onp?.(e.data.progress);return}waits.delete(e.data.id);e.data.error?w.rej(new Error(e.data.error)):w.res(e.data)};
   worker.onerror=e=>{waits.forEach(w=>w.rej(new Error("El modelo no se pudo iniciar")));waits.clear();worker=null};
   return worker;
@@ -102,7 +102,7 @@ export function boxMask(c){
   for(let i=0;i<N;i++){const o=i*4;dist[i]=d[o+3]<128?0:Math.max(Math.abs(d[o]-bg[0]),Math.abs(d[o+1]-bg[1]),Math.abs(d[o+2]-bg[2]))}
   const bs=bd.map(o=>Math.max(Math.abs(d[o]-bg[0]),Math.abs(d[o+1]-bg[1]),Math.abs(d[o+2]-bg[2]))).sort((a,b)=>a-b);
   if(bs[Math.floor(bs.length*.9)]>12)return null;
-  const lo=Math.max(5,Math.min(12,bs[Math.floor(bs.length*.99)]+3)),R=Math.max(2,Math.round(Math.max(w,h)/400));
+  const lo=Math.max(2,Math.min(12,bs[Math.floor(bs.length*.99)]+2)),R=Math.max(2,Math.round(Math.max(w,h)/400));
   const strong=new Uint8Array(N),weak=new Uint8Array(N);
   for(let i=0;i<N;i++){const o=i*4,r=d[o],g=d[o+1],b=d[o+2],chroma=Math.max(r,g,b)-Math.min(r,g,b);
     if(chroma>=28?dist[i]>30:dist[i]>(bg[0]+bg[1]+bg[2]>600?95:60))strong[i]=1;if(dist[i]>=lo)weak[i]=1}

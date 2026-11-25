@@ -1,11 +1,11 @@
-import {store} from "../app/store.js?v=20261125p";
-import {db} from "../app/db.js?v=20261125p";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261125p";
-import {lightbox} from "../app/lightbox.js?v=20261125p";
-import {I} from "../app/icons.js?v=20261125p";
-import {esc,toast} from "../app/ui.js?v=20261125p";
-import {scheduleDates,fmtMadrid,parseList} from "../studio/schedule.js?v=20261125p";
-import {fetchProduct,validateGallery,usable} from "../studio/gallery.js?v=20261125p";
+import {store} from "../app/store.js?v=20261125q";
+import {db} from "../app/db.js?v=20261125q";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261125q";
+import {lightbox} from "../app/lightbox.js?v=20261125q";
+import {I} from "../app/icons.js?v=20261125q";
+import {esc,toast} from "../app/ui.js?v=20261125q";
+import {scheduleDates,fmtMadrid,parseList} from "../studio/schedule.js?v=20261125q";
+import {fetchProduct,validateGallery,usable} from "../studio/gallery.js?v=20261125q";
 const LIM={name:40,sub:60},DAYS=["L","M","X","J","V","S","D"],pad=n=>String(n).padStart(2,"0");
 const thumb=(src,w=140)=>{try{const u=new URL(src);u.searchParams.set("width",w);return u.toString()}catch{return src}};
 export function mountCampaignNew(root){
