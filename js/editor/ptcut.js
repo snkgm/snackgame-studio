@@ -1,6 +1,6 @@
-import {modal,toast,esc} from "../app/ui.js?v=20261126j";
-import {outline,simplify,polyToMask,trimCanvas,uploadCut} from "../img/matting.js?v=20261126j";
-import {applyProductImage} from "./product.js?v=20261126j";
+import {modal,toast,esc} from "../app/ui.js?v=20261126k";
+import {outline,simplify,polyToMask,trimCanvas,uploadCut} from "../img/matting.js?v=20261126k";
+import {applyProductImage} from "./product.js?v=20261126k";
 const load=u=>new Promise((res,rej)=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>rej(new Error("No se pudo cargar la imagen"));i.src=u});
 const BGS={checker:"Cuadros",dark:"Oscuro",white:"Blanco",red:"Rojo"};
 export async function openPointsCut(ed,o){
@@ -66,7 +66,7 @@ export async function openPointsCut(ed,o){
     const d={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(d){e.preventDefault();S.pts[S.sel]=clamp([S.pts[S.sel][0]+d[0],S.pts[S.sel][1]+d[1]]);draw()}};
   const ku=e=>{if(e.code==="Space")S.space=false};addEventListener("keydown",key);addEventListener("keyup",ku);
   m.el.addEventListener("click",e=>{const a=e.target.closest("[data-a]"),b=e.target.closest("[data-bg]");
-    if(a){if(a.dataset.a==="clear"){S.pts=[];S.sel=-1;draw()}else{const r=outline(src);if(!r){toast("No se detectó una silueta clara. Coloca los puntos a mano.",{kind:"err"});return}S.pts=simplify(r.hull,r.solidity>=.95?6:12);S.sel=-1;draw();toast(`${S.pts.length} vértices detectados${r.solidity>=.95?" (caja)":""}`)}}
+    if(a){if(a.dataset.a==="clear"){S.pts=[];S.sel=-1;draw()}else{const r=outline(src);if(!r){toast("No se detectó una silueta clara. Coloca los puntos a mano.",{kind:"err"});return}S.pts=simplify(r.hull,r.solidity>=.9?6:12);S.sel=-1;draw();toast(`${S.pts.length} vértices detectados${r.solidity>=.95?" (caja)":""}`)}}
     if(b){S.bg=b.dataset.bg;m.el.querySelectorAll("[data-bg]").forEach(x=>x.classList.toggle("is-on",x===b));draw()}});
   $("#pt-pv").onchange=e=>{S.prev=e.target.checked;draw()};
   $("#pt-f").oninput=e=>{S.feather=+e.target.value;$("#pt-fv").textContent=S.feather;draw()};
