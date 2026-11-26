@@ -14,10 +14,13 @@ const ig=async(path,params,method="POST")=>{
 };
 const ready=async id=>{for(let i=0;i<30;i++){const s=await ig(id,{fields:"status_code,status"},"GET");if(s.status_code==="FINISHED")return;if(s.status_code==="ERROR"||s.status_code==="EXPIRED")throw new Error("Contenedor "+s.status_code+": "+(s.status||""));await sleep(4e3)}throw new Error("Contenedor sin terminar")};
 const now=new Date().toISOString();
-const posts=await rest(`posts?status=eq.scheduled&scheduled_at=lte.${now}&select=id,title,format,group_id,item_id,caption,assets,scheduled_at&order=scheduled_at.asc&limit=20`);
+const posts=await rest(`posts?status=eq.scheduled&scheduled_at=lte.${now}&select=id,title,format,group_id,item_id,campaign_id,caption,assets,scheduled_at&order=scheduled_at.asc&limit=20`);
+const cids=[...new Set(posts.map(p=>p.campaign_id).filter(Boolean))];
+const camps=cids.length?await rest(`campaigns?id=in.(${cids.join(",")})&select=id,status`):[];
+const off=new Set(camps.filter(c=>["paused","cancelled"].includes(c.status)).map(c=>c.id));
 const seen=new Set();let n=0;
 for(const p of posts){
-  const m=p.assets?.meta||{};if(m.published)continue;
+  const m=p.assets?.meta||{};if(m.published||off.has(p.campaign_id))continue;
   const isStory=p.format==="story-9x16",isFeed=/^(post-|carousel-)/.test(p.format);
   if(!isStory&&!isFeed)continue;
   const g=p.assets?.ig||{},mode=g.mode==="publicar"?"publicar":"prueba",cap=(p.caption||"").trim();
@@ -33,6 +36,7 @@ for(const p of posts){
   if(LOC&&g.loc!==false)ex.location_id=LOC;if(col.length)ex.collaborators=JSON.stringify(col);
   try{
     if(DRY){console.log("DRY",p.title,urls.length);continue}
+    if(mode==="publicar")await set({assets:{...p.assets,meta:{...m,publishing_at:new Date().toISOString()}}});
     let cid;
     if(isStory)cid=(await ig(IG+"/media",{image_url:urls[0],media_type:"STORIES"})).id;
     else if(urls.length===1)cid=(await ig(IG+"/media",{image_url:urls[0],caption:cap,alt_text:alt,...ex})).id;

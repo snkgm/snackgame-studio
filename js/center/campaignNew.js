@@ -1,11 +1,12 @@
-import {store} from "../app/store.js?v=20261127e";
-import {db} from "../app/db.js?v=20261127e";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261127e";
-import {lightbox} from "../app/lightbox.js?v=20261127e";
-import {I} from "../app/icons.js?v=20261127e";
-import {esc,toast} from "../app/ui.js?v=20261127e";
-import {scheduleDates,fmtMadrid,parseList} from "../studio/schedule.js?v=20261127e";
-import {fetchProduct,validateGallery,usable,handleOf} from "../studio/gallery.js?v=20261127e";
+import {store} from "../app/store.js?v=20261127f";
+import {db} from "../app/db.js?v=20261127f";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261127f";
+import {lightbox} from "../app/lightbox.js?v=20261127f";
+import {I} from "../app/icons.js?v=20261127f";
+import {esc,toast} from "../app/ui.js?v=20261127f";
+import {schedBody,schedClick} from "./schedUi.js?v=20261127f";
+import {scheduleDates,fmtMadrid,parseList} from "../studio/schedule.js?v=20261127f";
+import {fetchProduct,validateGallery,usable,handleOf} from "../studio/gallery.js?v=20261127f";
 const LIM={name:40,sub:60},DAYS=["L","M","X","J","V","S","D"],pad=n=>String(n).padStart(2,"0");
 const thumb=(src,w=140)=>{try{const u=new URL(src);u.searchParams.set("width",w);return u.toString()}catch{return src}};
 export function mountCampaignNew(root,addTo){
@@ -55,9 +56,7 @@ export function mountCampaignNew(root,addTo){
 <section class="blk"><h2><span>2</span>Categoría y preset de producción</h2>${pills(store.cats,S.catId,"ca")}<p class="hint">El preset (plantilla) se elige por formato en el bloque siguiente; se propone el predeterminado de esta combinación. Todo se genera con una copia: editar una publicación no cambia el preset.</p></section>
 <section class="blk"><h2><span>3</span>Formato e imágenes</h2><div class="fmts">${FORMATS.map(fmtRow).join("")}</div><div class="field"><label>Imágenes por publicación</label><div class="seg" id="seg-n">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<button type="button" data-n="${n}" class="${S.n===n?"is-on":""}">${n}</button>`).join("")}</div><p class="hint">De 1 a 10 imágenes por publicación. Con 2 o más se crea un carrusel; cada diapositiva usa la de la plantilla si existe, y si no copia la anterior.</p></div></section>
 <section class="blk"><h2><span>4</span>Frecuencia y horario</h2>
-<div class="seg" id="seg-m"><button type="button" data-m="weekdays" class="${S.sched.mode==="weekdays"?"is-on":""}">Días de la semana</button><button type="button" data-m="interval" class="${S.sched.mode==="interval"?"is-on":""}">Cada N días</button></div>
-${S.sched.mode==="weekdays"?`<div class="pills" id="days">${DAYS.map((x,i)=>`<button type="button" class="pill${S.sched.days.includes(i)?" is-on":""}" data-d="${i}">${x}</button>`).join("")}</div>`:`<div class="field"><label>Cada (días)</label><div class="seg" id="seg-e">${[1,2,3,4,5].map(n=>`<button type="button" data-e="${n}" class="${S.sched.every===n?"is-on":""}">${n}</button>`).join("")}</div></div>`}
-<div class="row2"><div class="field"><label for="sd">Primer día</label><input class="input" type="date" id="sd" value="${S.sched.start}"></div><div class="field"><label for="st">Hora (Europa/Madrid)</label><input class="input" type="time" id="st" value="${S.sched.time}"></div></div></section>
+${schedBody(S.sched)}</section>
 `}<section class="blk"><h2><span>5</span>Detectar productos</h2><textarea class="input area" id="list" placeholder="Pega aquí tu lista. Cada producto: nombre, línea siguiente con el enlace de snackgame.es, y una línea en blanco entre productos:&#10;&#10;Weaponized Rick&#10;https://snackgame.es/products/…&#10;&#10;Rachel Green&#10;https://snackgame.es/products/…" spellcheck="false">${esc(S.text)}</textarea><div class="bar"><button type="button" class="btn btn--accent" id="det"${S.text.trim()?"":" disabled"}>DETECTAR PRODUCTOS</button><span class="hint" id="revmsg">Acepta también «Nombre enlace subtítulo» en una sola línea.</span></div></section>
 <section class="blk"><h2><span>6</span>Productos agregados</h2><div id="sumline">${sumHtml()}</div><div class="plist2" id="cards">${S.rows.map(cardHtml).join("")}</div><div class="bar"><button type="button" class="btn" id="add">+ AGREGAR PRODUCTO</button>${S.rows.length?`<button type="button" class="btn btn--sm" id="clr">Descartar lista</button>`:""}</div></section>
 ${A?`<section class="blk blk--sum"><h2>Resumen</h2><div class="sums"><div><b>${valid().length}</b><span>productos válidos</span></div><div><b>${valid().length*nF}</b><span>publicaciones</span></div><div><b>${valid().length*nF*S.n}</b><span>imágenes</span></div><div><b class="${problems().length?"over":""}">${problems().length}</b><span>incidencias</span></div></div><p class="hint" id="sumhint">${ds.length?`Primera: ${fmtMadrid(ds[0])} · Última: ${fmtMadrid(ds[Math.max(0,valid().length-1)]||ds[ds.length-1])}`:""}</p><div class="bar"><button class="btn btn--accent" id="addgo"${valid().length&&!problems().length?"":" disabled"}>Añadir a la lista</button></div></section>`:`<section class="blk blk--sum"><h2><span>7</span>Resumen y confirmación</h2>
@@ -81,9 +80,7 @@ ${A?`<section class="blk blk--sum"><h2>Resumen</h2><div class="sums"><div><b>${v
     if(t.dataset.ty!==undefined){S.typeId=t.dataset.ty;S.tpls={};render()}
     else if(t.dataset.ca!==undefined){S.catId=t.dataset.ca;S.tpls={};render()}
     else if(t.closest("#seg-n")){S.n=+t.dataset.n;S.rows.forEach(r=>{if(r.gallery)r.sel=autoSel(r)});render()}
-    else if(t.closest("#seg-m")){S.sched.mode=t.dataset.m;render()}
-    else if(t.closest("#seg-e")){S.sched.every=+t.dataset.e;render()}
-    else if(t.dataset.d!==undefined){const k=+t.dataset.d,a=S.sched.days;S.sched.days=a.includes(k)?a.filter(x=>x!==k):[...a,k].sort();render()}
+    else if(schedClick(S.sched,t))render()
     else if(t.dataset.p!==undefined){const r=rowById(t.dataset.r),j=+t.dataset.p,p=r.gallery[j];if(!p.ok||p.dup)return;const i=r.sel.indexOf(j);if(i>=0)r.sel.splice(i,1);else r.sel.push(j);if(r.sel.length>S.n)toast(`Superas el límite de ${S.n} imágenes: quita una`);updCard(r.id)}
     else if(t.dataset.del!==undefined){S.rows.splice(idxOf(t.dataset.del),1);renderCards()}
     else if(t.dataset.an!==undefined){const r=rowById(t.dataset.an);analyze(r)}

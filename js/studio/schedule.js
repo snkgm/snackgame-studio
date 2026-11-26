@@ -4,6 +4,7 @@ export function madridIso(y,m,d,hh,mm){const g=Date.UTC(y,m-1,d,hh,mm);let t=g-o
 export function scheduleDates(s,count,skip=0){
   const [y,m,d]=s.start.split("-").map(Number),[hh,mm]=s.time.split(":").map(Number),out=[],step=Math.max(1,+s.every||1);
   if(s.mode==="weekdays"&&!(s.days||[]).length)return [];
+  if(s.mode==="hours"){const base=new Date(madridIso(y,m,d,hh,mm)).getTime(),h=Math.max(1,+s.hours||6);for(let i=skip;i<skip+count;i++)out.push(new Date(base+i*h*36e5).toISOString());return out.slice(skip)}
   for(let i=0;out.length<skip+count&&i<5000;i++){
     const day=new Date(Date.UTC(y,m-1,d+i));
     const ok=s.mode==="weekdays"?s.days.includes((day.getUTCDay()+6)%7):i%step===0;
