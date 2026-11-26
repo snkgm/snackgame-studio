@@ -7,7 +7,7 @@
 .clist{display:flex;flex-direction:column;gap:var(--sp-2)}
 .ccard{display:grid;grid-template-columns:1fr 192px 56px;align-items:center;gap:var(--sp-3);padding:var(--sp-2) var(--sp-3);background:var(--c-surface);border:var(--bw) solid var(--c-line);border-radius:var(--r-sm);color:inherit}
 .ccard:hover{border-color:var(--c-muted)}.ccard>div:first-child{display:flex;flex-direction:column}.ccard em{font-style:normal;color:var(--c-muted);text-align:right;font-variant-numeric:tabular-nums}
-.bar-p{height:8px;background:var(--c-bg);border-radius:4px;overflow:hidden}.bar-p i{display:block;height:100%;background:var(--c-accent);transition:width var(--dur) var(--ease)}.bar-p--lg{height:16px;border-radius:8px}
+.bar-p{height:8px;background:var(--c-bg);border-radius:4px;overflow:hidden}.bar-p i{display:block;height:100%;background:var(--c-accent);transition:width var(--dur) var(--ease)}.bar-p--lg{height:16px;border-radius:var(--r-md)}
 .over{color:var(--c-danger);font-style:normal}
 .auto__blocks{display:flex;flex-direction:column;gap:var(--sp-3)}
 .blk{display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-3);background:var(--c-surface);border:var(--bw) solid var(--c-line);border-radius:var(--r-md)}
@@ -91,3 +91,9 @@
 .irow__a{grid-area:a;display:grid;grid-template-columns:40px 40px 1fr 1fr;justify-content:stretch}
 .irow__a .btn{height:40px}.atool,.phead{flex-direction:column;align-items:stretch}.phead .bar{flex-wrap:wrap}.ccard{flex-wrap:wrap}
 }
+
+.irw{display:flex;flex-direction:column;gap:var(--sp-1)}.irow__m[data-igt]{cursor:pointer}
+.ig{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:var(--sp-3);padding:var(--sp-2) var(--sp-3);background:var(--c-surface);border:var(--bw) solid var(--c-line);border-radius:var(--r-md)}
+.ig__w,.ig__c{display:flex;flex-direction:column;gap:var(--sp-2);min-width:0}.ig label{display:flex;flex-direction:column;gap:var(--sp-1);font-size:var(--fs-12);color:var(--c-muted)}
+.ig .area{min-height:160px;resize:vertical}.ig__k{flex-direction:row!important;align-items:center;color:var(--c-text)!important}
+@media(max-width:800px){.ig{grid-template-columns:1fr}}

@@ -1,13 +1,14 @@
-import {db} from "../app/db.js?v=20261126w";
-import {store} from "../app/store.js?v=20261126w";
-import {lightbox} from "../app/lightbox.js?v=20261126w";
-import {I} from "../app/icons.js?v=20261126w";
-import {esc,toast,modal} from "../app/ui.js?v=20261126w";
-import {fmtById} from "../app/formats.js?v=20261126w";
-import {STAGES} from "../studio/pipeline.js?v=20261126w";
-import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261126w";
+import {db} from "../app/db.js?v=20261126x";
+import {store} from "../app/store.js?v=20261126x";
+import {lightbox} from "../app/lightbox.js?v=20261126x";
+import {I} from "../app/icons.js?v=20261126x";
+import {esc,toast,modal} from "../app/ui.js?v=20261126x";
+import {fmtById} from "../app/formats.js?v=20261126x";
+import {STAGES} from "../studio/pipeline.js?v=20261126x";
+import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261126x";
 const STG={pending:0,downloading:.15,removing_bg:.4,analyzing:.6,background:.7,composing:.82,saving:.95,scheduled:1,error:1,cancelled:1},STN={downloading:"descargando fotos",removing_bg:"quitando fondos",analyzing:"analizando colores",background:"generando fondo",composing:"componiendo",saving:"guardando"};
 let drainBusy=false;
+const IGD={mode:"prueba",loc:true,alt:"",collab:""};
 const STALE=5*6e4;
 const WORK=["downloading","removing_bg","analyzing","background","composing","saving"];
 const CST={draft:"Borrador",running:"En marcha",paused:"Pausada",cancelled:"Cancelada",done:"Completada"};
@@ -70,7 +71,20 @@ export function mountCampaign(root,id){
     const l=items.slice(),[x]=l.splice(from,1);l.splice(to,0,x);items=l;paint();
     await reflow(l);await load();toast("Orden actualizado")
   }
+  const openIg=new Set(),igT={};
+  const igOf=(ps,i)=>({...IGD,alt:i.name,...((ps[0]&&ps[0].assets&&ps[0].assets.ig)||{})});
+  const igPanel=(i,ps)=>{
+    if(!openIg.has(i.id))return "";
+    if(!ps.length)return `<div class="ig"><p class="hint">Disponible cuando se generen las imágenes.</p></div>`;
+    const g=igOf(ps,i),c=ps[0].caption||"",pub=ps.every(p=>p.status==="published");
+    return `<div class="ig" data-igf="${i.id}"><div class="ig__w"><label>Descripción (con # y @)</label><textarea class="input area" data-k="caption" rows="6" maxlength="2200" placeholder="Escribe la descripción y los hashtags…"${pub?" disabled":""}>${esc(c)}</textarea><small class="hint" data-cnt>${c.length}/2200 · ${(c.match(/#[\p{L}\d_]+/gu)||[]).length}/30 hashtags</small></div>
+<div class="ig__c"><label>Modo<select class="select" data-k="mode"${pub?" disabled":""}><option value="prueba"${g.mode!=="publicar"?" selected":""}>Prueba (valida, no publica)</option><option value="publicar"${g.mode==="publicar"?" selected":""}>Publicar en Instagram</option></select></label>
+<label>Texto alternativo de las imágenes<input class="input" data-k="alt" value="${esc(g.alt)}"></label>
+<label>Colaboradores (@usuario, separados por coma)<input class="input" data-k="collab" value="${esc(g.collab)}" placeholder="opcional"></label>
+<label class="ig__k"><input type="checkbox" data-k="loc"${g.loc!==false?" checked":""}> Ubicación: Snackgame - Funko Store, Madrid</label>
+<small class="hint">Cuenta @snackgame.es · ${ps.length} publicación${ps.length>1?"es":""}${pub?" · ya publicada":""}. En modo Publicar sale a su hora (≤5 min de margen).</small></div></div>`};
   function paint(){
+    const ae=document.activeElement;if(ae&&ae.closest&&ae.closest(".ig"))return;
     if(!C){P.innerHTML='<p class="hint">Lista no encontrada.</p>';return}
     const now=Date.now(),beat=i=>i.locked_at?now-new Date(i.locked_at).getTime():0,quiet=i=>WORK.includes(i.status)&&beat(i)>9e4,nF=(C.formats||[]).length||1,n=C.images_per_post||1;
     const sch=items.filter(i=>i.status==="scheduled"),err=items.filter(i=>i.status==="error"),pend=items.filter(i=>i.status==="pending"),work=items.filter(i=>WORK.includes(i.status));
@@ -92,9 +106,10 @@ ${banner}${errs}
 <div class="prog"><div class="bar-p bar-p--lg"><i style="width:${pct}%"></i></div><span>${pct}% · ${sch.length}/${items.length} programadas</span></div>${qline}
 <p class="hint">Inicio: ${fmtMadrid(C.started_at)} · Se procesa en la nube (GitHub Actions) y sigue aunque cierres el navegador; este panel se actualiza solo.</p>
 <div class="irows">${items.map((i,k)=>{const ps=posts.filter(p=>p.item_id===i.id),w=(i.product&&i.product.warnings)||[];
-  return `<div class="irow" data-row="${k}"><span class="irow__n" draggable="true" data-drag="${k}" title="Arrastra para reordenar">${k+1}</span><span class="irow__t" ${ps[0]?`data-z="${i.id}"`:""}>${ps[0]&&ps[0].thumb_url?`<img src="${esc(ps[0].thumb_url)}" alt="">`:""}</span><div class="irow__m"><b>${esc(i.name)}</b><small>${esc(i.subtitle||"")}${w.length?` <i class="over">⚠ ${esc(w.join(" · "))}</i>`:""}${i.error?` <i class="over">${esc(i.error)}</i>`:""}</small></div><span class="irow__d">${fmtMadrid(i.scheduled_at)}</span><span class="stc stc--${i.status}${WORK.includes(i.status)?(quiet(i)?" is-quiet":" is-work"):""}">${quiet(i)?`Reintentando en ${Math.max(1,Math.ceil((STALE-beat(i))/6e4))} min`:(STAGES[i.status]||i.status)}${i.attempts>1&&i.status!=="scheduled"?` (${i.attempts})`:""}</span><span class="irow__a"><button class="btn btn--sm" data-mv="${k}:-1" title="Subir"${k?"":" disabled"}>↑</button><button class="btn btn--sm" data-mv="${k}:1" title="Bajar"${k<items.length-1?"":" disabled"}>↓</button><span class="irow__s">${i.status==="error"&&C.status!=="cancelled"?`<button class="btn btn--sm" data-r="${i.id}">Reintentar</button>`:ps[0]?`<a class="btn btn--sm" href="#/editor/${ps[0].id}">Abrir en editor</a>`:""}</span><span class="irow__s">${WORK.includes(i.status)?"":`<button class="btn btn--sm btn--danger" data-del="${i.id}" title="Eliminar este producto de la lista">Eliminar</button>`}</span></span></div>`}).join("")}</div>`;
+  return `<div class="irw"><div class="irow" data-row="${k}"><span class="irow__n" draggable="true" data-drag="${k}" title="Arrastra para reordenar">${k+1}</span><span class="irow__t" ${ps[0]?`data-z="${i.id}"`:""}>${ps[0]&&ps[0].thumb_url?`<img src="${esc(ps[0].thumb_url)}" alt="">`:""}</span><div class="irow__m" data-igt="${i.id}" title="Datos de publicación"><b>${openIg.has(i.id)?"▾":"▸"} ${esc(i.name)}${ps[0]&&ps[0].caption?"":""}</b><small>${esc(i.subtitle||"")}${w.length?` <i class="over">⚠ ${esc(w.join(" · "))}</i>`:""}${i.error?` <i class="over">${esc(i.error)}</i>`:""}</small></div><span class="irow__d">${fmtMadrid(i.scheduled_at)}</span><span class="stc stc--${i.status}${WORK.includes(i.status)?(quiet(i)?" is-quiet":" is-work"):""}">${quiet(i)?`Reintentando en ${Math.max(1,Math.ceil((STALE-beat(i))/6e4))} min`:(STAGES[i.status]||i.status)}${i.attempts>1&&i.status!=="scheduled"?` (${i.attempts})`:""}</span><span class="irow__a"><button class="btn btn--sm" data-mv="${k}:-1" title="Subir"${k?"":" disabled"}>↑</button><button class="btn btn--sm" data-mv="${k}:1" title="Bajar"${k<items.length-1?"":" disabled"}>↓</button><span class="irow__s">${i.status==="error"&&C.status!=="cancelled"?`<button class="btn btn--sm" data-r="${i.id}">Reintentar</button>`:ps[0]?`<a class="btn btn--sm" href="#/editor/${ps[0].id}">Abrir en editor</a>`:""}</span><span class="irow__s">${WORK.includes(i.status)?"":`<button class="btn btn--sm btn--danger" data-del="${i.id}" title="Eliminar este producto de la lista">Eliminar</button>`}</span></span></div>${igPanel(i,ps)}</div>`}).join("")}</div>`;
   }
   P.addEventListener("click",async e=>{
+    const tg=e.target.closest("[data-igt]");if(tg){const k=tg.dataset.igt;openIg.has(k)?openIg.delete(k):openIg.add(k);paint();return}
     const z=e.target.closest("[data-z]");
     if(z){const ps=posts.filter(p=>p.item_id===z.dataset.z),it=items.find(i=>i.id===z.dataset.z);lightbox(ps.flatMap(p=>(p.assets&&p.assets.finals)||[p.thumb_url]).filter(Boolean),it&&it.name);return}
     const b=e.target.closest("button");if(!b)return;
@@ -107,7 +122,7 @@ ${banner}${errs}
       if(b.dataset.r){await db.update("campaign_items",b.dataset.r,{status:"pending",attempts:0,error:null,locked_by:null});await setC({status:"running"});toast("Reintento en cola")}
       else if(b.dataset.a==="start"){await setC({status:"running",started_at:new Date().toISOString()});toast("Iniciada")}
       else if(b.dataset.a==="now"){if(drainBusy)return;drainBusy=true;paint();toast("Procesando en este navegador: mantén esta pestaña abierta…");
-        try{await import("../studio/worker.js?v=20261126w");const log=await window.__drain("web-"+Date.now(),40*60e3);const bad=log.filter(x=>x[1]!=="ok").length;toast(`Terminado: ${log.length-bad} correctas${bad?`, ${bad} con error`:""}`)}catch(er){toast(er.message||String(er),{kind:"err"})}finally{drainBusy=false;await load()}}
+        try{await import("../studio/worker.js?v=20261126x");const log=await window.__drain("web-"+Date.now(),40*60e3);const bad=log.filter(x=>x[1]!=="ok").length;toast(`Terminado: ${log.length-bad} correctas${bad?`, ${bad} con error`:""}`)}catch(er){toast(er.message||String(er),{kind:"err"})}finally{drainBusy=false;await load()}}
       else if(b.dataset.a==="pause")await setC({status:"paused"});
       else if(b.dataset.a==="resume")await setC({status:"running"});
       else if(b.dataset.a==="retry"){await fetch(`${db.REST}campaign_items?campaign_id=eq.${id}&status=eq.error`,{method:"PATCH",headers:db.H,body:JSON.stringify({status:"pending",attempts:0,error:null,locked_by:null})});await setC({status:"running"});toast("Errores en cola")}
@@ -117,6 +132,18 @@ ${banner}${errs}
       else if(b.dataset.a==="add")location.hash=`#/automatizaciones/nueva/${id}`;
     }catch(er){toast(er.message,{kind:"err"})}
   });
+  const igSave=async f=>{
+    const id_=f.dataset.igf,ps=posts.filter(p=>p.item_id===id_);if(!ps.length)return;
+    const v=k=>f.querySelector(`[data-k=${k}]`),it=items.find(x=>x.id===id_);
+    const ig={mode:v("mode").value,alt:v("alt").value.trim(),collab:v("collab").value.trim(),loc:v("loc").checked},caption=v("caption").value;
+    try{await Promise.all(ps.map(p=>{const patch={caption,assets:{...p.assets,ig}};
+      if(ig.mode==="publicar"&&p.status==="review")patch.status="scheduled";
+      Object.assign(p,patch);return db.update("posts",p.id,patch)}));}catch(er){toast(er.message,{kind:"err"})}
+  };
+  P.addEventListener("input",e=>{const f=e.target.closest("[data-igf]");if(!f)return;
+    const t=f.querySelector("[data-k=caption]"),c=f.querySelector("[data-cnt]");if(c)c.textContent=`${t.value.length}/2200 · ${(t.value.match(/#[\p{L}\d_]+/gu)||[]).length}/30 hashtags`;
+    clearTimeout(igT[f.dataset.igf]);igT[f.dataset.igf]=setTimeout(()=>igSave(f),700)});
+  P.addEventListener("change",e=>{const f=e.target.closest("[data-igf]");if(!f)return;clearTimeout(igT[f.dataset.igf]);igSave(f).then(()=>toast("Guardado"))});
   P.addEventListener("dragstart",e=>{const h=e.target.closest&&e.target.closest("[data-drag]");if(!h)return;dragging=h.dataset.drag;try{e.dataTransfer.setData("text/plain","x");e.dataTransfer.effectAllowed="move"}catch{}});
   P.addEventListener("dragover",e=>{if(dragging===false)return;const r=e.target.closest(".irow");if(r){e.preventDefault();P.querySelectorAll(".irow.is-over").forEach(x=>x.classList.remove("is-over"));r.classList.add("is-over")}});
   P.addEventListener("drop",e=>{const r=e.target.closest(".irow");if(dragging===false||!r)return;e.preventDefault();const from=+dragging,to=+r.dataset.row;dragging=false;move(from,to)});

@@ -1,6 +1,6 @@
-import {FONTS,loadFont,WEIGHT_NAMES} from "../app/fonts.js?v=20261126w";
-import {BLENDS} from "./editor.js?v=20261126w";
-import {Shadow} from "../../vendor/fabric.min.mjs?v=20261126w";
+import {FONTS,loadFont,WEIGHT_NAMES} from "../app/fonts.js?v=20261126x";
+import {BLENDS} from "./editor.js?v=20261126x";
+import {Shadow} from "../../vendor/fabric.min.mjs?v=20261126x";
 const S=d=>`<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const IC={
  b:S('<path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z"/>'),i:S('<path d="M19 4h-9M14 20H5M15 4 9 20"/>'),

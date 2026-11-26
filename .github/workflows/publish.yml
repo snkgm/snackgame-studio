@@ -21,4 +21,5 @@ jobs:
           STUDIO_PASSWORD: ${{ secrets.STUDIO_PASSWORD }}
           IG_TOKEN: ${{ secrets.IG_TOKEN }}
           IG_USER_ID: "17841457354040174"
+          IG_LOCATION_ID: ${{ vars.IG_LOCATION_ID }}
           DRY: ${{ github.event.inputs.dry }}

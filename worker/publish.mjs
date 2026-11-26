@@ -1,4 +1,5 @@
 const SB=process.env.SUPABASE_URL,KEY=process.env.SUPABASE_KEY,TOK=process.env.IG_TOKEN,IG=process.env.IG_USER_ID||"17841457354040174",DRY=process.env.DRY==="1";
+const LOC=process.env.IG_LOCATION_ID||"";
 const G="https://graph.facebook.com/v23.0/";
 if(!TOK){console.log("Sin IG_TOKEN");process.exit(0)}
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -19,23 +20,28 @@ for(const p of posts){
   const m=p.assets?.meta||{};if(m.published)continue;
   const isStory=p.format==="story-9x16",isFeed=/^(post-|carousel-)/.test(p.format);
   if(!isStory&&!isFeed)continue;
+  const g=p.assets?.ig||{},mode=g.mode==="publicar"?"publicar":"prueba",cap=(p.caption||"").trim();
   const key=(p.group_id||p.item_id||p.id)+(isStory?":s":":f");
   const set=async(patch)=>rest(`posts?id=eq.${p.id}`,{method:"PATCH",body:JSON.stringify(patch)});
-  if(seen.has(key)){await set({status:"published",assets:{...p.assets,meta:{...m,published:true,skipped:"duplicado de formato"}}});continue}
+  if(seen.has(key)){await set({status:mode==="publicar"?"published":"review",assets:{...p.assets,meta:{...m,published:mode==="publicar",skipped:"duplicado de formato"}}});continue}
   seen.add(key);
   const urls=(p.assets?.finals||[]).slice(0,10);
   if(!urls.length){await set({status:"error",error_msg:"Sin imágenes finales"});continue}
+  if(!isStory&&mode==="publicar"&&!cap){await set({status:"error",error_msg:"Falta la descripción"});continue}
+  const alt=(g.alt||p.title||"").slice(0,1000),col=(g.collab||"").split(/[,\s]+/).map(x=>x.replace(/^@/,"")).filter(Boolean),ex={};
+  if(LOC&&g.loc!==false)ex.location_id=LOC;if(col.length)ex.collaborators=JSON.stringify(col);
   try{
     if(DRY){console.log("DRY",p.title,urls.length);continue}
     let cid;
     if(isStory)cid=(await ig(IG+"/media",{image_url:urls[0],media_type:"STORIES"})).id;
-    else if(urls.length===1)cid=(await ig(IG+"/media",{image_url:urls[0],caption:p.caption||""})).id;
+    else if(urls.length===1)cid=(await ig(IG+"/media",{image_url:urls[0],caption:cap,alt_text:alt,...ex})).id;
     else{
-      const kids=[];for(const u of urls)kids.push((await ig(IG+"/media",{image_url:u,is_carousel_item:"true"})).id);
+      const kids=[];for(const u of urls)kids.push((await ig(IG+"/media",{image_url:u,is_carousel_item:"true",alt_text:alt})).id);
       for(const k of kids)await ready(k);
-      cid=(await ig(IG+"/media",{media_type:"CAROUSEL",children:kids.join(","),caption:p.caption||""})).id;
+      cid=(await ig(IG+"/media",{media_type:"CAROUSEL",children:kids.join(","),caption:cap,...ex})).id;
     }
     await ready(cid);
+    if(mode!=="publicar"){await set({status:"review",error_msg:null,assets:{...p.assets,meta:{...m,tested_at:new Date().toISOString(),test_ok:true}}});console.log("Prueba OK",p.title);continue}
     const pub=await ig(IG+"/media_publish",{creation_id:cid});
     await set({status:"published",error_msg:null,assets:{...p.assets,meta:{...m,published:true,ig_media_id:pub.id,published_at:new Date().toISOString()}}});
     console.log("Publicado",p.title,pub.id);n++;
