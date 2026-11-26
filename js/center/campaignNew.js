@@ -1,12 +1,12 @@
-import {store} from "../app/store.js?v=20261127f";
-import {db} from "../app/db.js?v=20261127f";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261127f";
-import {lightbox} from "../app/lightbox.js?v=20261127f";
-import {I} from "../app/icons.js?v=20261127f";
-import {esc,toast} from "../app/ui.js?v=20261127f";
-import {schedBody,schedClick} from "./schedUi.js?v=20261127f";
-import {scheduleDates,fmtMadrid,parseList} from "../studio/schedule.js?v=20261127f";
-import {fetchProduct,validateGallery,usable,handleOf} from "../studio/gallery.js?v=20261127f";
+import {store} from "../app/store.js?v=20261127g";
+import {db} from "../app/db.js?v=20261127g";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261127g";
+import {lightbox} from "../app/lightbox.js?v=20261127g";
+import {I} from "../app/icons.js?v=20261127g";
+import {esc,toast} from "../app/ui.js?v=20261127g";
+import {schedBody,schedClick} from "./schedUi.js?v=20261127g";
+import {scheduleDates,fmtMadrid,parseList} from "../studio/schedule.js?v=20261127g";
+import {fetchProduct,validateGallery,usable,handleOf} from "../studio/gallery.js?v=20261127g";
 const LIM={name:40,sub:60},DAYS=["L","M","X","J","V","S","D"],pad=n=>String(n).padStart(2,"0");
 const thumb=(src,w=140)=>{try{const u=new URL(src);u.searchParams.set("width",w);return u.toString()}catch{return src}};
 export function mountCampaignNew(root,addTo){

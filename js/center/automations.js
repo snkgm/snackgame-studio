@@ -1,12 +1,12 @@
-import {db} from "../app/db.js?v=20261127f";
-import {store} from "../app/store.js?v=20261127f";
-import {lightbox} from "../app/lightbox.js?v=20261127f";
-import {I} from "../app/icons.js?v=20261127f";
-import {esc,toast,modal} from "../app/ui.js?v=20261127f";
-import {fmtById} from "../app/formats.js?v=20261127f";
-import {STAGES} from "../studio/pipeline.js?v=20261127f";
-import {schedBody,schedClick,schedChange} from "./schedUi.js?v=20261127f";
-import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261127f";
+import {db} from "../app/db.js?v=20261127g";
+import {store} from "../app/store.js?v=20261127g";
+import {lightbox} from "../app/lightbox.js?v=20261127g";
+import {I} from "../app/icons.js?v=20261127g";
+import {esc,toast,modal} from "../app/ui.js?v=20261127g";
+import {fmtById} from "../app/formats.js?v=20261127g";
+import {STAGES} from "../studio/pipeline.js?v=20261127g";
+import {schedBody,schedClick,schedChange} from "./schedUi.js?v=20261127g";
+import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261127g";
 const STG={pending:0,downloading:.15,removing_bg:.4,analyzing:.6,background:.7,composing:.82,saving:.95,scheduled:1,error:1,cancelled:1},STN={downloading:"descargando fotos",removing_bg:"quitando fondos",analyzing:"analizando colores",background:"generando fondo",composing:"componiendo",saving:"guardando"};
 let drainBusy=false;
 const IGD={mode:"prueba",loc:true,alt:"",collab:""};
@@ -116,8 +116,8 @@ export function mountCampaign(root,id){
     const active=["running","done"].includes(C.status);
     const banner=remaining===0&&items.length&&active&&C.status!=="cancelled"?`<div class="banner banner--red"><b>LISTA AGOTADA</b><span>No quedan publicaciones por publicar. Añade más productos para continuar.</span></div>`:(C.status==="done"&&!err.length?`<div class="banner banner--ok"><b>COMPLETADA</b><span>Todas las publicaciones están programadas.</span><button class="btn btn--sm" data-a="ics">Añadir al calendario (aviso 5 min antes)</button></div>`:"");
     const errs=err.length?`<div class="banner banner--warn"><b>${err.length} incidencia${err.length>1?"s":""}</b><span>${[...new Set(err.map(e=>e.error||"Error"))].map(esc).join(" · ")}</span></div>`:"";
-    const btns=[U&&C.status!=="cancelled"?`<button class="btn btn--accent" data-a="pubnow" title="Publicar ahora la siguiente publicación">Publicar ahora</button>`:"",C.status!=="cancelled"?`<button class="btn" data-a="edit">Editar automatización</button>`:"",C.status==="draft"?`<button class="btn btn--accent" data-a="start">Iniciar</button>`:"",C.status==="running"?`<button class="btn" data-a="pause">Pausar</button>`:"",C.status==="running"&&(pend.length||work.length)?`<button class="btn btn--accent" data-a="now"${drainBusy?" disabled":""}>${drainBusy?"Procesando aquí…":"Procesar ahora"}</button>`:"",C.status==="paused"?`<button class="btn btn--accent" data-a="resume">Reanudar</button>`:"",err.length&&C.status!=="cancelled"?`<button class="btn" data-a="retry">Reintentar errores</button>`:"",sch.length?`<button class="btn" data-a="ics" title="Descarga un .ics con aviso 5 min antes de cada publicación">Añadir al calendario</button>`:"",C.status!=="cancelled"&&sch.length?`<button class="btn" data-a="regen">Regenerar imágenes</button>`:"",C.status!=="cancelled"?`<button class="btn" data-a="add">Añadir productos</button>`:"",!["cancelled","done"].includes(C.status)?`<button class="btn btn--ghost" data-a="cancel">Cancelar</button>`:""].join("");
     const U=upcoming(),nT=items.filter(i=>i.status!=="cancelled").length,sts=items.map(i=>({i,st:i.status==="scheduled"?pstate(i,psOf(i)):null}));
+    const btns=[U&&C.status!=="cancelled"?`<button class="btn btn--accent" data-a="pubnow" title="Publicar ahora la siguiente publicación">Publicar ahora</button>`:"",C.status!=="cancelled"?`<button class="btn" data-a="edit">Editar automatización</button>`:"",C.status==="draft"?`<button class="btn btn--accent" data-a="start">Iniciar</button>`:"",C.status==="running"?`<button class="btn" data-a="pause">Pausar</button>`:"",C.status==="running"&&(pend.length||work.length)?`<button class="btn btn--accent" data-a="now"${drainBusy?" disabled":""}>${drainBusy?"Procesando aquí…":"Procesar ahora"}</button>`:"",C.status==="paused"?`<button class="btn btn--accent" data-a="resume">Reanudar</button>`:"",err.length&&C.status!=="cancelled"?`<button class="btn" data-a="retry">Reintentar errores</button>`:"",sch.length?`<button class="btn" data-a="ics" title="Descarga un .ics con aviso 5 min antes de cada publicación">Añadir al calendario</button>`:"",C.status!=="cancelled"&&sch.length?`<button class="btn" data-a="regen">Regenerar imágenes</button>`:"",C.status!=="cancelled"?`<button class="btn" data-a="add">Añadir productos</button>`:"",!["cancelled","done"].includes(C.status)?`<button class="btn btn--ghost" data-a="cancel">Cancelar</button>`:""].join("");
     const nPub=sts.filter(x=>x.st&&x.st[0]==="published").length,nQ=sts.filter(x=>x.st&&["queued","next","publishing","late"].includes(x.st[0])).length,nPrep=sts.filter(x=>x.st&&["prepared","tested"].includes(x.st[0])).length,nErr=sts.filter(x=>(x.st&&x.st[0]==="error")||x.i.status==="error").length,nGen=pend.length+work.length;
     const w=n=>nT?(n/nT*100).toFixed(1)+"%":"0%",lastPub=posts.map(p=>mOf(p).published_at).filter(Boolean).sort().pop();
     const uWhen=U?whenOf(U.i,U.ps):null,uPub=U&&U.ps.some(p=>gOf(p).mode==="publicar");
@@ -149,7 +149,7 @@ ${banner}${errs}
       if(b.dataset.r){await db.update("campaign_items",b.dataset.r,{status:"pending",attempts:0,error:null,locked_by:null});await setC({status:"running"});toast("Reintento en cola")}
       else if(b.dataset.a==="start"){await setC({status:"running",started_at:new Date().toISOString()});toast("Iniciada")}
       else if(b.dataset.a==="now"){if(drainBusy)return;drainBusy=true;paint();toast("Procesando en este navegador: mantén esta pestaña abierta…");
-        try{await import("../studio/worker.js?v=20261127f");const log=await window.__drain("web-"+Date.now(),40*60e3);const bad=log.filter(x=>x[1]!=="ok").length;toast(`Terminado: ${log.length-bad} correctas${bad?`, ${bad} con error`:""}`)}catch(er){toast(er.message||String(er),{kind:"err"})}finally{drainBusy=false;await load()}}
+        try{await import("../studio/worker.js?v=20261127g");const log=await window.__drain("web-"+Date.now(),40*60e3);const bad=log.filter(x=>x[1]!=="ok").length;toast(`Terminado: ${log.length-bad} correctas${bad?`, ${bad} con error`:""}`)}catch(er){toast(er.message||String(er),{kind:"err"})}finally{drainBusy=false;await load()}}
       else if(b.dataset.a==="pause")await setC({status:"paused"});
       else if(b.dataset.a==="resume")await setC({status:"running"});
       else if(b.dataset.a==="retry"){await fetch(`${db.REST}campaign_items?campaign_id=eq.${id}&status=eq.error`,{method:"PATCH",headers:db.H,body:JSON.stringify({status:"pending",attempts:0,error:null,locked_by:null})});await setC({status:"running"});toast("Errores en cola")}
