@@ -1,14 +1,14 @@
-import {store} from "./store.js?v=20261126z";
-import {mountCenter} from "../center/center.js?v=20261126z";
-import {mountSettings} from "../center/settings.js?v=20261126z";
-import {mountEditor} from "../editor/editorView.js?v=20261126z";
-import {mountTemplates} from "../center/templates.js?v=20261126z";
-import {mountAutomations,mountCampaign} from "../center/automations.js?v=20261126z";
-import {mountCampaignNew} from "../center/campaignNew.js?v=20261126z";
-import {CONFIG} from "./config.js?v=20261126z";
-import {auth} from "./auth.js?v=20261126z";
-import {closeMenu} from "./ui.js?v=20261126z";
-import {initNotify} from "./notify.js?v=20261126z";
+import {store} from "./store.js?v=20261127a";
+import {mountCenter} from "../center/center.js?v=20261127a";
+import {mountSettings} from "../center/settings.js?v=20261127a";
+import {mountEditor} from "../editor/editorView.js?v=20261127a";
+import {mountTemplates} from "../center/templates.js?v=20261127a";
+import {mountAutomations,mountCampaign} from "../center/automations.js?v=20261127a";
+import {mountCampaignNew} from "../center/campaignNew.js?v=20261127a";
+import {CONFIG} from "./config.js?v=20261127a";
+import {auth} from "./auth.js?v=20261127a";
+import {closeMenu} from "./ui.js?v=20261127a";
+import {initNotify} from "./notify.js?v=20261127a";
 let view=document.getElementById("view");
 let cleanup=null,token=0;
 let lastHash=location.hash;
@@ -19,7 +19,10 @@ async function route(){
   const my=++token;
   cleanup?.();cleanup=null;closeMenu();const fresh=view.cloneNode(false);view.replaceWith(fresh);view=fresh;
   const [a,id,id2]=location.hash.replace(/^#\/?/,"").split("/");
-  document.body.classList.toggle("is-editor",a==="editor"||a==="plantilla");
+  const ed=a==="editor"||a==="plantilla",mob=matchMedia("(max-width:720px)").matches;
+  if(ed&&mob){document.body.classList.remove("is-editor");document.querySelectorAll("[data-nav]").forEach(n=>n.classList.remove("is-on"));
+    view.innerHTML='<div class="mnote"><h1>Editor solo en ordenador</h1><p class="hint">Editar imágenes y plantillas desde el móvil está desactivado para evitar errores. Desde aquí puedes revisar, programar y seguir tus publicaciones.</p><a class="btn btn--accent" href="#/">Volver a publicaciones</a></div>';return}
+  document.body.classList.toggle("is-editor",ed);
   document.querySelectorAll("[data-nav]").forEach(n=>n.classList.toggle("is-on",n.dataset.nav===(a||"")));
   let c;
   if(a==="editor"&&id){store.flush();c=await mountEditor(view,id)}

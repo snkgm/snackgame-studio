@@ -1,0 +1,40 @@
+/* Móvil: la página se desplaza como un documento normal; nada más ancho que la pantalla */
+@media(max-width:720px){
+html,body{height:auto;max-width:100%;overflow-x:hidden}
+body{display:block;min-height:100dvh}
+body{padding-bottom:0!important}
+#view{display:block;flex:none;min-height:0;overflow:visible!important;max-width:100%}
+#view>*{max-width:100%;box-sizing:border-box}
+.center,.settings,.auto{height:auto!important;min-height:0;overflow:visible!important;display:flex;flex-direction:column;gap:var(--sp-2)}
+.center .cbody,.cbody{overflow:visible!important;height:auto!important;min-height:0;flex:none}
+.cbody>.mgrid,.cbody>.wgrid,.cbody>.lrows,.cbody>.empty{height:auto!important;overflow:visible!important}
+.mgrid{grid-template-rows:32px repeat(6,minmax(64px,auto))!important;grid-auto-rows:minmax(64px,auto)!important}
+.day{overflow:hidden;min-width:0}.day__list{overflow:hidden}
+.mgrid__dow{padding:0;justify-content:center;font-size:11px}
+.chip{min-width:0}.chip__time{display:none}
+.day .chip{height:24px;padding:0 4px}.day .chip__title{font-size:11px}
+.ctools{flex-wrap:wrap;gap:var(--sp-1)}
+.center .ctools__nav,.ctools__nav{width:auto!important;flex:none;flex-wrap:wrap}
+.center .ctools__title,.ctools__title{flex:1 1 100%;margin:0;font-size:var(--fs-20,20px);white-space:normal;overflow:visible}
+.cbar,.filters,.sum{width:100%}
+.filters .select,.search,.search .input{width:100%;max-width:100%}
+.center .tray{height:auto;flex-wrap:wrap;overflow:visible}.tray .chip{width:100%}
+.cbar .btn,.atool .btn{min-height:40px}
+.btn,.select,.input,.nav__tab{touch-action:manipulation}
+input,select,textarea{font-size:16px!important}
+.btn{min-height:40px}
+.tgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-2)}
+.set__row,.set__add,.setr,.imgt__bar{flex-wrap:wrap}.set__row--p{grid-template-columns:1fr}
+.modal__box{width:calc(100vw - 16px);max-width:100%;max-height:calc(100dvh - 16px)}
+.exp{grid-template-columns:1fr;min-width:0}
+h1,h2,.auto__h{overflow-wrap:anywhere}
+.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+.phead .bar .btn{flex:1 1 calc(50% - 8px)}
+.irow__m b,.irow__m small{white-space:normal}
+.lrow{grid-template-columns:40px minmax(0,1fr) auto}.lrow>*{min-width:0}
+/* sin edición en móvil */
+a[href^="#/editor"],a[href^="#/plantilla/"],[data-new],[data-add],.irow__s a.btn{display:none!important}
+.wcard,.chip{cursor:default}
+.mnote{display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-4) var(--sp-3);align-items:flex-start}
+.nav__tabs{position:fixed!important;left:0;right:0;bottom:0!important;z-index:900;transform:translateZ(0)}
+}

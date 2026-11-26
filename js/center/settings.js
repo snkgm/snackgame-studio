@@ -1,7 +1,7 @@
-import {store} from "../app/store.js?v=20261126z";
-import {I} from "../app/icons.js?v=20261126z";
-import {esc,toast} from "../app/ui.js?v=20261126z";
-import {logoUrl,uploadLogo} from "../app/brand.js?v=20261126z";
+import {store} from "../app/store.js?v=20261127a";
+import {I} from "../app/icons.js?v=20261127a";
+import {esc,toast} from "../app/ui.js?v=20261127a";
+import {logoUrl,uploadLogo} from "../app/brand.js?v=20261127a";
 export function mountSettings(root){
   const ST={post_types:{open:false,ren:{},del:new Set()},categories:{open:false,ren:{},del:new Set()}};
   const dirty=t=>Object.keys(ST[t].ren).length>0||ST[t].del.size>0;
