@@ -1,0 +1,24 @@
+name: Publicar en Instagram
+on:
+  schedule: [{cron: "*/5 * * * *"}]
+  workflow_dispatch:
+    inputs: {dry: {description: "Solo simular (1)", default: "0"}}
+concurrency: {group: studio-publish, cancel-in-progress: false}
+permissions: {contents: read}
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node worker/publish.mjs
+        env:
+          SUPABASE_URL: https://rppsssqdcgrhbjcivsal.supabase.co
+          SUPABASE_KEY: sb_publishable_3R43V8OIztDdh_WMD2YAqg_9x_57DPM
+          STUDIO_EMAIL: ${{ secrets.STUDIO_EMAIL }}
+          STUDIO_PASSWORD: ${{ secrets.STUDIO_PASSWORD }}
+          IG_TOKEN: ${{ secrets.IG_TOKEN }}
+          IG_USER_ID: "17841457354040174"
+          DRY: ${{ github.event.inputs.dry }}
