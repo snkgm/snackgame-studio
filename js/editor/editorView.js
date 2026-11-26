@@ -1,25 +1,25 @@
-import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261127c";
-import {Editor} from "./editor.js?v=20261127c";
-import {LayersPanel} from "./layers.js?v=20261127c";
-import {mountInspector} from "./inspector.js?v=20261127c";
-import {loadAllFonts} from "../app/fonts.js?v=20261127c";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261127c";
-import {sessionStart} from "./accordion.js?v=20261127c";
-import {scrollFade} from "./scrollfade.js?v=20261127c";
-import {openTplSettings} from "./tplsettings.js?v=20261127c";
-import {openExport} from "./exporter.js?v=20261127c";
-import {statusHtml,mountStatusBar} from "./statusbar.js?v=20261127c";
-import {mountCtxBar} from "./ctxbar.js?v=20261127c";
-import {mountComposer} from "./composer.js?v=20261127c";
-import {safeOf} from "../studio/skeleton.js?v=20261127c";
-import {openProductPicker} from "./product.js?v=20261127c";
-import {openImageTool,openShapes,openTextStyles,openOverlayTool,closePop} from "./tools.js?v=20261127c";
-import {zipBlobs} from "../app/zip.js?v=20261127c";
-import {I} from "../app/icons.js?v=20261127c";
-import {db} from "../app/db.js?v=20261127c";
-import {store} from "../app/store.js?v=20261127c";
-import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261127c";
-import {toInput,fromInput} from "../app/dates.js?v=20261127c";
+import {ActiveSelection} from "../../vendor/fabric.min.mjs?v=20261127d";
+import {Editor} from "./editor.js?v=20261127d";
+import {LayersPanel} from "./layers.js?v=20261127d";
+import {mountInspector} from "./inspector.js?v=20261127d";
+import {loadAllFonts} from "../app/fonts.js?v=20261127d";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261127d";
+import {sessionStart} from "./accordion.js?v=20261127d";
+import {scrollFade} from "./scrollfade.js?v=20261127d";
+import {openTplSettings} from "./tplsettings.js?v=20261127d";
+import {openExport} from "./exporter.js?v=20261127d";
+import {statusHtml,mountStatusBar} from "./statusbar.js?v=20261127d";
+import {mountCtxBar} from "./ctxbar.js?v=20261127d";
+import {mountComposer} from "./composer.js?v=20261127d";
+import {safeOf} from "../studio/skeleton.js?v=20261127d";
+import {openProductPicker} from "./product.js?v=20261127d";
+import {openImageTool,openShapes,openTextStyles,openOverlayTool,closePop} from "./tools.js?v=20261127d";
+import {zipBlobs} from "../app/zip.js?v=20261127d";
+import {I} from "../app/icons.js?v=20261127d";
+import {db} from "../app/db.js?v=20261127d";
+import {store} from "../app/store.js?v=20261127d";
+import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal} from "../app/ui.js?v=20261127d";
+import {toInput,fromInput} from "../app/dates.js?v=20261127d";
 export async function mountEditor(root,id,{template=false}={}){
   const table=template?"templates":"posts";
   root.innerHTML='<div class="empty">Cargando…</div>';
@@ -98,8 +98,16 @@ ${statusHtml()}
       const blob=await ed.thumbBlob();
       let thumb=post.thumb_url;
       try{thumb=await db.upload(`thumbs/${template?"t-":""}${post.id}.jpg`,blob)}catch{}
-      await upd(bodyOf(thumb));
-      post.thumb_url=thumb;mark();setSave("Guardado");
+      const body=bodyOf(thumb);
+      const fin=!template&&post.assets&&Array.isArray(post.assets.finals)?post.assets.finals:null;
+      if(fin&&fin.length){
+        const files=await ed.exportAll("jpg"),P="/object/public/studio/",pth=u=>{const i=u.indexOf(P);return i<0?null:decodeURIComponent(u.slice(i+P.length).split("?")[0])};
+        const dir=(pth(fin[0])||"").replace(/\/[^/]*$/,"")||`posts/${post.id}`;
+        const urls=[];for(let i=0;i<files.length;i++)urls.push(await db.upload((fin[i]&&pth(fin[i]))||`${dir}/edit-${i+1}.jpg`,files[i].blob));
+        body.assets={...post.assets,finals:urls,order:urls.map((_,i)=>i+1),meta:{...(post.assets.meta||{}),edited_at:new Date().toISOString()}};
+      }
+      await upd(body);
+      post.thumb_url=thumb;if(body.assets)post.assets=body.assets;mark();setSave("Guardado");
     }catch(e){dirty=true;setSave("Error al guardar",true);toast(e.message,{kind:"err"})}
     saving=false;
   }
