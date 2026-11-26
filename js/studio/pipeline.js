@@ -1,9 +1,9 @@
-import {db} from "../app/db.js?v=20261126q";
-import {store} from "../app/store.js?v=20261126q";
-import {fmtById} from "../app/formats.js?v=20261126q";
-import {composeMulti} from "./compose.js?v=20261126q";
-import {fetchProduct,validateGallery,usable,Fatal} from "./gallery.js?v=20261126q";
-import {cutoutFor,mattingInfo} from "../img/matting.js?v=20261126q";
+import {db} from "../app/db.js?v=20261126r";
+import {store} from "../app/store.js?v=20261126r";
+import {fmtById} from "../app/formats.js?v=20261126r";
+import {composeMulti} from "./compose.js?v=20261126r";
+import {fetchProduct,validateGallery,usable,Fatal} from "./gallery.js?v=20261126r";
+import {cutoutFor,mattingInfo} from "../img/matting.js?v=20261126r";
 const ext=b=>(b.type.split("/")[1]||"jpg").replace("jpeg","jpg");
 export const STAGES={pending:"Pendiente",downloading:"Descargando fotografías",removing_bg:"Eliminando fondo",analyzing:"Analizando colores",background:"Generando fondo",composing:"Componiendo imágenes",saving:"Guardando",scheduled:"Programada",error:"Error",cancelled:"Cancelada"};
 function limitWarnings(tpl,prod){

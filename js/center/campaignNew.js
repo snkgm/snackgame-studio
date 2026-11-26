@@ -1,11 +1,11 @@
-import {store} from "../app/store.js?v=20261126q";
-import {db} from "../app/db.js?v=20261126q";
-import {FORMATS,fmtById} from "../app/formats.js?v=20261126q";
-import {lightbox} from "../app/lightbox.js?v=20261126q";
-import {I} from "../app/icons.js?v=20261126q";
-import {esc,toast} from "../app/ui.js?v=20261126q";
-import {scheduleDates,fmtMadrid,parseList} from "../studio/schedule.js?v=20261126q";
-import {fetchProduct,validateGallery,usable,handleOf} from "../studio/gallery.js?v=20261126q";
+import {store} from "../app/store.js?v=20261126r";
+import {db} from "../app/db.js?v=20261126r";
+import {FORMATS,fmtById} from "../app/formats.js?v=20261126r";
+import {lightbox} from "../app/lightbox.js?v=20261126r";
+import {I} from "../app/icons.js?v=20261126r";
+import {esc,toast} from "../app/ui.js?v=20261126r";
+import {scheduleDates,fmtMadrid,parseList} from "../studio/schedule.js?v=20261126r";
+import {fetchProduct,validateGallery,usable,handleOf} from "../studio/gallery.js?v=20261126r";
 const LIM={name:40,sub:60},DAYS=["L","M","X","J","V","S","D"],pad=n=>String(n).padStart(2,"0");
 const thumb=(src,w=140)=>{try{const u=new URL(src);u.searchParams.set("width",w);return u.toString()}catch{return src}};
 export function mountCampaignNew(root){
@@ -25,7 +25,7 @@ export function mountCampaignNew(root){
     const nOk=(r.gallery||[]).length,sel=r.sel.length,diff=sel-S.n;
     const cnt=r.gallery?`<div class="pc__cnt ${diff===0?"ok":"bad"}"><b>${sel} DE ${S.n} IMÁGENES SELECCIONADAS</b><span>${nOk} disponibles${diff>0?` · te pasas en ${diff}`:diff<0?` · falta${-diff>1?"n":""} ${-diff}`:""}</span></div>`:"";
     const g=(r.gallery||[]).map((p,j)=>{const k=r.sel.indexOf(j);return `<button type="button" class="ph ph--l${k>=0?" is-sel":""}${!p.ok||p.dup?" is-bad":""}" ${k>=0?'draggable="true"':""} data-r="${r.id}" data-p="${j}" title="${esc(p.why||(k>=0?"Seleccionada · arrastra para ordenar":"Clic para elegir"))}"><img src="${esc(thumb(p.src,200))}" alt="" loading="lazy" draggable="false"><span class="ph__z" data-big="${r.id}:${j}" title="Ampliar">⤢</span>${k>=0?`<b>${k+1}</b><em>✅</em>`:""}${!p.ok||p.dup?`<u>${esc(p.why)}</u>`:""}</button>`}).join("");
-    return `<article class="pc${r.err?" is-err":""}" data-card="${r.id}"><div class="pc__l"><div class="pc__t"><b class="pc__id">#${i+1}</b><div class="cnt pc__n"><input class="input" data-n="${r.id}" value="${esc(r.name)}" placeholder="Nombre del producto" aria-label="Nombre"><small class="${r.name.length>LIM.name?"over":""}">${r.name.length}/${LIM.name}</small></div><button type="button" class="btn btn--sm" data-del="${r.id}" title="Eliminar producto" aria-label="Eliminar">${I["trash"]||"✕"}</button></div>
+    return `<article class="pc${r.err?" is-err":""}" data-card="${r.id}"><div class="pc__l"><div class="pc__t"><b class="pc__id">#${i+1}</b><div class="cnt pc__n"><input class="input" data-n="${r.id}" value="${esc(r.name)}" placeholder="Nombre del producto" aria-label="Nombre"><small class="${r.name.length>LIM.name?"over":""}">${r.name.length}/${LIM.name}</small></div><button type="button" class="btn btn--sm" data-del="${r.id}" title="Eliminar producto" aria-label="Eliminar">✕</button></div>
 <div class="pc__u"><input class="input" data-u="${r.id}" value="${esc(r.url)}" placeholder="https://snackgame.es/products/…" aria-label="URL" spellcheck="false"><button type="button" class="btn btn--sm" data-an="${r.id}">${r.gallery?"Reanalizar":"Analizar"}</button></div>
 <div class="cnt"><input class="input" data-s="${r.id}" value="${esc(r.subtitle)}" placeholder="Subtítulo (opcional)" aria-label="Subtítulo"><small class="${r.subtitle.length>LIM.sub?"over":""}">${r.subtitle.length}/${LIM.sub}</small></div>
 <div class="pc__s">${stOf(r)}${r.warn?`<span class="st st--warn">⚠ ${esc(r.warn)}</span>`:""}</div></div>
