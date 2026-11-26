@@ -1,8 +1,8 @@
-import {db,publicUrl} from "../app/db.js?v=20261126t";
+import {db,publicUrl} from "../app/db.js?v=20261126u";
 let worker,seq=0,noMain=false;const waits=new Map();
 function getWorker(){
   if(worker)return worker;
-  worker=new Worker(new URL("./matting.worker.js?v=20261126t",import.meta.url),{type:"module"});
+  worker=new Worker(new URL("./matting.worker.js?v=20261126u",import.meta.url),{type:"module"});
   worker.onmessage=e=>{const w=waits.get(e.data.id);if(!w)return;if(e.data.progress){w.onp?.(e.data.progress);return}waits.delete(e.data.id);e.data.error?w.rej(new Error(e.data.error)):w.res(e.data)};
   worker.onerror=e=>{waits.forEach(w=>w.rej(new Error("El modelo no se pudo iniciar")));waits.clear();worker=null};
   return worker;
@@ -134,7 +134,7 @@ export const mattingInfo={method:""};
 export async function removeBackground(blob,onProgress,method="auto",opt={}){
   const c=await toBitmapCanvas(blob);
   let mask=(opt.box??(method==="ai"||method==="smart"))?boxMask(c):null;mattingInfo.method=mask?"caja":"";
-  if(!mask){mask=method==="ai"?null:flatMask(c,opt.tol??mattingDefaults.tol,opt.holes??mattingDefaults.holes);mattingInfo.method=mask?"plano":"ia"}
+  if(!mask){mask=(method==="ai"||method==="smart")?null:flatMask(c,opt.tol??mattingDefaults.tol,opt.holes??mattingDefaults.holes);mattingInfo.method=mask?"plano":"ia"}
   if(!mask&&globalThis.__cutServiceUrl){
     try{const small=await new Promise(r=>c.toBlob(r,"image/png"));onProgress?.("Recortando en la nube (BiRefNet)…");
       const rr=await fetch(globalThis.__cutServiceUrl,{method:"POST",body:small});if(!rr.ok)throw new Error("servicio "+rr.status);
@@ -145,14 +145,15 @@ export async function removeBackground(blob,onProgress,method="auto",opt={}){
   }
   if(!mask){
     if(globalThis.__mockMatting){mask=await globalThis.__mockMatting(c)}
-    else{
+    else try{
       const id=++seq;const small=await new Promise(r=>c.toBlob(r,"image/png"));
       const run=only=>new Promise((res,rej)=>{const i2=++seq;waits.set(i2,{res,rej,onp:onProgress});getWorker().postMessage({id:i2,blob:small,only})});
       let res;try{res=await run(noMain?"ORMBG":undefined)}catch(e){if(noMain)throw e;noMain=true;try{worker?.terminate()}catch{}worker=null;onProgress?.("Modelo principal falló; usando el alternativo…");res=await run("ORMBG")}
       mask=res.mask;
+    }catch(e){if(method!=="smart")throw e;mask=null}
+    if(mask)    {mask=solidify(mask,c.width,c.height);if(mattingInfo.method!=="birefnet")mask=completeWithSilhouette(mask,c);
     }
-    {mask=solidify(mask,c.width,c.height);if(mattingInfo.method!=="birefnet")mask=completeWithSilhouette(mask,c);
-    }
+    if(!mask){mask=flatMask(c,opt.tol??mattingDefaults.tol,opt.holes??mattingDefaults.holes);mattingInfo.method="plano"}
   }
   const x=c.getContext("2d",{willReadFrequently:true}),im=x.getImageData(0,0,c.width,c.height);
   for(let i=0;i<mask.length;i++)im.data[i*4+3]=mask[i];
@@ -207,7 +208,7 @@ export const hashKey=sha1;
 const exists=async u=>{try{return (await fetch(u,{method:"HEAD"})).ok}catch{return false}};
 export async function cutoutFor(srcUrl,{blob,onProgress,method="smart",tol,holes,force}={}){
   const t=tol??mattingDefaults.tol,h=holes??mattingDefaults.holes;
-  const key=await sha1(srcUrl);const path=`cut/${key}-d14${method==="smart"?"-sm":""}${method==="ai"?"-ai":`${t!==10?"-t"+t:""}${h?"":"-nh"}`}.png`;const url=publicUrl(path);
+  const key=await sha1(srcUrl);const path=`cut/${key}-d15${method==="smart"?"-sm":""}${method==="ai"?"-ai":`${t!==10?"-t"+t:""}${h?"":"-nh"}`}.png`;const url=publicUrl(path);
   if(!force&&await exists(url))return url;
   const b=blob||await (await fetch(srcUrl,{mode:"cors"})).blob();
   const cut=await removeBackground(b,onProgress,method,{tol:t,holes:h});
