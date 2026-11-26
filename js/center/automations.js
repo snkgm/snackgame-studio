@@ -1,13 +1,14 @@
-import {db} from "../app/db.js?v=20261126u";
-import {store} from "../app/store.js?v=20261126u";
-import {lightbox} from "../app/lightbox.js?v=20261126u";
-import {I} from "../app/icons.js?v=20261126u";
-import {esc,toast,modal} from "../app/ui.js?v=20261126u";
-import {fmtById} from "../app/formats.js?v=20261126u";
-import {STAGES} from "../studio/pipeline.js?v=20261126u";
-import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261126u";
+import {db} from "../app/db.js?v=20261126v";
+import {store} from "../app/store.js?v=20261126v";
+import {lightbox} from "../app/lightbox.js?v=20261126v";
+import {I} from "../app/icons.js?v=20261126v";
+import {esc,toast,modal} from "../app/ui.js?v=20261126v";
+import {fmtById} from "../app/formats.js?v=20261126v";
+import {STAGES} from "../studio/pipeline.js?v=20261126v";
+import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261126v";
 const STG={pending:0,downloading:.15,removing_bg:.4,analyzing:.6,background:.7,composing:.82,saving:.95,scheduled:1,error:1,cancelled:1},STN={downloading:"descargando fotos",removing_bg:"quitando fondos",analyzing:"analizando colores",background:"generando fondo",composing:"componiendo",saving:"guardando"};
 let drainBusy=false;
+const STALE=5*6e4;
 const WORK=["downloading","removing_bg","analyzing","background","composing","saving"];
 const CST={draft:"Borrador",running:"En marcha",paused:"Pausada",cancelled:"Cancelada",done:"Completada"};
 const q=(t,s)=>db.list(t,s);
@@ -41,6 +42,8 @@ export function mountCampaign(root,id){
     try{
       [C]=await q("campaigns",`select=*&id=eq.${id}`);
       items=await q("campaign_items",`select=*&campaign_id=eq.${id}&order=pos.asc`);
+      const dead=items.filter(i=>WORK.includes(i.status)&&i.locked_at&&Date.now()-new Date(i.locked_at)>STALE&&C&&C.status==="running");
+      if(dead.length){await Promise.all(dead.map(i=>db.update("campaign_items",i.id,i.attempts>=3?{status:"error",error:"Sin conexión: reintentos agotados",locked_by:null}:{status:"pending",locked_by:null})));items=await q("campaign_items",`select=*&campaign_id=eq.${id}&order=pos.asc`)}
       posts=await q("posts",`select=id,item_id,format,thumb_url,assets&campaign_id=eq.${id}`);
       if(alive&&dragging===false)paint();
     }catch(e){if(alive)P.innerHTML=`<p class="hint">${esc(e.message)}</p>`}
@@ -61,7 +64,7 @@ export function mountCampaign(root,id){
   }
   function paint(){
     if(!C){P.innerHTML='<p class="hint">Lista no encontrada.</p>';return}
-    const now=Date.now(),nF=(C.formats||[]).length||1,n=C.images_per_post||1;
+    const now=Date.now(),beat=i=>i.locked_at?now-new Date(i.locked_at).getTime():0,quiet=i=>WORK.includes(i.status)&&beat(i)>9e4,nF=(C.formats||[]).length||1,n=C.images_per_post||1;
     const sch=items.filter(i=>i.status==="scheduled"),err=items.filter(i=>i.status==="error"),pend=items.filter(i=>i.status==="pending"),work=items.filter(i=>WORK.includes(i.status));
     const live=items.filter(i=>!["error","cancelled"].includes(i.status));
     const remaining=live.filter(i=>i.status!=="scheduled"||!i.scheduled_at||new Date(i.scheduled_at)>now).length;
@@ -81,7 +84,7 @@ ${banner}${errs}
 <div class="prog"><div class="bar-p bar-p--lg"><i style="width:${pct}%"></i></div><span>${pct}% · ${sch.length}/${items.length} programadas</span></div>${qline}
 <p class="hint">Inicio: ${fmtMadrid(C.started_at)} · Se procesa en la nube (GitHub Actions) y sigue aunque cierres el navegador; este panel se actualiza solo.</p>
 <div class="irows">${items.map((i,k)=>{const ps=posts.filter(p=>p.item_id===i.id),w=(i.product&&i.product.warnings)||[];
-  return `<div class="irow" data-row="${k}"><span class="irow__n" draggable="true" data-drag="${k}" title="Arrastra para reordenar">${k+1}</span><span class="irow__t" ${ps[0]?`data-z="${i.id}"`:""}>${ps[0]&&ps[0].thumb_url?`<img src="${esc(ps[0].thumb_url)}" alt="">`:""}</span><div class="irow__m"><b>${esc(i.name)}</b><small>${esc(i.subtitle||"")}${w.length?` <i class="over">⚠ ${esc(w.join(" · "))}</i>`:""}${i.error?` <i class="over">${esc(i.error)}</i>`:""}</small></div><span class="irow__d">${fmtMadrid(i.scheduled_at)}</span><span class="stc stc--${i.status}${WORK.includes(i.status)?" is-work":""}">${STAGES[i.status]||i.status}${i.attempts>1&&i.status!=="scheduled"?` (${i.attempts})`:""}</span><span class="irow__a"><button class="btn btn--sm" data-mv="${k}:-1" title="Subir"${k?"":" disabled"}>↑</button><button class="btn btn--sm" data-mv="${k}:1" title="Bajar"${k<items.length-1?"":" disabled"}>↓</button>${ps[0]?`<a class="btn btn--sm" href="#/editor/${ps[0].id}">Abrir en editor</a>`:""}${i.status==="error"&&C.status!=="cancelled"?`<button class="btn btn--sm" data-r="${i.id}">Reintentar</button>`:""}${WORK.includes(i.status)?"":`<button class="btn btn--sm btn--danger" data-del="${i.id}" title="Eliminar este producto de la lista">Eliminar</button>`}</span></div>`}).join("")}</div>`;
+  return `<div class="irow" data-row="${k}"><span class="irow__n" draggable="true" data-drag="${k}" title="Arrastra para reordenar">${k+1}</span><span class="irow__t" ${ps[0]?`data-z="${i.id}"`:""}>${ps[0]&&ps[0].thumb_url?`<img src="${esc(ps[0].thumb_url)}" alt="">`:""}</span><div class="irow__m"><b>${esc(i.name)}</b><small>${esc(i.subtitle||"")}${w.length?` <i class="over">⚠ ${esc(w.join(" · "))}</i>`:""}${i.error?` <i class="over">${esc(i.error)}</i>`:""}</small></div><span class="irow__d">${fmtMadrid(i.scheduled_at)}</span><span class="stc stc--${i.status}${WORK.includes(i.status)?(quiet(i)?" is-quiet":" is-work"):""}">${quiet(i)?`Reintentando en ${Math.max(1,Math.ceil((STALE-beat(i))/6e4))} min`:(STAGES[i.status]||i.status)}${i.attempts>1&&i.status!=="scheduled"?` (${i.attempts})`:""}</span><span class="irow__a"><button class="btn btn--sm" data-mv="${k}:-1" title="Subir"${k?"":" disabled"}>↑</button><button class="btn btn--sm" data-mv="${k}:1" title="Bajar"${k<items.length-1?"":" disabled"}>↓</button><span class="irow__s">${i.status==="error"&&C.status!=="cancelled"?`<button class="btn btn--sm" data-r="${i.id}">Reintentar</button>`:ps[0]?`<a class="btn btn--sm" href="#/editor/${ps[0].id}">Abrir en editor</a>`:""}</span><span class="irow__s">${WORK.includes(i.status)?"":`<button class="btn btn--sm btn--danger" data-del="${i.id}" title="Eliminar este producto de la lista">Eliminar</button>`}</span></span></div>`}).join("")}</div>`;
   }
   P.addEventListener("click",async e=>{
     const z=e.target.closest("[data-z]");
@@ -96,7 +99,7 @@ ${banner}${errs}
       if(b.dataset.r){await db.update("campaign_items",b.dataset.r,{status:"pending",attempts:0,error:null,locked_by:null});await setC({status:"running"});toast("Reintento en cola")}
       else if(b.dataset.a==="start"){await setC({status:"running",started_at:new Date().toISOString()});toast("Iniciada")}
       else if(b.dataset.a==="now"){if(drainBusy)return;drainBusy=true;paint();toast("Procesando en este navegador: mantén esta pestaña abierta…");
-        try{await import("../studio/worker.js?v=20261126u");const log=await window.__drain("web-"+Date.now(),40*60e3);const bad=log.filter(x=>x[1]!=="ok").length;toast(`Terminado: ${log.length-bad} correctas${bad?`, ${bad} con error`:""}`)}catch(er){toast(er.message||String(er),{kind:"err"})}finally{drainBusy=false;await load()}}
+        try{await import("../studio/worker.js?v=20261126v");const log=await window.__drain("web-"+Date.now(),40*60e3);const bad=log.filter(x=>x[1]!=="ok").length;toast(`Terminado: ${log.length-bad} correctas${bad?`, ${bad} con error`:""}`)}catch(er){toast(er.message||String(er),{kind:"err"})}finally{drainBusy=false;await load()}}
       else if(b.dataset.a==="pause")await setC({status:"paused"});
       else if(b.dataset.a==="resume")await setC({status:"running"});
       else if(b.dataset.a==="retry"){await fetch(`${db.REST}campaign_items?campaign_id=eq.${id}&status=eq.error`,{method:"PATCH",headers:db.H,body:JSON.stringify({status:"pending",attempts:0,error:null,locked_by:null})});await setC({status:"running"});toast("Errores en cola")}

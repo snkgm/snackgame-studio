@@ -1,13 +1,14 @@
-import {store} from "./store.js?v=20261126u";
-import {mountCenter} from "../center/center.js?v=20261126u";
-import {mountSettings} from "../center/settings.js?v=20261126u";
-import {mountEditor} from "../editor/editorView.js?v=20261126u";
-import {mountTemplates} from "../center/templates.js?v=20261126u";
-import {mountAutomations,mountCampaign} from "../center/automations.js?v=20261126u";
-import {mountCampaignNew} from "../center/campaignNew.js?v=20261126u";
-import {CONFIG} from "./config.js?v=20261126u";
-import {auth} from "./auth.js?v=20261126u";
-import {closeMenu} from "./ui.js?v=20261126u";
+import {store} from "./store.js?v=20261126v";
+import {mountCenter} from "../center/center.js?v=20261126v";
+import {mountSettings} from "../center/settings.js?v=20261126v";
+import {mountEditor} from "../editor/editorView.js?v=20261126v";
+import {mountTemplates} from "../center/templates.js?v=20261126v";
+import {mountAutomations,mountCampaign} from "../center/automations.js?v=20261126v";
+import {mountCampaignNew} from "../center/campaignNew.js?v=20261126v";
+import {CONFIG} from "./config.js?v=20261126v";
+import {auth} from "./auth.js?v=20261126v";
+import {closeMenu} from "./ui.js?v=20261126v";
+import {initNotify} from "./notify.js?v=20261126v";
 let view=document.getElementById("view");
 let cleanup=null,token=0;
 let lastHash=location.hash;
@@ -42,6 +43,6 @@ function gate(){
 }
 function start(){
   const lo=document.getElementById("logout");if(lo&&auth.ok()){lo.hidden=false;lo.onclick=()=>auth.logout()}
-  addEventListener("hashchange",route);route();
+  addEventListener("hashchange",route);route();initNotify();
 }
 auth.ok()||!CONFIG.AUTH_REQUIRED?start():gate();

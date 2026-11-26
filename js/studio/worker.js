@@ -1,7 +1,7 @@
-import {auth} from "../app/auth.js?v=20261126u";
-import {db} from "../app/db.js?v=20261126u";
-import {runItem} from "./pipeline.js?v=20261126u";
-import {Fatal} from "./gallery.js?v=20261126u";
+import {auth} from "../app/auth.js?v=20261126v";
+import {db} from "../app/db.js?v=20261126v";
+import {runItem} from "./pipeline.js?v=20261126v";
+import {Fatal} from "./gallery.js?v=20261126v";
 const rpc=async(fn,b={})=>{const r=await fetch(db.REST+"rpc/"+fn,{method:"POST",headers:db.H,body:JSON.stringify(b)});if(!r.ok)throw new Error(fn+" "+r.status);return r.json()};
 const patch=(id,p)=>db.update("campaign_items",id,p);
 async function closeIfDone(cid){
@@ -11,17 +11,20 @@ async function closeIfDone(cid){
 window.__pending=()=>rpc("queue_pending");
 window.__drain=async(wid,maxMs)=>{
   const t0=Date.now(),log=[];await rpc("fail_stale");
+  await fetch(`${db.REST}campaign_items?status=in.(downloading,removing_bg,analyzing,background,composing,saving)&locked_at=lt.${new Date(Date.now()-5*6e4).toISOString()}&attempts=lt.3`,{method:"PATCH",headers:db.H,body:JSON.stringify({status:"pending",locked_by:null})}).catch(()=>{});
   while(Date.now()-t0<maxMs){
     const r=await rpc("claim_item",{worker:wid});if(!r.length)break;
     const item=r[0],camp=await db.get("campaigns",item.campaign_id);let chain=Promise.resolve();
     const report=s=>{chain=chain.then(()=>patch(item.id,{status:s,locked_at:new Date().toISOString()})).catch(()=>{})};
+    const hb=setInterval(()=>patch(item.id,{locked_at:new Date().toISOString()}).catch(()=>{}),3e4);
     try{
       const res=await runItem(item,camp,report);await chain;
       await patch(item.id,{status:"scheduled",error:null,post_ids:res.post_ids,product:res.product,locked_by:null});log.push([item.name,"ok"]);
     }catch(e){
-      await chain;const fatal=e instanceof Fatal||item.attempts>=3;
+      clearInterval(hb);await chain;const fatal=e instanceof Fatal||item.attempts>=3;
       await patch(item.id,{status:fatal?"error":"pending",error:String(e.message||e).slice(0,300),locked_by:null}).catch(()=>{});log.push([item.name,"fail",e.message]);
     }
+    clearInterval(hb);
     await closeIfDone(item.campaign_id).catch(()=>{});
   }
   return log;
