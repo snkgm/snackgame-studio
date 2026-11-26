@@ -89,6 +89,5 @@
 .irow{grid-template-columns:32px 40px minmax(0,1fr);grid-template-areas:"n t m" "d d s" "a a a";row-gap:var(--sp-1)}
 .irow__n{grid-area:n}.irow__t{grid-area:t;display:block}.irow__m{grid-area:m}.irow__d{grid-area:d;display:block;grid-column:1/3;font-size:var(--fs-12);color:var(--c-muted)}.irow>.stc{grid-area:s;justify-self:end}
 .irow__a{grid-area:a;display:grid;grid-template-columns:40px 40px 1fr 1fr;justify-content:stretch}
-.irow__a .btn{height:40px}.nav{gap:var(--sp-2);padding:0 var(--sp-2);overflow-x:auto}.nav__brand{white-space:nowrap}.nav__tabs{flex:none}.nav__tab{white-space:nowrap}.nav__bell,.nav__out{white-space:nowrap;flex:none}
-.atool,.phead{flex-direction:column;align-items:stretch}.phead .bar{flex-wrap:wrap}.ccard{flex-wrap:wrap}
+.irow__a .btn{height:40px}.atool,.phead{flex-direction:column;align-items:stretch}.phead .bar{flex-wrap:wrap}.ccard{flex-wrap:wrap}
 }

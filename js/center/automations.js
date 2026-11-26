@@ -1,11 +1,11 @@
-import {db} from "../app/db.js?v=20261126v";
-import {store} from "../app/store.js?v=20261126v";
-import {lightbox} from "../app/lightbox.js?v=20261126v";
-import {I} from "../app/icons.js?v=20261126v";
-import {esc,toast,modal} from "../app/ui.js?v=20261126v";
-import {fmtById} from "../app/formats.js?v=20261126v";
-import {STAGES} from "../studio/pipeline.js?v=20261126v";
-import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261126v";
+import {db} from "../app/db.js?v=20261126w";
+import {store} from "../app/store.js?v=20261126w";
+import {lightbox} from "../app/lightbox.js?v=20261126w";
+import {I} from "../app/icons.js?v=20261126w";
+import {esc,toast,modal} from "../app/ui.js?v=20261126w";
+import {fmtById} from "../app/formats.js?v=20261126w";
+import {STAGES} from "../studio/pipeline.js?v=20261126w";
+import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261126w";
 const STG={pending:0,downloading:.15,removing_bg:.4,analyzing:.6,background:.7,composing:.82,saving:.95,scheduled:1,error:1,cancelled:1},STN={downloading:"descargando fotos",removing_bg:"quitando fondos",analyzing:"analizando colores",background:"generando fondo",composing:"componiendo",saving:"guardando"};
 let drainBusy=false;
 const STALE=5*6e4;
@@ -50,6 +50,14 @@ export function mountCampaign(root,id){
   }
   const setC=async patch=>{await db.update("campaigns",id,patch);await load()};
   let dragging=false;
+  function ics(){
+    const fold=l=>{const o=[];while(l.length>73){o.push(l.slice(0,73));l=" "+l.slice(73)}o.push(l);return o.join("\r\n")},esc2=t=>String(t).replace(/[\\;,]/g,m=>"\\"+m).replace(/\n/g,"\\n"),z=t=>new Date(t).toISOString().replace(/[-:]/g,"").replace(/\.\d+/,"");
+    const ev=items.filter(i=>i.status==="scheduled"&&i.scheduled_at&&new Date(i.scheduled_at)>Date.now()).map(i=>{const p=posts.find(x=>x.item_id===i.id),u=location.origin+location.pathname+(p?"#/editor/"+p.id:"#/automatizaciones/"+id);
+      return ["BEGIN:VEVENT",`UID:${i.id}@snackgame-studio`,`DTSTAMP:${z(Date.now())}`,`DTSTART:${z(i.scheduled_at)}`,`DTEND:${z(new Date(i.scheduled_at).getTime()+15*6e4)}`,`SUMMARY:${esc2("Publicar: "+i.name)}`,`DESCRIPTION:${esc2("Revisa la publicación antes de que salga: "+u)}`,`URL:${u}`,"BEGIN:VALARM","ACTION:DISPLAY",`DESCRIPTION:${esc2("Se publica en 5 min: "+i.name)}`,"TRIGGER:-PT5M","END:VALARM","END:VEVENT"].map(fold).join("\r\n")});
+    if(!ev.length){toast("No hay publicaciones futuras que añadir");return}
+    const t=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//SnackGame Studio//ES","CALSCALE:GREGORIAN","METHOD:PUBLISH",`X-WR-CALNAME:${esc2(C.name)}`,...ev,"END:VCALENDAR"].join("\r\n")+"\r\n";
+    const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([t],{type:"text/calendar;charset=utf-8"}));a.download=(C.name||"publicaciones").replace(/[^\w\-]+/g,"_")+".ics";document.body.appendChild(a);a.click();a.remove();toast(`${ev.length} eventos con aviso 5 min antes: ábrelo para añadirlos al calendario`)
+  }
   async function reflow(list){
     const ds=C.schedule&&C.schedule.start?scheduleDates(C.schedule,list.length):[];
     await Promise.all(list.map(async(it,k)=>{const patch={};if(it.pos!==k+1)patch.pos=k+1;if(ds[k]&&it.scheduled_at!==ds[k])patch.scheduled_at=ds[k];if(!Object.keys(patch).length)return;
@@ -73,9 +81,9 @@ export function mountCampaign(root,id){
     const cur=work[0],avg=sch.length&&C.started_at?(now-new Date(C.started_at))/sch.length:0,eta=avg&&pend.length+work.length?Math.round(avg*(pend.length+work.length)/60000):0;
     const qline=work.length?`<p class="hint"><i class="spin"></i> Procesando <b>${esc(cur.name)}</b>: ${STN[cur.status]||cur.status}${work.length>1?` (+${work.length-1} en paralelo)`:""}${eta?` · tiempo restante estimado ~${eta} min`:""}</p>`:(pend.length&&["running"].includes(C.status)?`<p class="hint">⏳ En cola: esperando al trabajador de la nube. GitHub lo lanza de forma programada y puede tardar de 5 min a 1 h. Pulsa «Procesar ahora» para empezar ya desde este navegador.</p>`:"");
     const active=["running","done"].includes(C.status);
-    const banner=remaining===0&&items.length&&active&&C.status!=="cancelled"?`<div class="banner banner--red"><b>LISTA AGOTADA</b><span>No quedan publicaciones por publicar. Añade más productos para continuar.</span></div>`:(C.status==="done"&&!err.length?`<div class="banner banner--ok"><b>COMPLETADA</b><span>Todas las publicaciones están programadas.</span></div>`:"");
+    const banner=remaining===0&&items.length&&active&&C.status!=="cancelled"?`<div class="banner banner--red"><b>LISTA AGOTADA</b><span>No quedan publicaciones por publicar. Añade más productos para continuar.</span></div>`:(C.status==="done"&&!err.length?`<div class="banner banner--ok"><b>COMPLETADA</b><span>Todas las publicaciones están programadas.</span><button class="btn btn--sm" data-a="ics">Añadir al calendario (aviso 5 min antes)</button></div>`:"");
     const errs=err.length?`<div class="banner banner--warn"><b>${err.length} incidencia${err.length>1?"s":""}</b><span>${[...new Set(err.map(e=>e.error||"Error"))].map(esc).join(" · ")}</span></div>`:"";
-    const btns=[C.status==="draft"?`<button class="btn btn--accent" data-a="start">Iniciar</button>`:"",C.status==="running"?`<button class="btn" data-a="pause">Pausar</button>`:"",C.status==="running"&&(pend.length||work.length)?`<button class="btn btn--accent" data-a="now"${drainBusy?" disabled":""}>${drainBusy?"Procesando aquí…":"Procesar ahora"}</button>`:"",C.status==="paused"?`<button class="btn btn--accent" data-a="resume">Reanudar</button>`:"",err.length&&C.status!=="cancelled"?`<button class="btn" data-a="retry">Reintentar errores</button>`:"",C.status!=="cancelled"&&sch.length?`<button class="btn" data-a="regen">Regenerar imágenes</button>`:"",C.status!=="cancelled"?`<button class="btn" data-a="add">Añadir productos</button>`:"",!["cancelled","done"].includes(C.status)?`<button class="btn btn--ghost" data-a="cancel">Cancelar</button>`:""].join("");
+    const btns=[C.status==="draft"?`<button class="btn btn--accent" data-a="start">Iniciar</button>`:"",C.status==="running"?`<button class="btn" data-a="pause">Pausar</button>`:"",C.status==="running"&&(pend.length||work.length)?`<button class="btn btn--accent" data-a="now"${drainBusy?" disabled":""}>${drainBusy?"Procesando aquí…":"Procesar ahora"}</button>`:"",C.status==="paused"?`<button class="btn btn--accent" data-a="resume">Reanudar</button>`:"",err.length&&C.status!=="cancelled"?`<button class="btn" data-a="retry">Reintentar errores</button>`:"",sch.length?`<button class="btn" data-a="ics" title="Descarga un .ics con aviso 5 min antes de cada publicación">Añadir al calendario</button>`:"",C.status!=="cancelled"&&sch.length?`<button class="btn" data-a="regen">Regenerar imágenes</button>`:"",C.status!=="cancelled"?`<button class="btn" data-a="add">Añadir productos</button>`:"",!["cancelled","done"].includes(C.status)?`<button class="btn btn--ghost" data-a="cancel">Cancelar</button>`:""].join("");
     const tile=(k,v,c="")=>`<div class="tile ${c}"><b>${v}</b><span>${k}</span></div>`;
     P.innerHTML=`<a class="btn btn--sm auto__back" href="#/automatizaciones">${I["arrow-left"]}<span>Automatizaciones</span></a>
 <div class="phead"><div><h1 class="auto__h">${esc(C.name)}</h1><span class="cst cst--${C.status}">${CST[C.status]}</span> <span class="hint">${esc(store.typeName(C.type_id))} · ${esc(store.catName(C.category_id))} · ${(C.formats||[]).map(f=>fmtById(f).short).join(", ")} · ${n} img/publicación</span></div><div class="bar">${btns}</div></div>
@@ -99,12 +107,13 @@ ${banner}${errs}
       if(b.dataset.r){await db.update("campaign_items",b.dataset.r,{status:"pending",attempts:0,error:null,locked_by:null});await setC({status:"running"});toast("Reintento en cola")}
       else if(b.dataset.a==="start"){await setC({status:"running",started_at:new Date().toISOString()});toast("Iniciada")}
       else if(b.dataset.a==="now"){if(drainBusy)return;drainBusy=true;paint();toast("Procesando en este navegador: mantén esta pestaña abierta…");
-        try{await import("../studio/worker.js?v=20261126v");const log=await window.__drain("web-"+Date.now(),40*60e3);const bad=log.filter(x=>x[1]!=="ok").length;toast(`Terminado: ${log.length-bad} correctas${bad?`, ${bad} con error`:""}`)}catch(er){toast(er.message||String(er),{kind:"err"})}finally{drainBusy=false;await load()}}
+        try{await import("../studio/worker.js?v=20261126w");const log=await window.__drain("web-"+Date.now(),40*60e3);const bad=log.filter(x=>x[1]!=="ok").length;toast(`Terminado: ${log.length-bad} correctas${bad?`, ${bad} con error`:""}`)}catch(er){toast(er.message||String(er),{kind:"err"})}finally{drainBusy=false;await load()}}
       else if(b.dataset.a==="pause")await setC({status:"paused"});
       else if(b.dataset.a==="resume")await setC({status:"running"});
       else if(b.dataset.a==="retry"){await fetch(`${db.REST}campaign_items?campaign_id=eq.${id}&status=eq.error`,{method:"PATCH",headers:db.H,body:JSON.stringify({status:"pending",attempts:0,error:null,locked_by:null})});await setC({status:"running"});toast("Errores en cola")}
       else if(b.dataset.a==="cancel"){modal("Cancelar lista","<p>Se detiene el procesamiento. Las publicaciones ya creadas y la lista original se conservan.</p>",{ok:"Cancelar lista",onOk:async()=>{await fetch(`${db.REST}campaign_items?campaign_id=eq.${id}&status=eq.pending`,{method:"PATCH",headers:db.H,body:JSON.stringify({status:"cancelled"})});await setC({status:"cancelled"})}})}
       else if(b.dataset.a==="regen"){modal("Regenerar imágenes","<p>Se vuelven a generar todas las imágenes de la lista con el diseño actual. Las fechas se mantienen y las publicaciones anteriores se sustituyen.</p>",{ok:"Regenerar",onOk:async()=>{await fetch(`${db.REST}campaign_items?campaign_id=eq.${id}&status=in.(scheduled,error)`,{method:"PATCH",headers:db.H,body:JSON.stringify({status:"pending",attempts:0,error:null,locked_by:null,photos:null})});await setC({status:"running"});toast("En cola")}})}
+      else if(b.dataset.a==="ics")ics();
       else if(b.dataset.a==="add")location.hash=`#/automatizaciones/nueva/${id}`;
     }catch(er){toast(er.message,{kind:"err"})}
   });

@@ -1,5 +1,5 @@
-import {db} from "./db.js?v=20261126v";
-import {toast} from "./ui.js?v=20261126v";
+import {db} from "./db.js?v=20261126w";
+import {toast} from "./ui.js?v=20261126w";
 const K="studio.notified.v1",WORKS="downloading,removing_bg,analyzing,background,composing,saving",iso=t=>new Date(t).toISOString();
 const seen=()=>{try{return JSON.parse(localStorage.getItem(K)||"{}")}catch{return{}}};
 const save=s=>{try{localStorage.setItem(K,JSON.stringify(s))}catch{}};
@@ -31,7 +31,7 @@ async function tick(){
     if(dirty){for(const k in s)if(k!=="__init"&&now-s[k]>7*864e5)delete s[k];save(s)}
   }catch{}
 }
-function label(b){const p=perm();b.textContent=p==="granted"?"🔔 Avisos activos":p==="denied"?"🔕 Avisos bloqueados":p==="unsupported"?"🔕 No disponible":"🔔 Activar avisos";b.classList.toggle("is-on",p==="granted")}
+function label(b){const p=perm(),t=b.querySelector(".nt");if(t)t.textContent=p==="granted"?"Avisos activos":p==="denied"?"Avisos bloqueados":p==="unsupported"?"No disponible":"Activar avisos";b.classList.toggle("is-on",p==="granted")}
 export async function initNotify(){
   if("serviceWorker" in navigator){try{await navigator.serviceWorker.register("sw.js");navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.go)location.hash=e.data.go})}catch{}}
   const b=document.getElementById("bell");
