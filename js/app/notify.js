@@ -1,5 +1,5 @@
-import {db} from "./db.js?v=20261126x";
-import {toast} from "./ui.js?v=20261126x";
+import {db} from "./db.js?v=20261126y";
+import {toast} from "./ui.js?v=20261126y";
 const K="studio.notified.v1",WORKS="downloading,removing_bg,analyzing,background,composing,saving",iso=t=>new Date(t).toISOString();
 const seen=()=>{try{return JSON.parse(localStorage.getItem(K)||"{}")}catch{return{}}};
 const save=s=>{try{localStorage.setItem(K,JSON.stringify(s))}catch{}};

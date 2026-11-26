@@ -1,13 +1,13 @@
-import {modal,toast,esc} from "../app/ui.js?v=20261126x";
-import {I} from "../app/icons.js?v=20261126x";
-import {db} from "../app/db.js?v=20261126x";
-import {store} from "../app/store.js?v=20261126x";
-import {hashKey} from "../img/matting.js?v=20261126x";
-import {logoUrl,uploadLogo} from "../app/brand.js?v=20261126x";
-import {openProductPicker} from "./product.js?v=20261126x";
+import {modal,toast,esc} from "../app/ui.js?v=20261126y";
+import {I} from "../app/icons.js?v=20261126y";
+import {db} from "../app/db.js?v=20261126y";
+import {store} from "../app/store.js?v=20261126y";
+import {hashKey} from "../img/matting.js?v=20261126y";
+import {logoUrl,uploadLogo} from "../app/brand.js?v=20261126y";
+import {openProductPicker} from "./product.js?v=20261126y";
 const sv=(d,x="")=>`<svg viewBox="0 0 48 48" width="40" height="40" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" ${x}>${d}</svg>`;
 const SHAPES=[["rect","Rectángulo",sv('<rect x="6" y="12" width="36" height="24" rx="0"/>')],["rrect","Rect. redondeado",sv('<rect x="6" y="12" width="36" height="24" rx="8"/>')],["square","Cuadrado",sv('<rect x="10" y="10" width="28" height="28"/>')],["circle","Círculo",sv('<circle cx="24" cy="24" r="15"/>')],["ellipse","Elipse",sv('<ellipse cx="24" cy="24" rx="19" ry="12"/>')],["triangle","Triángulo",sv('<path d="M24 8 42 38H6z"/>')],["rhombus","Rombo",sv('<path d="M24 6 42 24 24 42 6 24z"/>')],["star","Estrella",sv('<path d="m24 5 5.6 12.2 13.4 1.5-10 9 2.8 13.1L24 34l-11.8 6.8 2.8-13.1-10-9 13.4-1.5z"/>')],["hexagon","Hexágono",sv('<path d="M24 6 39.6 15v18L24 42 8.4 33V15z"/>')],["line","Línea",sv('<path d="M8 24h32" fill="none" stroke-width="5" stroke-linecap="round"/>')]];
-import {TEXT_STYLES,addStyled} from "./textstyles.js?v=20261126x";
+import {TEXT_STYLES,addStyled} from "./textstyles.js?v=20261126y";
 let pop=null;
 export function closePop(){if(pop){pop.remove();pop=null;document.removeEventListener("mousedown",outside,true)}}
 const outside=e=>{if(pop&&!pop.contains(e.target)&&!e.target.closest("[data-pop]"))closePop()};
@@ -48,7 +48,7 @@ export function openImageTool(ed,{afterProduct}={}){
     }catch(er){toast("No se pudo añadir: "+er.message,{kind:"err"})}
   });
 }
-import {OVERLAYS,renderOverlay} from "../img/overlays.js?v=20261126x";
+import {OVERLAYS,renderOverlay} from "../img/overlays.js?v=20261126y";
 export function openOverlayTool(ed){
   const thumbs=OVERLAYS.map(o=>{const c=renderOverlay(o.id,144,192,3);return `<button type="button" class="ovt" data-ov="${o.id}" title="${esc(o.name)}"><span class="ovt__img"><img src="${c.toDataURL("image/png")}" alt=""></span><span>${esc(o.name)}</span></button>`}).join("");
   const m=modal("Overlays",`<div class="imgt"><div class="imgt__bar"><button type="button" class="btn btn--accent" data-a="up">${I.upload}<span>Subir mi overlay (PNG)</span></button></div><p class="hint">Se añaden como capa independiente con su modo de fusión. Cambia modo, opacidad, posición u orden desde el panel derecho.</p><div class="ovgrid">${thumbs}</div><h3 class="imgt__h">Mis overlays</h3><div class="lib lib--img" id="ovl"></div></div>`,{ok:"Cerrar",wide:true,onOk:()=>true});

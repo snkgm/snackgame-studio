@@ -28,3 +28,12 @@ body:not(.is-editor) #view{padding-bottom:calc(72px + env(safe-area-inset-bottom
 .ver{display:none}
 }
 .nav__out[hidden]{display:none}
+
+@media(max-width:720px){
+html,body{overscroll-behavior-y:none}
+body{padding-bottom:calc(64px + env(safe-area-inset-bottom));box-sizing:border-box}
+body.is-editor{height:100dvh}
+body.is-editor .nav{display:block;position:static;height:0;padding:0;border:0;background:none;overflow:visible}
+body.is-editor .nav>:not(.nav__tabs){display:none}
+.nav__tabs{position:fixed!important;bottom:0!important;transform:translateZ(0);z-index:900}
+}
