@@ -1,12 +1,12 @@
-import {db} from "../app/db.js?v=20261127g";
-import {store} from "../app/store.js?v=20261127g";
-import {lightbox} from "../app/lightbox.js?v=20261127g";
-import {I} from "../app/icons.js?v=20261127g";
-import {esc,toast,modal} from "../app/ui.js?v=20261127g";
-import {fmtById} from "../app/formats.js?v=20261127g";
-import {STAGES} from "../studio/pipeline.js?v=20261127g";
-import {schedBody,schedClick,schedChange} from "./schedUi.js?v=20261127g";
-import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261127g";
+import {db} from "../app/db.js?v=20261127h";
+import {store} from "../app/store.js?v=20261127h";
+import {lightbox} from "../app/lightbox.js?v=20261127h";
+import {I} from "../app/icons.js?v=20261127h";
+import {esc,toast,modal} from "../app/ui.js?v=20261127h";
+import {fmtById} from "../app/formats.js?v=20261127h";
+import {STAGES} from "../studio/pipeline.js?v=20261127h";
+import {schedBody,schedClick,schedChange} from "./schedUi.js?v=20261127h";
+import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261127h";
 const STG={pending:0,downloading:.15,removing_bg:.4,analyzing:.6,background:.7,composing:.82,saving:.95,scheduled:1,error:1,cancelled:1},STN={downloading:"descargando fotos",removing_bg:"quitando fondos",analyzing:"analizando colores",background:"generando fondo",composing:"componiendo",saving:"guardando"};
 let drainBusy=false;
 const IGD={mode:"prueba",loc:true,alt:"",collab:""};
@@ -121,7 +121,7 @@ export function mountCampaign(root,id){
     const nPub=sts.filter(x=>x.st&&x.st[0]==="published").length,nQ=sts.filter(x=>x.st&&["queued","next","publishing","late"].includes(x.st[0])).length,nPrep=sts.filter(x=>x.st&&["prepared","tested"].includes(x.st[0])).length,nErr=sts.filter(x=>(x.st&&x.st[0]==="error")||x.i.status==="error").length,nGen=pend.length+work.length;
     const w=n=>nT?(n/nT*100).toFixed(1)+"%":"0%",lastPub=posts.map(p=>mOf(p).published_at).filter(Boolean).sort().pop();
     const uWhen=U?whenOf(U.i,U.ps):null,uPub=U&&U.ps.some(p=>gOf(p).mode==="publicar");
-    const sw=`<label class="sw${swOn()?" is-on":""}" title="Activa o desactiva la publicación automática de toda la lista"><input type="checkbox" data-a="swpub"${swOn()?" checked":""}><i></i><span>Publicar<small>${swOn()?"Activo":"Desactivado"}</small></span></label>`;
+    const sw=`<label class="pubsw${swOn()?" is-on":""}" title="Activa o desactiva la publicación automática de toda la lista"><input type="checkbox" data-a="swpub"${swOn()?" checked":""}><i></i><span>Publicar<small>${swOn()?"Activo":"Desactivado"}</small></span></label>`;
     const tile=(k,v,c="")=>`<div class="tile ${c}"><b>${v}</b><span>${k}</span></div>`;
     P.innerHTML=`<a class="btn btn--sm auto__back" href="#/automatizaciones">${I["arrow-left"]}<span>Automatizaciones</span></a>
 <div class="phead"><div><h1 class="auto__h">${esc(C.name)}</h1><span class="cst cst--${C.status}">${CST[C.status]}</span> <span class="hint">${esc(store.typeName(C.type_id))} · ${esc(store.catName(C.category_id))} · ${(C.formats||[]).map(f=>fmtById(f).short).join(", ")} · ${n} img/publicación</span></div><div class="bar">${sw}${btns}</div></div>
@@ -149,7 +149,7 @@ ${banner}${errs}
       if(b.dataset.r){await db.update("campaign_items",b.dataset.r,{status:"pending",attempts:0,error:null,locked_by:null});await setC({status:"running"});toast("Reintento en cola")}
       else if(b.dataset.a==="start"){await setC({status:"running",started_at:new Date().toISOString()});toast("Iniciada")}
       else if(b.dataset.a==="now"){if(drainBusy)return;drainBusy=true;paint();toast("Procesando en este navegador: mantén esta pestaña abierta…");
-        try{await import("../studio/worker.js?v=20261127g");const log=await window.__drain("web-"+Date.now(),40*60e3);const bad=log.filter(x=>x[1]!=="ok").length;toast(`Terminado: ${log.length-bad} correctas${bad?`, ${bad} con error`:""}`)}catch(er){toast(er.message||String(er),{kind:"err"})}finally{drainBusy=false;await load()}}
+        try{await import("../studio/worker.js?v=20261127h");const log=await window.__drain("web-"+Date.now(),40*60e3);const bad=log.filter(x=>x[1]!=="ok").length;toast(`Terminado: ${log.length-bad} correctas${bad?`, ${bad} con error`:""}`)}catch(er){toast(er.message||String(er),{kind:"err"})}finally{drainBusy=false;await load()}}
       else if(b.dataset.a==="pause")await setC({status:"paused"});
       else if(b.dataset.a==="resume")await setC({status:"running"});
       else if(b.dataset.a==="retry"){await fetch(`${db.REST}campaign_items?campaign_id=eq.${id}&status=eq.error`,{method:"PATCH",headers:db.H,body:JSON.stringify({status:"pending",attempts:0,error:null,locked_by:null})});await setC({status:"running"});toast("Errores en cola")}

@@ -1,5 +1,5 @@
-import {CONFIG} from "./config.js?v=20261127g";
-import {auth} from "./auth.js?v=20261127g";
+import {CONFIG} from "./config.js?v=20261127h";
+import {auth} from "./auth.js?v=20261127h";
 const hd=()=>({apikey:CONFIG.SUPABASE_ANON_KEY,Authorization:"Bearer "+(auth.token()||CONFIG.SUPABASE_ANON_KEY)});
 const REST=CONFIG.SUPABASE_URL+"/rest/v1/",STORE=CONFIG.SUPABASE_URL+"/storage/v1/";
 async function req(path,{method="GET",body,keepalive}={}){

@@ -1,8 +1,8 @@
-import {db,publicUrl} from "../app/db.js?v=20261127g";
+import {db,publicUrl} from "../app/db.js?v=20261127h";
 let worker,seq=0,noMain=false;const waits=new Map();
 function getWorker(){
   if(worker)return worker;
-  worker=new Worker(new URL("./matting.worker.js?v=20261127g",import.meta.url),{type:"module"});
+  worker=new Worker(new URL("./matting.worker.js?v=20261127h",import.meta.url),{type:"module"});
   worker.onmessage=e=>{const w=waits.get(e.data.id);if(!w)return;if(e.data.progress){w.onp?.(e.data.progress);return}waits.delete(e.data.id);e.data.error?w.rej(new Error(e.data.error)):w.res(e.data)};
   worker.onerror=e=>{waits.forEach(w=>w.rej(new Error("El modelo no se pudo iniciar")));waits.clear();worker=null};
   return worker;
