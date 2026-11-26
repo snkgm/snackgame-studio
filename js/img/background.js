@@ -1,4 +1,4 @@
-import {adjust,rgba,shade,rng,clamp} from "./color.js?v=20261126s";
+import {adjust,rgba,shade,rng,clamp} from "./color.js?v=20261126t";
 export const GRAD_DEFAULT={type:"linear",angle:135,cx:50,cy:50,stops:[{p:0,c:"#3b2f8f"},{p:55,c:"#8f2f6a"},{p:100,c:"#ffb400"}]};
 export const BG_DEFAULT={mode:"auto",n:3,blur:60,angle:135,spread:50,lum:0,sat:0,light:45,edge:55,opacity:80,seed:1,lightX:50,lightY:42,solid:"#14141c",tex:0,colors:null,img:"",imgFit:"cover"};
 const EDGE_CLEAR=1;

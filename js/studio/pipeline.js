@@ -1,9 +1,9 @@
-import {db} from "../app/db.js?v=20261126s";
-import {store} from "../app/store.js?v=20261126s";
-import {fmtById} from "../app/formats.js?v=20261126s";
-import {composeMulti} from "./compose.js?v=20261126s";
-import {fetchProduct,validateGallery,usable,Fatal} from "./gallery.js?v=20261126s";
-import {cutoutFor,mattingInfo} from "../img/matting.js?v=20261126s";
+import {db} from "../app/db.js?v=20261126t";
+import {store} from "../app/store.js?v=20261126t";
+import {fmtById} from "../app/formats.js?v=20261126t";
+import {composeMulti} from "./compose.js?v=20261126t";
+import {fetchProduct,validateGallery,usable,Fatal} from "./gallery.js?v=20261126t";
+import {cutoutFor,mattingInfo} from "../img/matting.js?v=20261126t";
 const ext=b=>(b.type.split("/")[1]||"jpg").replace("jpeg","jpg");
 export const STAGES={pending:"Pendiente",downloading:"Descargando fotografías",removing_bg:"Eliminando fondo",analyzing:"Analizando colores",background:"Generando fondo",composing:"Componiendo imágenes",saving:"Guardando",scheduled:"Programada",error:"Error",cancelled:"Cancelada"};
 function limitWarnings(tpl,prod){
@@ -14,17 +14,22 @@ function limitWarnings(tpl,prod){
 export const captionOf=(p)=>[p.name,p.tagline,"",[p.hashtag,p.web].filter(Boolean).join(" ")].filter((x,i)=>x||i===2).join("\n").trim();
 export async function runItem(item,camp,report=()=>{}){
   await store.load();
-  const n=Math.max(1,Math.min(4,camp.images_per_post||2));
+  const n=Math.max(1,Math.min(10,camp.images_per_post||2));
   report("downloading");
   const info=await fetchProduct(item.url);
-  let photos=item.photos&&item.photos.length?item.photos:null;
-  if(!photos){photos=usable(await validateGallery(info.images)).slice(0,n)}
+  let photos=item.photos&&item.photos.length?item.photos:null,pool=[];
+  if(!photos){pool=usable(await validateGallery(info.images));photos=pool.slice(0,n)}
+  else pool=info.images.filter(x=>!photos.some(p=>p.src===x.src));
   if(photos.length<n)throw new Fatal(`Solo ${photos.length} fotografías válidas (se necesitan ${n})`);
   photos=photos.slice(0,n);
   const base=`campaigns/${camp.id}/${item.id}`,blobs=[],origs=[];
+  const vars=src=>{const o=[src];for(const w of [2048,1600,1000]){try{const u=new URL(src);u.searchParams.set("width",w);o.push(u.toString())}catch{}}return o};
+  const get=async src=>{for(let k=0;k<2;k++){for(const u of vars(src)){try{const r=await fetch(u,{mode:"cors"});if(r.ok)return await r.blob()}catch{}}await new Promise(r=>setTimeout(r,600))}return null};
+  const used=new Set(photos.map(p=>p.src));
   for(let i=0;i<n;i++){
-    const r=await fetch(photos[i].src,{mode:"cors"});if(!r.ok)throw new Error("Descarga de fotografía fallida ("+r.status+")");
-    const b=await r.blob();blobs.push(b);origs.push(await db.upload(`${base}/orig-${i+1}.${ext(b)}`,b));
+    let b=await get(photos[i].src);
+    while(!b){const alt=pool.find(x=>!used.has(x.src));if(!alt)throw new Error("Descarga de fotografía fallida (404): "+photos[i].src.split("/").pop().split("?")[0]);used.add(alt.src);photos[i]=alt;b=await get(alt.src)}
+    blobs.push(b);origs.push(await db.upload(`${base}/orig-${i+1}.${ext(b)}`,b));
   }
   report("removing_bg");
   const cuts=[],methods=[];

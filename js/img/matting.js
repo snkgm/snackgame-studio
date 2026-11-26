@@ -1,8 +1,8 @@
-import {db,publicUrl} from "../app/db.js?v=20261126s";
+import {db,publicUrl} from "../app/db.js?v=20261126t";
 let worker,seq=0,noMain=false;const waits=new Map();
 function getWorker(){
   if(worker)return worker;
-  worker=new Worker(new URL("./matting.worker.js?v=20261126s",import.meta.url),{type:"module"});
+  worker=new Worker(new URL("./matting.worker.js?v=20261126t",import.meta.url),{type:"module"});
   worker.onmessage=e=>{const w=waits.get(e.data.id);if(!w)return;if(e.data.progress){w.onp?.(e.data.progress);return}waits.delete(e.data.id);e.data.error?w.rej(new Error(e.data.error)):w.res(e.data)};
   worker.onerror=e=>{waits.forEach(w=>w.rej(new Error("El modelo no se pudo iniciar")));waits.clear();worker=null};
   return worker;
@@ -192,6 +192,13 @@ export function completeWithSilhouette(mask,c){
       while(stk.length){const i=stk.pop(),x=i%w;n++;if(x>0&&E[i-1]&&!lab[i-1]){lab[i-1]=id;stk.push(i-1)}if(x<w-1&&E[i+1]&&!lab[i+1]){lab[i+1]=id;stk.push(i+1)}if(i>=w&&E[i-w]&&!lab[i-w]){lab[i-w]=id;stk.push(i-w)}if(i<N-w&&E[i+w]&&!lab[i+w]){lab[i+w]=id;stk.push(i+w)}}cn.push(n)}
     const minA=N*.0025;
     for(let i=0;i<N;i++)if(E[i]&&cn[lab[i]]>=minA&&out[i]<255)out[i]=255;
+    const Fm=new Uint8Array(N);for(let i=0;i<N;i++)Fm[i]=(o.G[i]&&hm[i*4+3]>128&&!bin[i])?1:0;
+    const lb=new Int32Array(N),stk2=[];let id2=0;
+    for(let i0=0;i0<N;i0++){if(!Fm[i0]||lb[i0])continue;id2++;const mem=[];let ins=0,outs=0;stk2.length=0;stk2.push(i0);lb[i0]=id2;
+      while(stk2.length){const i=stk2.pop(),x=i%w;mem.push(i);
+        const nb=[x>0?i-1:-1,x<w-1?i+1:-1,i>=w?i-w:-1,i<N-w?i+w:-1];
+        for(const j of nb){if(j<0){outs++;continue}if(Fm[j]){if(!lb[j]){lb[j]=id2;stk2.push(j)}}else if(bin[j])ins++;else outs++}}
+      if(mem.length>=4&&ins>=outs*1.5)for(const i of mem)out[i]=255}
     return out;
   }catch{return mask}
 }
@@ -200,7 +207,7 @@ export const hashKey=sha1;
 const exists=async u=>{try{return (await fetch(u,{method:"HEAD"})).ok}catch{return false}};
 export async function cutoutFor(srcUrl,{blob,onProgress,method="smart",tol,holes,force}={}){
   const t=tol??mattingDefaults.tol,h=holes??mattingDefaults.holes;
-  const key=await sha1(srcUrl);const path=`cut/${key}-d13${method==="smart"?"-sm":""}${method==="ai"?"-ai":`${t!==10?"-t"+t:""}${h?"":"-nh"}`}.png`;const url=publicUrl(path);
+  const key=await sha1(srcUrl);const path=`cut/${key}-d14${method==="smart"?"-sm":""}${method==="ai"?"-ai":`${t!==10?"-t"+t:""}${h?"":"-nh"}`}.png`;const url=publicUrl(path);
   if(!force&&await exists(url))return url;
   const b=blob||await (await fetch(srcUrl,{mode:"cors"})).blob();
   const cut=await removeBackground(b,onProgress,method,{tol:t,holes:h});

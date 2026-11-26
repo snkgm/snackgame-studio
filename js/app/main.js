@@ -1,13 +1,13 @@
-import {store} from "./store.js?v=20261126s";
-import {mountCenter} from "../center/center.js?v=20261126s";
-import {mountSettings} from "../center/settings.js?v=20261126s";
-import {mountEditor} from "../editor/editorView.js?v=20261126s";
-import {mountTemplates} from "../center/templates.js?v=20261126s";
-import {mountAutomations,mountCampaign} from "../center/automations.js?v=20261126s";
-import {mountCampaignNew} from "../center/campaignNew.js?v=20261126s";
-import {CONFIG} from "./config.js?v=20261126s";
-import {auth} from "./auth.js?v=20261126s";
-import {closeMenu} from "./ui.js?v=20261126s";
+import {store} from "./store.js?v=20261126t";
+import {mountCenter} from "../center/center.js?v=20261126t";
+import {mountSettings} from "../center/settings.js?v=20261126t";
+import {mountEditor} from "../editor/editorView.js?v=20261126t";
+import {mountTemplates} from "../center/templates.js?v=20261126t";
+import {mountAutomations,mountCampaign} from "../center/automations.js?v=20261126t";
+import {mountCampaignNew} from "../center/campaignNew.js?v=20261126t";
+import {CONFIG} from "./config.js?v=20261126t";
+import {auth} from "./auth.js?v=20261126t";
+import {closeMenu} from "./ui.js?v=20261126t";
 let view=document.getElementById("view");
 let cleanup=null,token=0;
 let lastHash=location.hash;
@@ -17,14 +17,14 @@ async function route(){
   lastHash=nh;
   const my=++token;
   cleanup?.();cleanup=null;closeMenu();const fresh=view.cloneNode(false);view.replaceWith(fresh);view=fresh;
-  const [a,id]=location.hash.replace(/^#\/?/,"").split("/");
+  const [a,id,id2]=location.hash.replace(/^#\/?/,"").split("/");
   document.body.classList.toggle("is-editor",a==="editor"||a==="plantilla");
   document.querySelectorAll("[data-nav]").forEach(n=>n.classList.toggle("is-on",n.dataset.nav===(a||"")));
   let c;
   if(a==="editor"&&id){store.flush();c=await mountEditor(view,id)}
   else if(a==="plantilla"&&id){store.flush();c=await mountEditor(view,id,{template:true})}
   else if(a==="plantillas")c=mountTemplates(view);
-  else if(a==="automatizaciones"&&id==="nueva")c=mountCampaignNew(view);
+  else if(a==="automatizaciones"&&id==="nueva")c=mountCampaignNew(view,id2);
   else if(a==="automatizaciones"&&id)c=mountCampaign(view,id);
   else if(a==="automatizaciones")c=mountAutomations(view);
   else if(a==="ajustes")c=mountSettings(view);
