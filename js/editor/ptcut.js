@@ -1,6 +1,6 @@
-import {modal,toast,esc} from "../app/ui.js?v=20261126y";
-import {outline,simplify,polyToMask,trimCanvas,uploadCut} from "../img/matting.js?v=20261126y";
-import {applyProductImage} from "./product.js?v=20261126y";
+import {modal,toast,esc} from "../app/ui.js?v=20261126z";
+import {outline,simplify,polyToMask,trimCanvas,uploadCut} from "../img/matting.js?v=20261126z";
+import {applyProductImage} from "./product.js?v=20261126z";
 const load=u=>new Promise((res,rej)=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>rej(new Error("No se pudo cargar la imagen"));i.src=u});
 const BGS={checker:"Cuadros",dark:"Oscuro",white:"Blanco",red:"Rojo"};
 export async function openPointsCut(ed,o){

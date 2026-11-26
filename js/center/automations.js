@@ -1,11 +1,11 @@
-import {db} from "../app/db.js?v=20261126y";
-import {store} from "../app/store.js?v=20261126y";
-import {lightbox} from "../app/lightbox.js?v=20261126y";
-import {I} from "../app/icons.js?v=20261126y";
-import {esc,toast,modal} from "../app/ui.js?v=20261126y";
-import {fmtById} from "../app/formats.js?v=20261126y";
-import {STAGES} from "../studio/pipeline.js?v=20261126y";
-import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261126y";
+import {db} from "../app/db.js?v=20261126z";
+import {store} from "../app/store.js?v=20261126z";
+import {lightbox} from "../app/lightbox.js?v=20261126z";
+import {I} from "../app/icons.js?v=20261126z";
+import {esc,toast,modal} from "../app/ui.js?v=20261126z";
+import {fmtById} from "../app/formats.js?v=20261126z";
+import {STAGES} from "../studio/pipeline.js?v=20261126z";
+import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261126z";
 const STG={pending:0,downloading:.15,removing_bg:.4,analyzing:.6,background:.7,composing:.82,saving:.95,scheduled:1,error:1,cancelled:1},STN={downloading:"descargando fotos",removing_bg:"quitando fondos",analyzing:"analizando colores",background:"generando fondo",composing:"componiendo",saving:"guardando"};
 let drainBusy=false;
 const IGD={mode:"prueba",loc:true,alt:"",collab:""};
@@ -77,7 +77,7 @@ export function mountCampaign(root,id){
     if(!openIg.has(i.id))return "";
     if(!ps.length)return `<div class="ig"><p class="hint">Disponible cuando se generen las imágenes.</p></div>`;
     const g=igOf(ps,i),c=ps[0].caption||"",pub=ps.every(p=>p.status==="published");
-    return `<div class="ig" data-igf="${i.id}"><div class="ig__w"><label>Descripción (con # y @)</label><textarea class="input area" data-k="caption" rows="6" maxlength="2200" placeholder="Escribe la descripción y los hashtags…"${pub?" disabled":""}>${esc(c)}</textarea><small class="hint" data-cnt>${c.length}/2200 · ${(c.match(/#[\p{L}\d_]+/gu)||[]).length}/30 hashtags</small></div>
+    return `<div class="ig" data-igf="${i.id}"><div class="ig__w"><label>Descripción (con # y @)</label><textarea class="input area" data-k="caption" rows="6" maxlength="2200" placeholder="Escribe la descripción y los hashtags…"${pub?" disabled":""}>${esc(c)}</textarea><small class="hint" data-cnt>${c.length}/2200 · ${(c.match(/#[\p{L}\d_]+/gu)||[]).length}/5 hashtags</small></div>
 <div class="ig__c"><label>Modo<select class="select" data-k="mode"${pub?" disabled":""}><option value="prueba"${g.mode!=="publicar"?" selected":""}>Prueba (valida, no publica)</option><option value="publicar"${g.mode==="publicar"?" selected":""}>Publicar en Instagram</option></select></label>
 <label>Texto alternativo de las imágenes<input class="input" data-k="alt" value="${esc(g.alt)}"></label>
 <label>Colaboradores (@usuario, separados por coma)<input class="input" data-k="collab" value="${esc(g.collab)}" placeholder="opcional"></label>
@@ -122,7 +122,7 @@ ${banner}${errs}
       if(b.dataset.r){await db.update("campaign_items",b.dataset.r,{status:"pending",attempts:0,error:null,locked_by:null});await setC({status:"running"});toast("Reintento en cola")}
       else if(b.dataset.a==="start"){await setC({status:"running",started_at:new Date().toISOString()});toast("Iniciada")}
       else if(b.dataset.a==="now"){if(drainBusy)return;drainBusy=true;paint();toast("Procesando en este navegador: mantén esta pestaña abierta…");
-        try{await import("../studio/worker.js?v=20261126y");const log=await window.__drain("web-"+Date.now(),40*60e3);const bad=log.filter(x=>x[1]!=="ok").length;toast(`Terminado: ${log.length-bad} correctas${bad?`, ${bad} con error`:""}`)}catch(er){toast(er.message||String(er),{kind:"err"})}finally{drainBusy=false;await load()}}
+        try{await import("../studio/worker.js?v=20261126z");const log=await window.__drain("web-"+Date.now(),40*60e3);const bad=log.filter(x=>x[1]!=="ok").length;toast(`Terminado: ${log.length-bad} correctas${bad?`, ${bad} con error`:""}`)}catch(er){toast(er.message||String(er),{kind:"err"})}finally{drainBusy=false;await load()}}
       else if(b.dataset.a==="pause")await setC({status:"paused"});
       else if(b.dataset.a==="resume")await setC({status:"running"});
       else if(b.dataset.a==="retry"){await fetch(`${db.REST}campaign_items?campaign_id=eq.${id}&status=eq.error`,{method:"PATCH",headers:db.H,body:JSON.stringify({status:"pending",attempts:0,error:null,locked_by:null})});await setC({status:"running"});toast("Errores en cola")}
@@ -141,7 +141,7 @@ ${banner}${errs}
       Object.assign(p,patch);return db.update("posts",p.id,patch)}));}catch(er){toast(er.message,{kind:"err"})}
   };
   P.addEventListener("input",e=>{const f=e.target.closest("[data-igf]");if(!f)return;
-    const t=f.querySelector("[data-k=caption]"),c=f.querySelector("[data-cnt]");if(c)c.textContent=`${t.value.length}/2200 · ${(t.value.match(/#[\p{L}\d_]+/gu)||[]).length}/30 hashtags`;
+    const t=f.querySelector("[data-k=caption]"),c=f.querySelector("[data-cnt]");if(c){const h=(t.value.match(/#[\p{L}\d_]+/gu)||[]).length;c.textContent=`${t.value.length}/2200 · ${h}/5 hashtags${h>5?" · máximo 5":""}`;c.style.color=h>5?"var(--c-danger,#f87171)":""}
     clearTimeout(igT[f.dataset.igf]);igT[f.dataset.igf]=setTimeout(()=>igSave(f),700)});
   P.addEventListener("change",e=>{const f=e.target.closest("[data-igf]");if(!f)return;clearTimeout(igT[f.dataset.igf]);igSave(f).then(()=>toast("Guardado"))});
   P.addEventListener("dragstart",e=>{const h=e.target.closest&&e.target.closest("[data-drag]");if(!h)return;dragging=h.dataset.drag;try{e.dataTransfer.setData("text/plain","x");e.dataTransfer.effectAllowed="move"}catch{}});

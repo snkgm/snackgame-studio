@@ -28,6 +28,7 @@ for(const p of posts){
   const urls=(p.assets?.finals||[]).slice(0,10);
   if(!urls.length){await set({status:"error",error_msg:"Sin imágenes finales"});continue}
   if(!isStory&&mode==="publicar"&&!cap){await set({status:"error",error_msg:"Falta la descripción"});continue}
+  if((cap.match(/#[\p{L}\d_]+/gu)||[]).length>5){await set({status:"error",error_msg:"Máximo 5 hashtags por publicación"});continue}
   const alt=(g.alt||p.title||"").slice(0,1000),col=(g.collab||"").split(/[,\s]+/).map(x=>x.replace(/^@/,"")).filter(Boolean),ex={};
   if(LOC&&g.loc!==false)ex.location_id=LOC;if(col.length)ex.collaborators=JSON.stringify(col);
   try{
