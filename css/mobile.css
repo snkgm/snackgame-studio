@@ -1,14 +1,15 @@
 /* Móvil: la página se desplaza como un documento normal; nada más ancho que la pantalla */
 @media(max-width:720px){
-html,body{height:auto;max-width:100%;overflow-x:hidden}
-body{display:block;min-height:100dvh}
-body{padding-bottom:0!important}
-#view{display:block;flex:none;min-height:0;overflow:visible!important;max-width:100%}
+html,body{height:100%;max-width:100%;overflow:hidden;overscroll-behavior:none}
+body{display:block;padding-bottom:0!important;position:fixed;inset:0;width:100%}
+.nav{position:fixed!important;top:0;left:0;right:0;z-index:800}
+#view,body:not(.is-editor) #view{display:block;position:fixed;left:0;right:0;top:calc(var(--topbar-h) + env(safe-area-inset-top));bottom:calc(64px + env(safe-area-inset-bottom));padding:0 0 var(--sp-3)!important;overflow-x:hidden!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;max-width:100%;min-height:0;flex:none}
 #view>*{max-width:100%;box-sizing:border-box}
 .center,.settings,.auto{height:auto!important;min-height:0;overflow:visible!important;display:flex;flex-direction:column;gap:var(--sp-2)}
 .center .cbody,.cbody{overflow:visible!important;height:auto!important;min-height:0;flex:none}
 .cbody>.mgrid,.cbody>.wgrid,.cbody>.lrows,.cbody>.empty{height:auto!important;overflow:visible!important}
-.mgrid{grid-template-rows:32px repeat(6,minmax(64px,auto))!important;grid-auto-rows:minmax(64px,auto)!important}
+.mgrid{height:auto!important;min-height:0!important;grid-template-rows:32px repeat(6,auto)!important;grid-auto-rows:auto!important}
+.mgrid>.day{min-height:80px}
 .day{overflow:hidden;min-width:0}.day__list{overflow:hidden}
 .mgrid__dow{padding:0;justify-content:center;font-size:11px}
 .chip{min-width:0}.chip__time{display:none}

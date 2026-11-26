@@ -1,11 +1,11 @@
-import {db} from "../app/db.js?v=20261127b";
-import {store} from "../app/store.js?v=20261127b";
-import {lightbox} from "../app/lightbox.js?v=20261127b";
-import {I} from "../app/icons.js?v=20261127b";
-import {esc,toast,modal} from "../app/ui.js?v=20261127b";
-import {fmtById} from "../app/formats.js?v=20261127b";
-import {STAGES} from "../studio/pipeline.js?v=20261127b";
-import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261127b";
+import {db} from "../app/db.js?v=20261127c";
+import {store} from "../app/store.js?v=20261127c";
+import {lightbox} from "../app/lightbox.js?v=20261127c";
+import {I} from "../app/icons.js?v=20261127c";
+import {esc,toast,modal} from "../app/ui.js?v=20261127c";
+import {fmtById} from "../app/formats.js?v=20261127c";
+import {STAGES} from "../studio/pipeline.js?v=20261127c";
+import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261127c";
 const STG={pending:0,downloading:.15,removing_bg:.4,analyzing:.6,background:.7,composing:.82,saving:.95,scheduled:1,error:1,cancelled:1},STN={downloading:"descargando fotos",removing_bg:"quitando fondos",analyzing:"analizando colores",background:"generando fondo",composing:"componiendo",saving:"guardando"};
 let drainBusy=false;
 const IGD={mode:"prueba",loc:true,alt:"",collab:""};
@@ -122,7 +122,7 @@ ${banner}${errs}
       if(b.dataset.r){await db.update("campaign_items",b.dataset.r,{status:"pending",attempts:0,error:null,locked_by:null});await setC({status:"running"});toast("Reintento en cola")}
       else if(b.dataset.a==="start"){await setC({status:"running",started_at:new Date().toISOString()});toast("Iniciada")}
       else if(b.dataset.a==="now"){if(drainBusy)return;drainBusy=true;paint();toast("Procesando en este navegador: mantén esta pestaña abierta…");
-        try{await import("../studio/worker.js?v=20261127b");const log=await window.__drain("web-"+Date.now(),40*60e3);const bad=log.filter(x=>x[1]!=="ok").length;toast(`Terminado: ${log.length-bad} correctas${bad?`, ${bad} con error`:""}`)}catch(er){toast(er.message||String(er),{kind:"err"})}finally{drainBusy=false;await load()}}
+        try{await import("../studio/worker.js?v=20261127c");const log=await window.__drain("web-"+Date.now(),40*60e3);const bad=log.filter(x=>x[1]!=="ok").length;toast(`Terminado: ${log.length-bad} correctas${bad?`, ${bad} con error`:""}`)}catch(er){toast(er.message||String(er),{kind:"err"})}finally{drainBusy=false;await load()}}
       else if(b.dataset.a==="pause")await setC({status:"paused"});
       else if(b.dataset.a==="resume")await setC({status:"running"});
       else if(b.dataset.a==="retry"){await fetch(`${db.REST}campaign_items?campaign_id=eq.${id}&status=eq.error`,{method:"PATCH",headers:db.H,body:JSON.stringify({status:"pending",attempts:0,error:null,locked_by:null})});await setC({status:"running"});toast("Errores en cola")}
