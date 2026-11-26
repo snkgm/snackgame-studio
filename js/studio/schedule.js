@@ -13,10 +13,15 @@ export function scheduleDates(s,count,skip=0){
 }
 export const fmtMadrid=iso=>iso?new Date(iso).toLocaleString("es-ES",{timeZone:TZ,weekday:"short",day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}):"—";
 export function parseList(text){
-  return text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>{
+  const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean),out=[];let pend=null;
+  const strip=t=>t.replace(/^[\s|;,\-–—:\t]+|[\s|;,\-–—:\t]+$/g,"").trim();
+  const clean=u=>{try{const x=new URL(u);return x.origin+x.pathname}catch{return u}};
+  for(const l of lines){
     const m=/https?:\/\/[^\s|;]+/.exec(l);
-    if(!m)return {name:l.replace(/[|;\t]+/g," ").trim(),url:"",subtitle:""};
-    const strip=t=>t.replace(/^[\s|;,\-–—:\t]+|[\s|;,\-–—:\t]+$/g,"").trim();
-    return {name:strip(l.slice(0,m.index)),url:m[0],subtitle:strip(l.slice(m.index+m[0].length))};
-  });
+    if(!m){if(pend)out.push(pend);pend={name:l.replace(/[|;\t]+/g," ").trim(),url:"",subtitle:""};continue}
+    const before=strip(l.slice(0,m.index)),after=strip(l.slice(m.index+m[0].length));
+    if(!before&&pend&&!pend.url){pend.url=clean(m[0]);pend.subtitle=after;out.push(pend);pend=null}
+    else{if(pend){out.push(pend);pend=null}out.push({name:before,url:clean(m[0]),subtitle:after})}
+  }
+  if(pend)out.push(pend);return out;
 }

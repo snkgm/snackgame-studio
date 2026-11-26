@@ -1,9 +1,9 @@
-import {openBatch} from "./batch.js?v=20261126o";
-import {store} from "../app/store.js?v=20261126o";
-import {I} from "../app/icons.js?v=20261126o";
-import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal,thumbHtml} from "../app/ui.js?v=20261126o";
-import {MONTHS,DOW,monthGrid,weekDays,same,ymd,time,longDate,toInput,fromInput,moveToDay,addDays,startOfWeek} from "../app/dates.js?v=20261126o";
-import {openWizard} from "./wizard.js?v=20261126o";
+import {openBatch} from "./batch.js?v=20261126p";
+import {store} from "../app/store.js?v=20261126p";
+import {I} from "../app/icons.js?v=20261126p";
+import {esc,STATUS,STATUS_KEYS,toast,openMenu,modal,thumbHtml} from "../app/ui.js?v=20261126p";
+import {MONTHS,DOW,monthGrid,weekDays,same,ymd,time,longDate,toInput,fromInput,moveToDay,addDays,startOfWeek} from "../app/dates.js?v=20261126p";
+import {openWizard} from "./wizard.js?v=20261126p";
 const LS="sg.center";
 const load=()=>{try{return JSON.parse(localStorage.getItem(LS))||{}}catch{return{}}};
 const save=s=>{try{localStorage.setItem(LS,JSON.stringify(s))}catch{}};
@@ -100,7 +100,7 @@ export function mountCenter(root){
     const nav=t.closest("[data-nav]");if(nav){const n=+nav.dataset.nav;if(!n)S.cur=new Date(),S.cur.setHours(12);else if(S.view==="month")S.cur=new Date(S.cur.getFullYear(),S.cur.getMonth()+n,1,12);else S.cur=addDays(S.cur,7*n);render();return}
     const v=t.closest("[data-view]");if(v){S.view=v.dataset.view;save({view:S.view});render();return}
     const sm=t.closest("[data-sum]");if(sm){S.f.status=S.f.status===sm.dataset.sum?"":sm.dataset.sum;render();return}
-    if(t.closest("[data-batch]")){openBatch();return}
+    if(t.closest("[data-batch]")){location.hash="#/automatizaciones/nueva";return}
     if(t.closest("[data-new]")){create();return}
     if(t.closest("[data-clear]")){S.f={status:"",type:"",cat:"",q:""};render();return}
     const open=t.closest(".chip,.wcard,.lrow:not(.lrow--head)");if(open)location.hash=`#/editor/${open.dataset.id}`;
