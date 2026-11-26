@@ -1,8 +1,8 @@
-import {withHeadless} from "./headless.js?v=20261126n";
-import {buildSkeleton} from "./skeleton.js?v=20261126n";
-import {fmtById} from "../app/formats.js?v=20261126n";
-import {cutoutFor} from "../img/matting.js?v=20261126n";
-import {extractPalette} from "../img/color.js?v=20261126n";
+import {withHeadless} from "./headless.js?v=20261126o";
+import {buildSkeleton} from "./skeleton.js?v=20261126o";
+import {fmtById} from "../app/formats.js?v=20261126o";
+import {cutoutFor} from "../img/matting.js?v=20261126o";
+import {extractPalette} from "../img/color.js?v=20261126o";
 const loadImg=u=>new Promise((res,rej)=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>rej(new Error("No se pudo cargar la imagen del producto"));i.src=u});
 export async function composePost({tplData,fmtId,product,names,blob,onProgress,cutUrl,bgOverride}){
   const fmt=fmtById(fmtId);
@@ -34,7 +34,8 @@ export async function composeMulti({tplData,fmtId,product,names,cutUrls,origs,bg
   const fmt={...fmtById(fmtId)};
   let base=tplData||await buildSkeleton(fmtId,names);
   const c0=base.slides&&base.slides.length?base.slides[0]:base.c,multi=cutUrls.length>1;
-  base={...base,c:multi?undefined:c0,slides:multi?[c0]:undefined};
+  const ts=multi&&base.slides&&base.slides.length>1?base.slides:null;
+  base={...base,c:multi?undefined:c0,slides:multi?(ts?ts.slice(0,cutUrls.length):[c0]):undefined};
   if(multi)fmt.slides=true;
   return withHeadless(async ed=>{
     await ed.loadData(JSON.parse(JSON.stringify(base)),fmt);
@@ -50,7 +51,10 @@ export async function composeMulti({tplData,fmtId,product,names,cutUrls,origs,bg
     const warnings=ed.fitReport();
     let bgBlob=null;
     try{const b=ed.bgLayer();if(b)bgBlob=await (await fetch(b.toDataURL({format:"jpeg",quality:.85}))).blob()}catch{}
-    for(let i=1;i<cutUrls.length;i++){await ed.newSlide(true);await ed.setProductImage(cutUrls[i],{orig:origs&&origs[i]})}
+    for(let i=1;i<cutUrls.length;i++){
+      if(ts&&i<ts.length){await ed.gotoSlide(i);await ed.setProductImage(cutUrls[i],{orig:origs&&origs[i]});if(ed.cfg.bg&&(ed.cfg.bg.mode==="auto"||bgOverride))await ed.applyBg();else ed.applyColorRules();ed.applyFields()}
+      else{await ed.newSlide(true);await ed.setProductImage(cutUrls[i],{orig:origs&&origs[i]})}
+    }
     if(ed.slides)await ed.gotoSlide(0);
     const finals=(await ed.exportAll("jpg")).map(s=>s.blob);
     const thumb=await ed.thumbBlob();
