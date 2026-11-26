@@ -1,10 +1,10 @@
-import {getPfx,setPfx,applyPfx} from "./photofx.js?v=20261126r";
-import {StaticCanvas,Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,controlsUtils,filters as FX} from "../../vendor/fabric.min.mjs?v=20261126r";
-import {bgDataUrl,bgColors,BG_DEFAULT,gradDataUrl} from "../img/background.js?v=20261126r";
-import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261126r";
-import {renderOverlay,overlayById} from "../img/overlays.js?v=20261126r";
-import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261126r";
-import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261126r";
+import {getPfx,setPfx,applyPfx} from "./photofx.js?v=20261126s";
+import {StaticCanvas,Canvas,Rect,Circle,Ellipse,Triangle,Polygon,Line,FabricObject,Textbox,FabricImage,Point,Shadow,controlsUtils,filters as FX} from "../../vendor/fabric.min.mjs?v=20261126s";
+import {bgDataUrl,bgColors,BG_DEFAULT,gradDataUrl} from "../img/background.js?v=20261126s";
+import {loadSnap,snapMove,snapResize} from "./snap.js?v=20261126s";
+import {renderOverlay,overlayById} from "../img/overlays.js?v=20261126s";
+import {renderBgFx,fxActive,renderFloorShadow,FLOOR_DEFAULT} from "../img/fx.js?v=20261126s";
+import {contrastText,shade,lumOf,rgbToHex} from "../img/color.js?v=20261126s";
 const _tid=Textbox.prototype.initDimensions;
 Textbox.prototype.initDimensions=function(){_tid.call(this);if(this.boxH&&this.boxH>this.height)this.height=this.boxH};
 const PROPS=["pfx","boxH","name","locked","role","field","pattern","rule","orig","gen","globalCompositeOperation"];
@@ -307,7 +307,7 @@ export class Editor{
     while(o.calcTextHeight()>r.maxH&&sz>(r.min||20)){sz-=4;o.set("fontSize",sz);o.initDimensions()}
   }
   fitReport(){return this.canvas.getObjects().filter(o=>o.rule&&o.rule.fit&&o.type.toLowerCase()==="textbox"&&(o.text||"").length&&o.calcTextHeight()>o.rule.maxH+1).map(o=>o.name||o.field)}
-  maxSlides=5;th=[];
+  maxSlides=10;th=[];
   grabTh(){try{return this.shot("jpeg",.6,120)}catch{return null}}
   newSlide(dup=true,noProduct=false){
     if(!this.slides){this.slides=[null];this.th=[]}
