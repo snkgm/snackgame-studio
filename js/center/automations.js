@@ -1,12 +1,12 @@
-import {db} from "../app/db.js?v=20261127h";
-import {store} from "../app/store.js?v=20261127h";
-import {lightbox} from "../app/lightbox.js?v=20261127h";
-import {I} from "../app/icons.js?v=20261127h";
-import {esc,toast,modal} from "../app/ui.js?v=20261127h";
-import {fmtById} from "../app/formats.js?v=20261127h";
-import {STAGES} from "../studio/pipeline.js?v=20261127h";
-import {schedBody,schedClick,schedChange} from "./schedUi.js?v=20261127h";
-import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261127h";
+import {db} from "../app/db.js?v=20261127i";
+import {store} from "../app/store.js?v=20261127i";
+import {lightbox} from "../app/lightbox.js?v=20261127i";
+import {I} from "../app/icons.js?v=20261127i";
+import {esc,toast,modal} from "../app/ui.js?v=20261127i";
+import {fmtById} from "../app/formats.js?v=20261127i";
+import {STAGES} from "../studio/pipeline.js?v=20261127i";
+import {schedBody,schedClick,schedChange} from "./schedUi.js?v=20261127i";
+import {fmtMadrid,scheduleDates,parseList} from "../studio/schedule.js?v=20261127i";
 const STG={pending:0,downloading:.15,removing_bg:.4,analyzing:.6,background:.7,composing:.82,saving:.95,scheduled:1,error:1,cancelled:1},STN={downloading:"descargando fotos",removing_bg:"quitando fondos",analyzing:"analizando colores",background:"generando fondo",composing:"componiendo",saving:"guardando"};
 let drainBusy=false;
 const IGD={mode:"prueba",loc:true,alt:"",collab:""};
@@ -93,7 +93,7 @@ export function mountCampaign(root,id){
     const m=mOf(ps[0]),t=new Date(whenOf(i,ps)).getTime(),now=Date.now();
     if(ps.some(p=>gOf(p).mode==="publicar")){
       if(m.publishing_at&&now-new Date(m.publishing_at)<6e5)return["publishing","Publicando"];
-      if(t<=now)return now-t>18e5?["late","Retrasada"]:["publishing","Publicando"];
+      if(t<=now)return now-t>18e5?["late","Retrasada"]:["waiting","En espera de publicación"];
       return t-now<36e5?["next","Próxima a publicar"]:["queued","Programada"];
     }
     return m.test_ok?["tested","Prueba superada"]:["prepared","Preparada"];
@@ -118,7 +118,7 @@ export function mountCampaign(root,id){
     const errs=err.length?`<div class="banner banner--warn"><b>${err.length} incidencia${err.length>1?"s":""}</b><span>${[...new Set(err.map(e=>e.error||"Error"))].map(esc).join(" · ")}</span></div>`:"";
     const U=upcoming(),nT=items.filter(i=>i.status!=="cancelled").length,sts=items.map(i=>({i,st:i.status==="scheduled"?pstate(i,psOf(i)):null}));
     const btns=[U&&C.status!=="cancelled"?`<button class="btn btn--accent" data-a="pubnow" title="Publicar ahora la siguiente publicación">Publicar ahora</button>`:"",C.status!=="cancelled"?`<button class="btn" data-a="edit">Editar automatización</button>`:"",C.status==="draft"?`<button class="btn btn--accent" data-a="start">Iniciar</button>`:"",C.status==="running"?`<button class="btn" data-a="pause">Pausar</button>`:"",C.status==="running"&&(pend.length||work.length)?`<button class="btn btn--accent" data-a="now"${drainBusy?" disabled":""}>${drainBusy?"Procesando aquí…":"Procesar ahora"}</button>`:"",C.status==="paused"?`<button class="btn btn--accent" data-a="resume">Reanudar</button>`:"",err.length&&C.status!=="cancelled"?`<button class="btn" data-a="retry">Reintentar errores</button>`:"",sch.length?`<button class="btn" data-a="ics" title="Descarga un .ics con aviso 5 min antes de cada publicación">Añadir al calendario</button>`:"",C.status!=="cancelled"&&sch.length?`<button class="btn" data-a="regen">Regenerar imágenes</button>`:"",C.status!=="cancelled"?`<button class="btn" data-a="add">Añadir productos</button>`:"",!["cancelled","done"].includes(C.status)?`<button class="btn btn--ghost" data-a="cancel">Cancelar</button>`:""].join("");
-    const nPub=sts.filter(x=>x.st&&x.st[0]==="published").length,nQ=sts.filter(x=>x.st&&["queued","next","publishing","late"].includes(x.st[0])).length,nPrep=sts.filter(x=>x.st&&["prepared","tested"].includes(x.st[0])).length,nErr=sts.filter(x=>(x.st&&x.st[0]==="error")||x.i.status==="error").length,nGen=pend.length+work.length;
+    const nPub=sts.filter(x=>x.st&&x.st[0]==="published").length,nQ=sts.filter(x=>x.st&&["queued","next","waiting","publishing","late"].includes(x.st[0])).length,nPrep=sts.filter(x=>x.st&&["prepared","tested"].includes(x.st[0])).length,nErr=sts.filter(x=>(x.st&&x.st[0]==="error")||x.i.status==="error").length,nGen=pend.length+work.length;
     const w=n=>nT?(n/nT*100).toFixed(1)+"%":"0%",lastPub=posts.map(p=>mOf(p).published_at).filter(Boolean).sort().pop();
     const uWhen=U?whenOf(U.i,U.ps):null,uPub=U&&U.ps.some(p=>gOf(p).mode==="publicar");
     const sw=`<label class="pubsw${swOn()?" is-on":""}" title="Activa o desactiva la publicación automática de toda la lista"><input type="checkbox" data-a="swpub"${swOn()?" checked":""}><i></i><span>Publicar<small>${swOn()?"Activo":"Desactivado"}</small></span></label>`;
@@ -149,7 +149,7 @@ ${banner}${errs}
       if(b.dataset.r){await db.update("campaign_items",b.dataset.r,{status:"pending",attempts:0,error:null,locked_by:null});await setC({status:"running"});toast("Reintento en cola")}
       else if(b.dataset.a==="start"){await setC({status:"running",started_at:new Date().toISOString()});toast("Iniciada")}
       else if(b.dataset.a==="now"){if(drainBusy)return;drainBusy=true;paint();toast("Procesando en este navegador: mantén esta pestaña abierta…");
-        try{await import("../studio/worker.js?v=20261127h");const log=await window.__drain("web-"+Date.now(),40*60e3);const bad=log.filter(x=>x[1]!=="ok").length;toast(`Terminado: ${log.length-bad} correctas${bad?`, ${bad} con error`:""}`)}catch(er){toast(er.message||String(er),{kind:"err"})}finally{drainBusy=false;await load()}}
+        try{await import("../studio/worker.js?v=20261127i");const log=await window.__drain("web-"+Date.now(),40*60e3);const bad=log.filter(x=>x[1]!=="ok").length;toast(`Terminado: ${log.length-bad} correctas${bad?`, ${bad} con error`:""}`)}catch(er){toast(er.message||String(er),{kind:"err"})}finally{drainBusy=false;await load()}}
       else if(b.dataset.a==="pause")await setC({status:"paused"});
       else if(b.dataset.a==="resume")await setC({status:"running"});
       else if(b.dataset.a==="retry"){await fetch(`${db.REST}campaign_items?campaign_id=eq.${id}&status=eq.error`,{method:"PATCH",headers:db.H,body:JSON.stringify({status:"pending",attempts:0,error:null,locked_by:null})});await setC({status:"running"});toast("Errores en cola")}
