@@ -127,3 +127,5 @@
 .ig__w{min-height:0}.ig__w>label{flex:1;min-height:0}
 .ig .area{flex:1;min-height:420px;resize:vertical}
 @media(max-width:800px){.ig .area{min-height:280px}}
+.ig .area{flex:none;height:264px;min-height:264px}.ig__w>label{flex:none}
+@media(max-width:800px){.ig .area{height:200px;min-height:200px}}
